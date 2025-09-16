@@ -93,7 +93,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
-      setError("Sila masukkan Prompt.");
+      setError("Please enter a prompt.");
       return;
     }
     setIsLoading(true);
@@ -108,8 +108,8 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         setEditedResult(result);
         if (result.imageBase64) {
           await addHistoryItem({
-            type: 'Imej',
-            prompt: `Suntingan Imej: ${prompt}`,
+            type: 'Image',
+            prompt: `Image Edit: ${prompt}`,
             result: result.imageBase64,
           });
         }
@@ -129,15 +129,16 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         setSelectedImageIndex(0);
         if (result.length > 0) {
           await addHistoryItem({
-            type: 'Imej',
-            prompt: `Jana Imej: ${prompt} (Nisbah: ${aspectRatio})`,
+            type: 'Image',
+            prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`,
             result: result[0],
           });
         }
       }
     } catch (e) {
-      console.error(e);
-      setError("Gagal memproses permintaan. Sila cuba lagi.");
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+      console.error("Generation failed:", e);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -147,15 +148,15 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
       {/* Left Panel: Controls */}
       <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold">Jana & Sunting Imej</h1>
+        <h1 className="text-3xl font-bold">Generate & Edit Images</h1>
         
         <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Imej Rujukan (Pilihan, sehingga 5)</label>
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Reference Images (Optional, up to 5)</label>
             <div className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 min-h-[116px]">
                 <div className="flex items-center gap-3 flex-wrap">
                     {referenceImages.map(img => (
                         <div key={img.id} className="relative w-20 h-20">
-                            <img src={img.previewUrl} alt="pratonton muat naik" className="w-full h-full object-cover rounded-md"/>
+                            <img src={img.previewUrl} alt="upload preview" className="w-full h-full object-cover rounded-md"/>
                             <button onClick={() => removeImage(img.id)} className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 text-white hover:bg-red-600 transition-colors">
                                 <TrashIcon className="w-3 h-3"/>
                             </button>
@@ -164,7 +165,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
                     {referenceImages.length < 5 && (
                         <button onClick={() => fileInputRef.current?.click()} className="w-20 h-20 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md flex flex-col items-center justify-center text-gray-500 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                             <UploadIcon className="w-6 h-6"/>
-                            <span className="text-xs mt-1">Muat Naik</span>
+                            <span className="text-xs mt-1">Upload</span>
                         </button>
                     )}
                     <input
@@ -176,7 +177,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
                         className="hidden"
                     />
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Muat naik sehingga 5 imej untuk disunting atau digabungkan. Biarkan kosong untuk mencipta imej baharu daripada teks.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Upload up to 5 images to edit or combine. Leave blank to create a new image from text.</p>
             </div>
         </div>
 
@@ -186,14 +187,14 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
             id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Seorang angkasawan bersendirian di bulan, sinematik"
+            placeholder="A lone astronaut on the moon, cinematic"
             rows={4}
             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
           />
         </div>
         
-        <div title={isEditing ? "Nisbah Aspek tidak boleh diubah dalam mod suntingan" : ""}>
-          <label htmlFor="aspect-ratio" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Nisbah Aspek</label>
+        <div title={isEditing ? "Aspect Ratio cannot be changed in edit mode" : ""}>
+          <label htmlFor="aspect-ratio" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Aspect Ratio</label>
           <select 
             id="aspect-ratio" 
             value={aspectRatio} 
@@ -205,8 +206,8 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           </select>
         </div>
         
-        <div title={isEditing ? "Hanya satu imej boleh dijana dalam mod suntingan" : ""}>
-          <label htmlFor="number-of-images" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Bilangan Imej</label>
+        <div title={isEditing ? "Only one image can be generated in edit mode" : ""}>
+          <label htmlFor="number-of-images" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Number of Images</label>
           <select 
             id="number-of-images" 
             value={isEditing ? 1 : numberOfImages} 
@@ -220,15 +221,15 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         
         {/* Advanced Controls */}
         <div className="space-y-4 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tetapan Lanjutan</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Advanced Settings</h3>
             
-            <div title={isEditing ? "Prompt Negatif tidak disokong dalam mod suntingan" : ""}>
-              <label htmlFor="negative-prompt" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Prompt Negatif</label>
+            <div title={isEditing ? "Negative Prompt is not supported in edit mode" : ""}>
+              <label htmlFor="negative-prompt" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Negative Prompt</label>
               <textarea
                 id="negative-prompt"
                 value={negativePrompt}
                 onChange={(e) => setNegativePrompt(e.target.value)}
-                placeholder="Contoh: teks, logo, kabur, hodoh"
+                placeholder="e.g., text, logos, blurry, ugly"
                 rows={2}
                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isEditing}
@@ -236,20 +237,20 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-                <div title={isEditing ? "Seed tidak boleh digunakan dalam mod suntingan" : ""}>
+                <div title={isEditing ? "Seed cannot be used in edit mode" : ""}>
                   <label htmlFor="seed" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Seed</label>
                   <input
                     id="seed"
                     type="number"
                     value={seed}
                     onChange={(e) => setSeed(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                    placeholder="Nombor rawak"
+                    placeholder="Random number"
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isEditing}
                   />
                 </div>
-                 <div title={isEditing ? "Penjanaan Orang tidak boleh digunakan dalam mod suntingan" : ""}>
-                  <label htmlFor="person-generation" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Penjanaan Orang</label>
+                 <div title={isEditing ? "Person Generation cannot be used in edit mode" : ""}>
+                  <label htmlFor="person-generation" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Person Generation</label>
                   <select 
                     id="person-generation" 
                     value={personGeneration} 
@@ -257,16 +258,16 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isEditing}
                   >
-                    <option value="GENERATE_DEFAULT">Lalai</option>
-                    <option value="GENERATE_PHOTOREALISTIC_FACES">Wajah Fotorealistik</option>
-                    <option value="DONT_GENERATE">Jangan Jana</option>
+                    <option value="GENERATE_DEFAULT">Default</option>
+                    <option value="GENERATE_PHOTOREALISTIC_FACES">Photorealistic Faces</option>
+                    <option value="DONT_GENERATE">Don't Generate</option>
                   </select>
                 </div>
             </div>
 
-            <div title={isEditing ? "HDR tidak boleh digunakan dalam mod suntingan" : ""}>
+            <div title={isEditing ? "HDR cannot be used in edit mode" : ""}>
                 <div className={`flex items-center justify-between ${isEditing ? 'cursor-not-allowed' : ''}`}>
-                    <label htmlFor="hdr-toggle" className={`text-sm font-medium transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Julat Dinamik Tinggi (HDR)</label>
+                    <label htmlFor="hdr-toggle" className={`text-sm font-medium transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>High Dynamic Range (HDR)</label>
                     <label htmlFor="hdr-toggle" className={`relative inline-flex items-center ${isEditing ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                         <input 
                             type="checkbox" 
@@ -288,7 +289,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           disabled={isLoading}
           className="w-full mt-2 flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? <Spinner /> : 'Jana'}
+          {isLoading ? <Spinner /> : 'Generate Image'}
         </button>
         {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
       </div>
@@ -300,19 +301,19 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           {isLoading && (
             <div className="text-center">
               <Spinner />
-              <p className="mt-4 text-gray-500 dark:text-gray-400">Menjana karya agung anda...</p>
+              <p className="mt-4 text-gray-500 dark:text-gray-400">Generating your masterpiece...</p>
             </div>
           )}
           {!isLoading && images.length > 0 && (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2">
               <div className="flex-1 flex items-center justify-center min-h-0 w-full relative">
-                <img src={`data:image/png;base64,${images[selectedImageIndex]}`} alt={`Imej dijana ${selectedImageIndex + 1}`} className="rounded-md max-h-full max-w-full object-contain" />
+                <img src={`data:image/png;base64,${images[selectedImageIndex]}`} alt={`Generated image ${selectedImageIndex + 1}`} className="rounded-md max-h-full max-w-full object-contain" />
                  <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <button onClick={() => downloadImage(images[selectedImageIndex], `1za7-ai-image-${Date.now()}.png`)} className="flex items-center gap-2 bg-black/60 text-white text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-black/80 transition-colors">
-                        <DownloadIcon className="w-3 h-3"/> Muat Turun
+                        <DownloadIcon className="w-3 h-3"/> Download
                     </button>
                     <button onClick={() => onCreateVideo({ prompt, image: { base64: images[selectedImageIndex], mimeType: 'image/png' } })} className="flex items-center gap-2 bg-primary-600/80 text-white text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-primary-600 transition-colors">
-                        <VideoIcon className="w-3 h-3"/> Buat Video
+                        <VideoIcon className="w-3 h-3"/> Create Video
                     </button>
                 </div>
               </div>
@@ -321,7 +322,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
                   <div className="flex gap-2 overflow-x-auto p-2">
                     {images.map((img, index) => (
                       <button key={index} onClick={() => setSelectedImageIndex(index)} className={`w-16 h-16 md:w-20 md:h-20 rounded-md overflow-hidden flex-shrink-0 transition-all duration-200 ${selectedImageIndex === index ? 'ring-4 ring-primary-500' : 'ring-2 ring-transparent hover:ring-primary-300'}`}>
-                        <img src={`data:image/png;base64,${img}`} alt={`Imej kecil ${index + 1}`} className="w-full h-full object-cover" />
+                        <img src={`data:image/png;base64,${img}`} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -331,13 +332,13 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           )}
           {!isLoading && editedResult?.imageBase64 && (
              <div className="w-full h-full flex items-center justify-center relative">
-                <img src={`data:image/png;base64,${editedResult.imageBase64}`} alt="Output suntingan" className="rounded-md max-h-full max-w-full object-contain" />
+                <img src={`data:image/png;base64,${editedResult.imageBase64}`} alt="Edited output" className="rounded-md max-h-full max-w-full object-contain" />
                 <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <button onClick={() => downloadImage(editedResult.imageBase64!, `1za7-ai-edited-image-${Date.now()}.png`)} className="flex items-center gap-2 bg-black/60 text-white text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-black/80 transition-colors">
-                        <DownloadIcon className="w-3 h-3"/> Muat Turun
+                        <DownloadIcon className="w-3 h-3"/> Download
                     </button>
                     <button onClick={() => onCreateVideo({ prompt, image: { base64: editedResult.imageBase64!, mimeType: 'image/png' } })} className="flex items-center gap-2 bg-primary-600/80 text-white text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-primary-600 transition-colors">
-                        <VideoIcon className="w-3 h-3"/> Buat Video
+                        <VideoIcon className="w-3 h-3"/> Create Video
                     </button>
                 </div>
              </div>
@@ -345,7 +346,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
            {!isLoading && images.length === 0 && !editedResult && (
             <div className="text-center text-gray-500 dark:text-gray-600">
               <ImageIcon className="w-16 h-16 mx-auto" />
-              <p>Output akan muncul di sini</p>
+              <p>Your output will appear here</p>
             </div>
           )}
         </div>

@@ -14,7 +14,12 @@ import LoginPage from './components/LoginPage';
 import GalleryView from './components/views/GalleryView';
 import WelcomeAnimation from './components/WelcomeAnimation';
 import VideoCombinerView from './components/views/VideoCombinerView';
-import { MenuIcon, LogoIcon } from './components/Icons';
+import MarketingCopyView from './components/views/MarketingCopyView';
+import BackgroundRemoverView from './components/views/BackgroundRemoverView';
+import ImageEnhancerView from './components/views/ImageEnhancerView';
+import ContentIdeasView from './components/views/ContentIdeasView';
+import VoiceStudioView from './components/views/VoiceStudioView';
+import { MenuIcon, LogoIcon, XIcon } from './components/Icons';
 import { getUserProfile, signOutUser, checkAndDeactivateTrialUser } from './services/userService';
 import { setActiveApiKey } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
@@ -119,6 +124,8 @@ const App: React.FC = () => {
         return <VideoGenerationView preset={videoGenPreset} clearPreset={() => setVideoGenPreset(null)} />;
       case 'product-ad':
         return <ProductAdView />;
+      case 'marketing-copy':
+        return <MarketingCopyView />;
       case 'product-review':
         return <ProductReviewView />;
       case 'tiktok-affiliate':
@@ -129,6 +136,14 @@ const App: React.FC = () => {
         return <GalleryView onCreateVideo={handleCreateVideoFromImage} />;
       case 'video-combiner':
         return <VideoCombinerView />;
+      case 'background-remover':
+        return <BackgroundRemoverView />;
+      case 'image-enhancer':
+        return <ImageEnhancerView />;
+      case 'content-ideas':
+        return <ContentIdeasView />;
+      case 'voice-studio':
+        return <VoiceStudioView />;
       case 'settings':
           return <SettingsView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} setActiveView={setActiveView} />;
       default:
@@ -138,7 +153,7 @@ const App: React.FC = () => {
   
   if (!sessionChecked) {
       return (
-          <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+          <div className="flex items-center justify-center min-h-screen bg-neutral-100 dark:bg-neutral-900">
               <Spinner />
           </div>
       );
@@ -170,34 +185,34 @@ const App: React.FC = () => {
           if (currentUser.status === 'inactive') {
               // Specific message for expired trials
               blockMessage = {
-                  title: 'Akaun Tidak Aktif',
-                  body: 'Tempoh percubaan anda telah tamat. Sila update Gemini API Key anda di Tetapan untuk membuka kunci akses seumur hidup kepada semua ciri AI.',
+                  title: 'Account Inactive',
+                  body: 'Your trial period has expired. Please update your Gemini API Key in Settings to unlock lifetime access to all AI features.',
               };
           } else {
               // Generic message for anyone without a key (admin, new trial user, etc.)
               blockMessage = {
-                  title: 'API Key Diperlukan',
-                  body: 'Untuk menggunakan ciri AI ini, anda mesti menyediakan Gemini API Key anda sendiri di halaman Tetapan.',
+                  title: 'API Key Required',
+                  body: 'To use this AI feature, you must provide your own Gemini API Key on the Settings page.',
               };
           }
       }
-      // Note: The previous logic of limiting features for 'trial' users is removed.
-      // Now, if a user has a key, they have access. This simplifies the model.
-      // The 'trial' status now effectively means "user without a personal API key yet".
   }
 
 
   const PageContent = isBlocked ? (
-    <div className="flex items-center justify-center h-full">
-      <div className="text-center p-10 max-w-lg bg-white dark:bg-black rounded-lg shadow-xl">
-        <h2 className="text-2xl font-bold">{blockMessage.title}</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">{blockMessage.body}</p>
+    <div className="flex items-center justify-center h-full p-4">
+      <div className="text-center p-8 sm:p-12 max-w-lg bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-800">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50">
+          <XIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+        </div>
+        <h2 className="mt-5 text-2xl font-bold text-neutral-800 dark:text-white">{blockMessage.title}</h2>
+        <p className="mt-2 text-neutral-600 dark:text-neutral-300">{blockMessage.body}</p>
       </div>
     </div>
   ) : renderView();
 
   return (
-    <div className="flex h-screen bg-white dark:bg-black text-gray-800 dark:text-gray-100 font-sans">
+    <div className="flex h-screen bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 font-sans">
       <Sidebar 
         activeView={activeView} 
         setActiveView={setActiveView} 
@@ -206,14 +221,14 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
-      <main className="flex-1 flex flex-col overflow-hidden bg-gray-100 dark:bg-gray-900">
+      <main className="flex-1 flex flex-col overflow-hidden">
          {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sticky top-0 z-10">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2" aria-label="Buka menu">
+        <header className="lg:hidden flex items-center justify-between p-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 sticky top-0 z-10">
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2" aria-label="Open menu">
             <MenuIcon className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-2">
-            <LogoIcon className="w-20 text-gray-800 dark:text-gray-200" />
+            <LogoIcon className="w-20 text-neutral-800 dark:text-neutral-200" />
             <span className="font-bold text-lg">AI</span>
           </div>
           <div className="w-10"></div> {/* Spacer */}

@@ -1,9 +1,5 @@
-
-
-
-
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllUsers, updateUserStatus, replaceUsers, exportAllUserData } from '../../services/userService';
 import { type User, type UserStatus } from '../../types';
 import { UsersIcon, XIcon, DownloadIcon, UploadIcon } from '../Icons';
@@ -13,22 +9,21 @@ const formatStatus = (user: User): { text: string; color: 'green' | 'yellow' | '
         case 'admin':
             return { text: 'Admin', color: 'blue' };
         case 'lifetime':
-            return { text: 'Seumur Hidup', color: 'green' };
+            return { text: 'Lifetime', color: 'green' };
         case 'trial':
-            // This is a fallback, the countdown component will be used instead.
-            return { text: 'Percubaan', color: 'yellow' };
+            return { text: 'Trial', color: 'yellow' };
         case 'inactive':
-            return { text: 'Tidak Aktif', color: 'red' };
+            return { text: 'Inactive', color: 'red' };
         default:
-            return { text: 'Tidak Diketahui', color: 'red' };
+            return { text: 'Unknown', color: 'red' };
     }
 };
 
 const statusColors: Record<'green' | 'yellow' | 'red' | 'blue', string> = {
-    green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    green: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+    red: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+    blue: 'bg-primary-100 text-primary-800 dark:bg-primary-900/50 dark:text-primary-300',
 };
 
 const TrialCountdown: React.FC<{ expiry: number }> = ({ expiry }) => {
@@ -37,13 +32,13 @@ const TrialCountdown: React.FC<{ expiry: number }> = ({ expiry }) => {
         const timeLeft = expiry - now;
 
         if (timeLeft <= 0) {
-            return { text: 'Telah tamat', color: 'red' as const };
+            return { text: 'Expired', color: 'red' as const };
         }
 
         const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
         const seconds = Math.floor((timeLeft / 1000) % 60);
 
-        return { text: `Tamat dalam ${minutes}m ${seconds}s`, color: 'yellow' as const };
+        return { text: `Expires in ${minutes}m ${seconds}s`, color: 'yellow' as const };
     }, [expiry]);
     
     const [timeInfo, setTimeInfo] = useState(calculateRemainingTime());
@@ -66,6 +61,22 @@ const TrialCountdown: React.FC<{ expiry: number }> = ({ expiry }) => {
 
 const AIAgentPanel: React.FC = () => {
     const SETTINGS_KEY = '1za7-ai-agent-settings';
+    
+    const allAgents = [
+        { id: 'chat', label: 'Chat GPT' },
+        { id: 'content-ideas', label: 'Content Ideas Generator' },
+        { id: 'marketing-copy', label: 'Copywriting Generator' },
+        { id: 'image-generation', label: 'Image Generation' },
+        { id: 'background-remover', label: 'Image Background Remover' },
+        { id: 'image-enhancer', label: 'Image Enhancer' },
+        { id: 'product-photo', label: 'Image Product Photos' },
+        { id: 'tiktok-affiliate', label: 'Image Model Photos' },
+        { id: 'product-ad', label: 'Video Storyline Generator' },
+        { id: 'product-review', label: 'Video Storyboard Generator' },
+        { id: 'video-generation', label: 'Video Generation' },
+        { id: 'video-combiner', label: 'Video Combiner' },
+        { id: 'voice-studio', label: 'Voice Studio' },
+    ];
 
     const getInitialState = () => {
         try {
@@ -76,12 +87,11 @@ const AIAgentPanel: React.FC = () => {
         } catch (e) {
             console.error("Failed to parse AI Agent settings:", e);
         }
-        return {
-          '1za7-gpt': true,
-          'jana-foto': true,
-          'foto-model': true,
-          'foto-produk': true,
-        };
+        const defaultState: Record<string, boolean> = {};
+        allAgents.forEach(agent => {
+            defaultState[agent.id] = true;
+        });
+        return defaultState;
     };
 
     const [enabledAgents, setEnabledAgents] = useState<Record<string, boolean>>(getInitialState());
@@ -97,27 +107,14 @@ const AIAgentPanel: React.FC = () => {
             return newState;
         });
     };
-
-    const mainAgents = [
-        { id: '1za7-gpt', label: '1za7-GPT' },
-        { id: 'jana-foto', label: 'Jana Foto' },
-        { id: 'jana-video', label: 'Jana Video' },
-        { id: 'jana-copywriting', label: 'Jana Copywriting' },
-        { id: 'ulasan-produk', label: 'Ulasan Produk' },
-    ];
-    const ugcAgents = [
-        { id: 'foto-model', label: 'Foto Model' },
-        { id: 'foto-produk', label: 'Foto Produk' },
-        { id: 'gabung-video', label: 'Gabung Video' },
-    ];
-
+    
     const ToggleItem: React.FC<{
         service: { id: string; label: string };
         isChecked: boolean;
         onToggle: (id: string) => void;
     }> = ({ service, isChecked, onToggle }) => (
-        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900/50 rounded-lg">
-            <span className="font-medium text-gray-800 dark:text-gray-200">{service.label}</span>
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-neutral-900/50 rounded-lg">
+            <span className="font-medium text-neutral-800 dark:text-neutral-200">{service.label}</span>
             <label htmlFor={`toggle-${service.id}`} className="relative inline-flex items-center cursor-pointer">
                 <input
                     type="checkbox"
@@ -126,7 +123,7 @@ const AIAgentPanel: React.FC = () => {
                     checked={isChecked}
                     onChange={() => onToggle(service.id)}
                 />
-                <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
             </label>
         </div>
     );
@@ -134,26 +131,13 @@ const AIAgentPanel: React.FC = () => {
     return (
         <>
             <h2 className="text-xl font-semibold">AI Agent</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-6">
-                Aktifkan atau nyahaktifkan ciri janaan AI untuk semua pengguna. Perubahan berkuat kuasa serta-merta.
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 mb-6">
+                Enable or disable AI generation features for all users. Changes take effect immediately.
             </p>
-            <div className="space-y-6">
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">AI Agent</h3>
-                    <div className="space-y-2">
-                        {mainAgents.map(service => (
-                            <ToggleItem key={service.id} service={service} isChecked={!!enabledAgents[service.id]} onToggle={handleToggle} />
-                        ))}
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Kandungan UGC</h3>
-                    <div className="space-y-2">
-                        {ugcAgents.map(service => (
-                            <ToggleItem key={service.id} service={service} isChecked={!!enabledAgents[service.id]} onToggle={handleToggle} />
-                        ))}
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {allAgents.map(service => (
+                    <ToggleItem key={service.id} service={service} isChecked={!!enabledAgents[service.id]} onToggle={handleToggle} />
+                ))}
             </div>
         </>
     );
@@ -196,9 +180,9 @@ const AdminDashboardView: React.FC = () => {
         
         if (await updateUserStatus(selectedUser.id, newStatus)) {
             fetchUsers();
-            setStatusMessage({ type: 'success', message: `Status untuk ${selectedUser.username} telah dikemaskini.` });
+            setStatusMessage({ type: 'success', message: `Status for ${selectedUser.username} has been updated.` });
         } else {
-            setStatusMessage({ type: 'error', message: 'Gagal mengemas kini status.' });
+            setStatusMessage({ type: 'error', message: 'Failed to update status.' });
         }
         setIsModalOpen(false);
         setSelectedUser(null);
@@ -210,7 +194,7 @@ const AdminDashboardView: React.FC = () => {
         setStatusMessage(null);
         const usersToExport = await exportAllUserData();
         if (!usersToExport) {
-            setStatusMessage({ type: 'error', message: 'Gagal mengeksport: Pangkalan data pengguna rosak.' });
+            setStatusMessage({ type: 'error', message: 'Export failed: User database is corrupted.' });
             setTimeout(() => setStatusMessage(null), 4000);
             return;
         }
@@ -227,9 +211,9 @@ const AdminDashboardView: React.FC = () => {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            setStatusMessage({ type: 'success', message: 'Data pengguna berjaya dieksport.' });
+            setStatusMessage({ type: 'success', message: 'User data exported successfully.' });
         } catch (error) {
-             setStatusMessage({ type: 'error', message: 'Gagal mencipta fail eksport.' });
+             setStatusMessage({ type: 'error', message: 'Failed to create export file.' });
         }
         setTimeout(() => setStatusMessage(null), 4000);
     };
@@ -243,7 +227,7 @@ const AdminDashboardView: React.FC = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (!window.confirm("Adakah anda pasti mahu menggantikan semua data pengguna sedia ada dengan kandungan fail ini? Tindakan ini tidak boleh diubah kembali.")) {
+        if (!window.confirm("Are you sure you want to replace all existing user data with the contents of this file? This action cannot be undone.")) {
             if(event.target) event.target.value = '';
             return;
         }
@@ -252,7 +236,7 @@ const AdminDashboardView: React.FC = () => {
         reader.onload = async (e) => {
             try {
                 const text = e.target?.result;
-                if (typeof text !== 'string') throw new Error("Gagal membaca fail.");
+                if (typeof text !== 'string') throw new Error("Failed to read file.");
                 
                 const importedUsers = JSON.parse(text);
                 const result = await replaceUsers(importedUsers);
@@ -264,7 +248,7 @@ const AdminDashboardView: React.FC = () => {
                     setStatusMessage({ type: 'error', message: result.message });
                 }
             } catch (error) {
-                setStatusMessage({ type: 'error', message: `Ralat mengimport fail: ${error instanceof Error ? error.message : 'Format fail tidak sah.'}` });
+                setStatusMessage({ type: 'error', message: `Error importing file: ${error instanceof Error ? error.message : 'Invalid file format.'}` });
             } finally {
                  if(event.target) event.target.value = '';
                  setTimeout(() => setStatusMessage(null), 5000);
@@ -282,41 +266,41 @@ const AdminDashboardView: React.FC = () => {
         : [];
     
     if (loading) {
-        return <div>Memuatkan pengguna...</div>;
+        return <div>Loading users...</div>;
     }
 
     if (users === null) {
         return (
             <div className="bg-red-100 dark:bg-red-900/50 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg" role="alert">
-                <strong className="font-bold">Ralat Kritikal:</strong>
-                <span className="block sm:inline"> Pangkalan data pengguna rosak dan tidak dapat dibaca. Sila hubungi sokongan.</span>
+                <strong className="font-bold">Critical Error:</strong>
+                <span className="block sm:inline"> The user database is corrupted and could not be read. Please contact support.</span>
             </div>
         );
     }
 
     return (
         <>
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg">
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
                 <h2 className="text-xl font-semibold mb-2">User Database</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Urus pengguna, langganan, dan sandaran pangkalan data.</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">Manage users, subscriptions, and database backups.</p>
                 
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     <input
                         type="text"
-                        placeholder="Cari mengikut nama pengguna atau e-mel..."
+                        placeholder="Search by username or email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full max-w-sm bg-white dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                        className="w-full max-w-sm bg-white dark:bg-neutral-800/50 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                     />
                     <div className="flex gap-2">
                         <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".json" className="hidden" />
-                        <button onClick={handleImportClick} className="flex items-center gap-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-2 px-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <button onClick={handleImportClick} className="flex items-center gap-2 text-sm bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 font-semibold py-2 px-3 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
                             <UploadIcon className="w-4 h-4" />
                             Import
                         </button>
                         <button onClick={handleExport} className="flex items-center gap-2 text-sm bg-primary-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-primary-700 transition-colors">
                             <DownloadIcon className="w-4 h-4" />
-                            Eksport
+                            Export
                         </button>
                     </div>
                 </div>
@@ -327,25 +311,25 @@ const AdminDashboardView: React.FC = () => {
                     </div>
                 )}
 
-                <div className="bg-white dark:bg-black rounded-lg shadow-inner">
+                <div className="bg-white dark:bg-neutral-950 rounded-lg shadow-inner">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400">
+                        <table className="w-full text-sm text-left text-neutral-500 dark:text-neutral-400">
+                            <thead className="text-xs text-neutral-700 uppercase bg-neutral-100 dark:bg-neutral-800/50 dark:text-neutral-400">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">
-                                        Nama Pengguna
+                                        Username
                                     </th>
                                     <th scope="col" className="px-6 py-3">
-                                        E-mel
+                                        Email
                                     </th>
                                     <th scope="col" className="px-6 py-3">
-                                        Nombor Telefon
+                                        Phone Number
                                     </th>
                                     <th scope="col" className="px-6 py-3">
-                                        Status Akaun
+                                        Account Status
                                     </th>
                                     <th scope="col" className="px-6 py-3">
-                                        Tindakan
+                                        Action
                                     </th>
                                 </tr>
                             </thead>
@@ -354,8 +338,8 @@ const AdminDashboardView: React.FC = () => {
                                     filteredUsers.map((user) => {
                                         const { text, color } = formatStatus(user);
                                         return (
-                                            <tr key={user.id} className="bg-white dark:bg-black border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                            <tr key={user.id} className="bg-white dark:bg-neutral-950 border-b dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900/50">
+                                                <th scope="row" className="px-6 py-4 font-medium text-neutral-900 whitespace-nowrap dark:text-white">
                                                     {user.username || '-'}
                                                 </th>
                                                 <td className="px-6 py-4">
@@ -389,14 +373,14 @@ const AdminDashboardView: React.FC = () => {
                                         <td colSpan={5} className="text-center py-10">
                                             {users.length > 0 ? (
                                                 <div>
-                                                    <p className="mt-2 font-semibold">Tiada pengguna ditemui.</p>
-                                                    <p className="text-xs">Tiada pengguna yang sepadan dengan "{searchTerm}".</p>
+                                                    <p className="mt-2 font-semibold">No users found.</p>
+                                                    <p className="text-xs">No users match "{searchTerm}".</p>
                                                 </div>
                                             ) : (
                                                 <div>
-                                                    <UsersIcon className="w-12 h-12 mx-auto text-gray-400" />
-                                                    <p className="mt-2 font-semibold">Tiada pengguna berdaftar lagi.</p>
-                                                    <p className="text-xs">Apabila pengguna baharu mendaftar, mereka akan muncul di sini.</p>
+                                                    <UsersIcon className="w-12 h-12 mx-auto text-neutral-400" />
+                                                    <p className="mt-2 font-semibold">No registered users yet.</p>
+                                                    <p className="text-xs">When new users register, they will appear here.</p>
                                                 </div>
                                             )}
                                         </td>
@@ -408,49 +392,49 @@ const AdminDashboardView: React.FC = () => {
                 </div>
             </div>
             
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg mt-8">
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg mt-8 shadow-sm">
                 <AIAgentPanel />
             </div>
 
             {isModalOpen && selectedUser && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" aria-modal="true" role="dialog">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md m-4">
+                    <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-full max-w-md m-4">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold">Ubah Status Pengguna</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <h3 className="text-lg font-bold">Edit User Status</h3>
+                            <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700">
                                 <XIcon className="w-5 h-5" />
                             </button>
                         </div>
-                        <p className="mb-4 text-sm">Mengemas kini status untuk <span className="font-semibold">{selectedUser.username}</span>.</p>
+                        <p className="mb-4 text-sm">Updating status for <span className="font-semibold">{selectedUser.username}</span>.</p>
                         <div className="space-y-4">
                             <div>
-                                <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Status Akaun
+                                <label htmlFor="status-select" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                                    Account Status
                                 </label>
                                 <select
                                     id="status-select"
                                     value={newStatus}
                                     onChange={(e) => setNewStatus(e.target.value as UserStatus)}
-                                    className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                                    className="w-full bg-neutral-50 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none"
                                 >
-                                    <option value="trial">Percubaan</option>
-                                    <option value="lifetime">Seumur Hidup</option>
-                                    <option value="inactive">Tidak Aktif</option>
+                                    <option value="trial">Trial</option>
+                                    <option value="lifetime">Lifetime</option>
+                                    <option value="inactive">Inactive</option>
                                 </select>
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end gap-2">
                                 <button
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-sm font-semibold bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                                    className="px-4 py-2 text-sm font-semibold bg-neutral-200 dark:bg-neutral-600 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-500 transition-colors"
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                                 <button
                                     onClick={handleSaveStatus}
                                     className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
                                 >
-                                    Kemas Kini Status
+                                    Update Status
                                 </button>
                         </div>
                     </div>

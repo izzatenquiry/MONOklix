@@ -31,11 +31,11 @@ const ImageUnderstandingView: React.FC = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!imageData) {
-      setError("Sila muat naik imej terlebih dahulu.");
+      setError("Please upload an image first.");
       return;
     }
     if (!prompt.trim()) {
-      setError("Sila masukkan soalan atau Prompt.");
+      setError("Please enter a question or prompt.");
       return;
     }
     setIsLoading(true);
@@ -45,8 +45,9 @@ const ImageUnderstandingView: React.FC = () => {
       const result = await generateMultimodalContent(prompt, [imageData]);
       setResponse(result);
     } catch (e) {
-      console.error(e);
-      setError("Gagal menganalisis imej. Sila cuba lagi.");
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+      console.error("Analysis failed:", e);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -55,15 +56,15 @@ const ImageUnderstandingView: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-3xl font-bold">Pemahaman Imej</h2>
-        <p className="text-gray-500 dark:text-gray-400">Muat naik imej dan tanya AI apa sahaja tentangnya.</p>
+        <h2 className="text-3xl font-bold">Image Understanding</h2>
+        <p className="text-gray-500 dark:text-gray-400">Upload an image and ask the AI anything about it.</p>
       </div>
       <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl shadow-lg space-y-4">
         <ImageUpload id="image-understand-upload" onImageUpload={handleImageUpload} />
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="cth., Apa yang ada dalam imej ini? Terangkan subjek utama. Apakah warna kereta itu?"
+          placeholder="e.g., What is in this image? Describe the main subject. What color is the car?"
           rows={2}
           className="w-full bg-gray-200 dark:bg-gray-700/60 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
         />
@@ -73,7 +74,7 @@ const ImageUnderstandingView: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading && <Spinner />}
-          Analisis Imej
+          Analyze Image
         </button>
       </div>
 
@@ -82,20 +83,20 @@ const ImageUnderstandingView: React.FC = () => {
       {(isLoading || response) && (
         <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold">Analisis AI</h3>
+            <h3 className="text-xl font-semibold">AI Analysis</h3>
             {response && !isLoading && (
                 <button 
                   onClick={() => downloadText(response, `1za7-ai-analysis-${Date.now()}.txt`)} 
                   className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 >
-                    <DownloadIcon className="w-4 h-4"/> Muat Turun
+                    <DownloadIcon className="w-4 h-4"/> Download
                 </button>
             )}
           </div>
           {isLoading ? (
             <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400">
               <Spinner />
-              <p>Menganalisis... sila tunggu.</p>
+              <p>Analyzing... please wait.</p>
             </div>
           ) : (
             response && <MarkdownRenderer content={response} />

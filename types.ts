@@ -1,7 +1,4 @@
 
-
-
-
 export type View =
   | 'e-course'
   | 'chat'
@@ -13,7 +10,12 @@ export type View =
   | 'product-photo'
   | 'gallery'
   | 'settings'
-  | 'video-combiner';
+  | 'video-combiner'
+  | 'marketing-copy'
+  | 'background-remover'
+  | 'image-enhancer'
+  | 'content-ideas'
+  | 'voice-studio';
 
 export interface NavItem {
   id: View | 'logout';
@@ -26,7 +28,7 @@ export interface NavItem {
 }
 
 // FIX: Added 'Audio' to the HistoryItemType to support it as a valid type for history items.
-export type HistoryItemType = 'Imej' | 'Video' | 'Papan Cerita' | 'Kanvas' | 'Audio';
+export type HistoryItemType = 'Image' | 'Video' | 'Storyboard' | 'Canvas' | 'Audio' | 'Copy';
 
 export interface HistoryItem {
   id: string;

@@ -1,31 +1,30 @@
 
+
 import { type HistoryItem, type HistoryItemType } from '../types';
 import { supabase } from './supabaseClient';
-import { getLocalUser } from './userService';
 
 const HISTORY_KEY_PREFIX = '1za7-ai-generation-history-';
-const MAX_HISTORY_ITEMS = 50; // Set a reasonable limit to prevent storage quota errors
+const MAX_HISTORY_ITEMS = 15; // Set a reasonable limit to prevent storage quota errors
 
 /**
  * Gets the localStorage key specific to the current user.
- * It prioritizes the insecure local session over the Supabase session.
+ * It now relies solely on the secure Supabase session.
  * @returns {Promise<string | null>} The user-specific key or null if not authenticated.
  */
 const getUserHistoryKey = async (): Promise<string | null> => {
-    // 1. Check for the insecure local user first, as it's the primary session method for email-only login.
-    const localUser = getLocalUser();
-    if (localUser?.id) {
-        return `${HISTORY_KEY_PREFIX}${localUser.id}`;
+    // The single source of truth for the user's session is Supabase auth.
+    const { data: { session }, error } = await (supabase.auth as any).getSession();
+
+    if (error) {
+        console.error("Error getting session for history:", error.message);
+        return null;
     }
 
-    // 2. Fallback to the standard Supabase session for users who logged in via magic link/confirmation.
-    // FIX: Cast supabase.auth to any to resolve type error for getSession method.
-    const { data: { session } } = await (supabase.auth as any).getSession();
     if (session?.user?.id) {
         return `${HISTORY_KEY_PREFIX}${session.user.id}`;
     }
-    
-    // 3. If neither authentication method finds a user, then deny access.
+
+    // This message will now only appear if there is genuinely no active session.
     console.error("User not authenticated, cannot access history.");
     return null;
 };

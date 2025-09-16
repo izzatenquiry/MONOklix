@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1za7.my - Platform AI (all-in-One)</title>
+    <title>1za7.my - All-in-One AI Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -11,20 +11,17 @@
         theme: {
           extend: {
             colors: {
-              primary: {
-                '50': '#eff6ff', '100': '#dbeafe', '200': '#bfdbfe', '300': '#93c5fd', '400': '#60a5fa',
-                '500': '#3b82f6', '600': '#2563eb', '700': '#1d4ed8', '800': '#1e40af', '900': '#1e3a8a',
-                '950': '#172554',
-              },
+              primary: tailwind.colors.sky,
+              neutral: tailwind.colors.slate,
             },
             keyframes: {
               zoomIn: {
-                '0%': { opacity: '0', transform: 'scale(0.8)' },
+                '0%': { opacity: '0', transform: 'scale(0.95)' },
                 '100%': { opacity: '1', transform: 'scale(1)' },
               },
             },
             animation: {
-              zoomIn: 'zoomIn 2s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+              zoomIn: 'zoomIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
             }
           }
         }
@@ -47,7 +44,7 @@
 <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/util.js" async></script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-white text-gray-900 dark:bg-gray-900 dark:text-white transition-colors duration-300">
+<body class="bg-neutral-50 text-neutral-800 dark:bg-neutral-950 dark:text-neutral-200 transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

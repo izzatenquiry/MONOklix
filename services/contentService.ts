@@ -4,15 +4,12 @@ const CONTENT_KEY = '1za7-ai-tutorial-content';
 
 const defaultContent: TutorialContent = {
   mainVideoUrl: 'https://www.youtube.com/embed/EbXYHeQWaG0',
-  mainTitle: 'Selamat Datang ke Tutorial 1za7.my AI',
-  mainDescription: 'Selamat datang! Video ini adalah pengenalan anda kepada platform 1za7.my AI. Fahami gambaran keseluruhan, ciri-ciri hebat, dan bagaimana untuk memulakan projek kreatif anda dengan bantuan AI.',
+  mainTitle: 'Welcome to the 1za7.my AI Tutorial',
+  mainDescription: 'Welcome! This video is your introduction to the 1za7.my AI platform. Understand the overview, powerful features, and how to get started on your creative projects with the help of AI.',
   tutorials: [
-    { title: "Pengenalan kepada 1za7.my AI", description: "Jelajah pantas antara muka platform, ciri utama dan cara untuk bermula dengan projek AI pertama anda.", thumbnailUrl: "" },
-    { title: "Menguasai Penjanaan Imej", description: "Belajar cara menulis gesa yang berkesan untuk menjana imej yang menakjubkan, menggunakan imej rujukan dan melaraskan nisbah aspek.", thumbnailUrl: "" },
-    { title: "Dari Teks ke Video dalam Minit", description: "Panduan langkah demi langkah untuk menggunakan penjana video AI kami, daripada menulis gesa hingga memuat turun karya sinematik anda.", thumbnailUrl: "" },
-    { title: "Tips Copywriting Produk", description: "Ketahui cara untuk mendapatkan hasil terbaik daripada alat copywriting kami untuk mencipta papan cerita iklan yang menarik.", thumbnailUrl: "" },
-    { title: "Menguruskan Sejarah & Tetapan", description: "Ketahui cara mengakses, menyemak dan mengurus semua kandungan janaan anda dari panel Sejarah dalam Tetapan.", thumbnailUrl: "" }
-    { title: "Menguruskan Sejarah & Tetapan", description: "Ketahui cara mengakses, menyemak dan mengurus semua kandungan janaan anda dari panel Sejarah dalam Tetapan.", thumbnailUrl: "" }
+    { title: "Introduction to 1za7.my AI", description: "A quick tour of the platform interface, key features, and how to get started with your first AI project.", thumbnailUrl: "" },
+    { title: "Mastering Image Generation", description: "Learn how to write effective prompts to generate stunning images, use reference images, and adjust aspect ratios.", thumbnailUrl: "" },
+    { title: "From Text to Video in Minutes", description: "A step-by-step guide to using our AI video generator, from writing a prompt to downloading your cinematic masterpiece.", thumbnailUrl: "" },
    ]
 };
 

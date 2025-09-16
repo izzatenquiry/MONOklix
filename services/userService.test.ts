@@ -1,4 +1,4 @@
-// Nota: Fail ini adalah untuk tujuan demonstrasi ujian dan memerlukan persekitaran ujian seperti Jest untuk dijalankan.
+// Note: This file is for testing demonstration purposes and requires a test environment like Jest to run.
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
@@ -37,12 +37,12 @@ describe('userService with Supabase', () => {
   describe('registerUser', () => {
     it('should register a new user successfully', async () => {
       // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
-      (mockSignUp as jest.Mock).mockResolvedValueOnce({
+      mockSignUp.mockResolvedValueOnce({
         data: { user: { id: '123' }, session: {} },
         error: null,
-      });
+      } as any);
       // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
-      (mockInsert as jest.Mock).mockResolvedValueOnce({ error: null });
+      mockInsert.mockResolvedValueOnce({ error: null } as any);
 
       const result = await registerUser('newuser', 'new@example.com', '0123456789');
 
@@ -62,16 +62,16 @@ describe('userService with Supabase', () => {
 
     it('should fail if Supabase auth returns an error', async () => {
       // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
-      (mockSignUp as jest.Mock).mockResolvedValueOnce({
+      mockSignUp.mockResolvedValueOnce({
         data: { user: null, session: null },
         error: { message: 'User already registered' },
-      });
+      } as any);
 
       const result = await registerUser('testuser', 'test@example.com', '123');
       
       expect(result.success).toBe(false);
-      // FIX: Added a type guard to correctly handle the discriminated union return type.
-      if (!result.success) {
+      // Fix: Added a type guard to safely access 'message' property on failed result.
+      if (result.success === false) {
         expect(result.message).toBe('User already registered');
       }
     });
@@ -79,9 +79,9 @@ describe('userService with Supabase', () => {
     it('should fail if any field is empty', async () => {
       const result = await registerUser('', 'email@test.com', '123');
       expect(result.success).toBe(false);
-      // FIX: Added a type guard to correctly handle the discriminated union return type.
-      if (!result.success) {
-        expect(result.message).toBe('Semua medan diperlukan.');
+      // Fix: Added a type guard to safely access 'message' property on failed result.
+      if (result.success === false) {
+        expect(result.message).toBe('All fields are required.');
       }
     });
   });
@@ -101,7 +101,7 @@ describe('userService with Supabase', () => {
         subscription_expiry: new Date().toISOString()
       };
       // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
-      (mockSingle as jest.Mock).mockResolvedValueOnce({ data: mockProfile, error: null });
+      mockSingle.mockResolvedValueOnce({ data: mockProfile, error: null } as any);
 
       const result = await loginUser('test@example.com');
 
@@ -114,18 +114,17 @@ describe('userService with Supabase', () => {
 
     it('should fail to log in if user is not found', async () => {
       // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
-      (mockSingle as jest.Mock).mockResolvedValueOnce({
+      mockSingle.mockResolvedValueOnce({
         data: null,
         error: { message: 'user not found' },
-      });
+      } as any);
 
       const result = await loginUser('test@example.com');
 
       expect(result.success).toBe(false);
-      // FIX: Added a type guard to correctly handle the `LoginResult` discriminated union type,
-      // ensuring `result.message` is only accessed on a failed login attempt.
-      if (!result.success) {
-        expect(result.message).toBe('E-mel tidak ditemui. Sila daftar jika anda pengguna baru.');
+      // Fix: Added a type guard to safely access 'message' property on failed result.
+      if (result.success === false) {
+        expect(result.message).toBe('Email not found. Please register if you are a new user.');
       }
     });
   });

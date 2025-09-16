@@ -4,7 +4,7 @@ import { type HistoryItem } from '../../types';
 import Spinner from '../common/Spinner';
 import { FilmIcon, DownloadIcon, CheckCircleIcon } from '../Icons';
 
-// FFmpeg dimuatkan melalui tag skrip, jadi kita boleh mengisytiharkannya pada window
+// FFmpeg is loaded via a script tag, so we can declare it on the window
 declare global {
     interface Window {
         FFmpeg: any;
@@ -14,7 +14,7 @@ declare global {
 
 const VideoCombinerView: React.FC = () => {
     const [allVideos, setAllVideos] = useState<HistoryItem[]>([]);
-    const [selectedVideos, setSelectedVideos] = useState<string[]>([]); // Simpan mengikut ID
+    const [selectedVideos, setSelectedVideos] = useState<string[]>([]); // Store by ID
     const [isLoading, setIsLoading] = useState(false);
     const [progressMessage, setProgressMessage] = useState('');
     const [outputUrl, setOutputUrl] = useState<string | null>(null);
@@ -36,7 +36,7 @@ const VideoCombinerView: React.FC = () => {
         if (ffmpegRef.current) return;
         
         if (!window.FFmpeg || !window.FFmpegUtil) {
-            const errorMessage = "Pustaka FFmpeg gagal dimuatkan. Sila pastikan anda mempunyai sambungan internet dan muat semula halaman.";
+            const errorMessage = "The FFmpeg library failed to load. Please ensure you have an internet connection and refresh the page.";
             setError(errorMessage);
             throw new Error(errorMessage);
         }
@@ -48,7 +48,7 @@ const VideoCombinerView: React.FC = () => {
 
         ffmpeg.setLogger(({ message }: { message: string }) => {
             console.log(message);
-            // Hanya tunjukkan mesej yang relevan kepada pengguna
+            // Only show relevant messages to the user
             if (message.includes('Input') || message.includes('Output') || message.includes('size=')) {
                 setProgressMessage(message);
             }
@@ -69,7 +69,7 @@ const VideoCombinerView: React.FC = () => {
 
     const handleCombine = async () => {
         if (selectedVideos.length < 2) {
-            setError("Sila pilih sekurang-kurangnya 2 video untuk digabungkan.");
+            setError("Please select at least 2 videos to combine.");
             return;
         }
 
@@ -78,11 +78,11 @@ const VideoCombinerView: React.FC = () => {
         setOutputUrl(null);
 
         try {
-            setProgressMessage("Memuatkan enjin FFmpeg...");
+            setProgressMessage("Loading FFmpeg engine...");
             await loadFfmpeg();
             const ffmpeg = ffmpegRef.current;
             
-            setProgressMessage("Memuat turun dan menulis fail video...");
+            setProgressMessage("Downloading and writing video files...");
             const fileListContent: string[] = [];
             // Ensure videos are added in the order they were selected
             const orderedVideos = selectedVideos.map(id => allVideos.find(v => v.id === id)).filter(Boolean) as HistoryItem[];
@@ -97,21 +97,21 @@ const VideoCombinerView: React.FC = () => {
 
             ffmpeg.FS('writeFile', 'filelist.txt', fileListContent.join('\n'));
 
-            setProgressMessage("Menggabungkan video... ini mungkin mengambil sedikit masa.");
+            setProgressMessage("Combining videos... this may take a moment.");
             await ffmpeg.run('-f', 'concat', '-safe', '0', '-i', 'filelist.txt', '-c', 'copy', 'output.mp4');
 
-            setProgressMessage("Memproses output...");
+            setProgressMessage("Processing output...");
             const data = ffmpeg.FS('readFile', 'output.mp4');
 
             const blob = new Blob([data.buffer], { type: 'video/mp4' });
             const url = URL.createObjectURL(blob);
             setOutputUrl(url);
 
-            setProgressMessage("Selesai!");
+            setProgressMessage("Done!");
 
         } catch (err) {
             console.error(err);
-            setError("Gagal menggabungkan video. Sila cuba lagi atau semak konsol untuk butiran.");
+            setError("Failed to combine videos. Please try again or check the console for details.");
         } finally {
             setIsLoading(false);
         }
@@ -129,11 +129,11 @@ const VideoCombinerView: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6">
-            <h1 className="text-3xl font-bold">Gabung Video</h1>
-            <p className="text-gray-500 dark:text-gray-400">Pilih video dari galeri anda untuk dicantumkan menjadi satu fail yang lebih panjang.</p>
+            <h1 className="text-3xl font-bold">Combine Videos</h1>
+            <p className="text-gray-500 dark:text-gray-400">Select videos from your gallery to merge them into one longer file.</p>
             
             <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg">
-                <h2 className="text-xl font-semibold mb-4">1. Pilih Video Anda (mengikut urutan)</h2>
+                <h2 className="text-xl font-semibold mb-4">1. Select Your Videos (in order)</h2>
                 {allVideos.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                         {allVideos.map(video => {
@@ -155,7 +155,7 @@ const VideoCombinerView: React.FC = () => {
                         })}
                     </div>
                 ) : (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">Tiada video ditemui dalam galeri anda. Jana beberapa video terlebih dahulu!</p>
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">No videos found in your gallery. Generate some videos first!</p>
                 )}
             </div>
 
@@ -166,18 +166,18 @@ const VideoCombinerView: React.FC = () => {
                     className="w-full max-w-sm flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mx-auto"
                 >
                     {isLoading ? <Spinner /> : <FilmIcon className="w-5 h-5"/>}
-                    Gabung {selectedVideos.length > 0 ? selectedVideos.length : ''} Video
+                    Combine {selectedVideos.length > 0 ? selectedVideos.length : ''} Videos
                 </button>
                 {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center text-sm">{error}</p>}
             </div>
 
             {(isLoading || outputUrl) && (
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">Hasil</h2>
+                    <h2 className="text-xl font-semibold mb-4">Output</h2>
                     {isLoading ? (
                         <div className="text-center space-y-3">
                             <Spinner />
-                            <p className="font-semibold text-primary-500 dark:text-primary-400">Memproses...</p>
+                            <p className="font-semibold text-primary-500 dark:text-primary-400">Processing...</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto truncate" title={progressMessage}>{progressMessage}</p>
                         </div>
                     ) : (
@@ -187,7 +187,7 @@ const VideoCombinerView: React.FC = () => {
                                 <div className="text-center">
                                      <button onClick={handleDownload} className="flex items-center justify-center gap-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors mx-auto">
                                         <DownloadIcon className="w-5 h-5" />
-                                        Muat Turun Video Gabungan
+                                        Download Combined Video
                                     </button>
                                 </div>
                             </div>

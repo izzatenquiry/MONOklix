@@ -57,8 +57,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = { role: 'model', text: 'Maaf, berlaku sedikit kesilapan. Sila cuba lagi.' };
-      setMessages((prev) => [...prev.slice(0, -1), errorMessage]);
+      const errorMessageText = error instanceof Error ? error.message : 'An unknown error occurred.';
+      const errorMessage: Message = { role: 'model', text: `Sorry, an error occurred: ${errorMessageText}` };
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        // Replace the "..." placeholder with the error, or add if it doesn't exist
+        if (newMessages.length > 0 && newMessages[newMessages.length-1].role === 'model') {
+            newMessages[newMessages.length-1] = errorMessage;
+        } else {
+            newMessages.push(errorMessage);
+        }
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -74,8 +84,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-3xl font-bold">{title}</h2>
-        <p className="text-gray-500 dark:text-gray-400">{description}</p>
+        <h2 className="text-3xl font-bold text-neutral-800 dark:text-white">{title}</h2>
+        <p className="text-neutral-500 dark:text-neutral-400">{description}</p>
       </div>
       <div className="flex-1 overflow-y-auto pr-2 space-y-6">
         {messages.map((msg, index) => (
@@ -83,22 +93,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
             {msg.role === 'model' && (
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex-shrink-0"></div>
             )}
-            <div className={`max-w-xl p-4 rounded-2xl ${
+            <div className={`max-w-xl p-4 rounded-2xl shadow-sm ${
               msg.role === 'user'
                 ? 'bg-primary-600 text-white rounded-br-none'
-                : 'bg-gray-200 dark:bg-gray-700/60 text-gray-800 dark:text-gray-200 rounded-bl-none'
+                : 'bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-none'
             }`}>
               <MarkdownRenderer content={msg.text} />
             </div>
              {msg.role === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+              <div className="w-8 h-8 rounded-full bg-neutral-300 dark:bg-neutral-700 flex-shrink-0"></div>
             )}
           </div>
         ))}
         {isLoading && messages[messages.length-1].role === 'user' && (
           <div className="flex items-start gap-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex-shrink-0"></div>
-            <div className="max-w-xl p-4 rounded-2xl bg-gray-200 dark:bg-gray-700/60 text-gray-800 dark:text-gray-200 rounded-bl-none">
+            <div className="max-w-xl p-4 rounded-2xl bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-none">
               <Spinner />
             </div>
           </div>
@@ -113,13 +123,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-gray-200 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-600 rounded-xl p-4 pr-16 resize-none focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all duration-200"
+            className="w-full bg-white dark:bg-neutral-800/80 border border-neutral-300 dark:border-neutral-700 rounded-xl p-4 pr-16 resize-none focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all duration-200"
             disabled={isLoading}
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 transition-transform duration-200"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 transition-transform duration-200"
           >
             <SendIcon className="w-5 h-5" />
           </button>

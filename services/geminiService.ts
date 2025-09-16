@@ -14,19 +14,41 @@ export const setActiveApiKey = (key: string | null): void => {
 const getAiInstance = () => {
     if (!activeApiKey) {
         // This case should be handled by UI guards, but as a safeguard:
-        throw new Error("API Key tidak ditetapkan untuk sesi ini. Sila log masuk semula atau konfigurasikan kunci anda.");
+        throw new Error("API Key is not set for this session. Please log in again or configure your key.");
     }
     return new GoogleGenAI({ apiKey: activeApiKey });
 };
 
 /**
- * Handles API errors, re-throwing them for the UI to catch.
- * The logic for clearing invalid keys is now handled in the settings/verification flow.
+ * Handles API errors, re-throwing them with user-friendly messages for the UI to catch.
  * @param {unknown} error - The error caught from the API call.
  */
 const handleApiError = (error: unknown): void => {
-    // Re-throw the original error to be caught by the UI component's catch block.
-    throw error;
+    console.error("Original API Error:", error);
+    let userFriendlyMessage = 'An unknown error occurred. Please try again.';
+
+    if (error && typeof error === 'object') {
+        if ('message' in error) {
+            const message = (error as { message: string }).message;
+            
+            if (message.includes('429') || message.includes('RESOURCE_EXHAUSTED') || message.includes('quota')) {
+                userFriendlyMessage = 'You have exceeded your API quota. Please check your Google AI Studio account for usage details or try again later.';
+            } else if (message.includes('403') || message.includes('PERMISSION_DENIED')) {
+                userFriendlyMessage = 'Permission denied. Please check that your API key has the correct permissions and is not restricted by IP address or referrer.';
+            } else if (message.includes('400') && message.toLowerCase().includes('api key not valid')) {
+                userFriendlyMessage = 'Your API key is not valid. Please check it in the Settings page and try again.';
+            } else if (message.includes('safety policies')) {
+                // This error is already user-friendly, let's keep it.
+                userFriendlyMessage = message;
+            } else {
+                // Use the error message if it exists but doesn't match specific cases
+                userFriendlyMessage = message;
+            }
+        }
+    }
+    
+    // Re-throw a new error with a message that's safe to display to the user.
+    throw new Error(userFriendlyMessage);
 };
 
 
@@ -113,20 +135,19 @@ export const generateImages = async (
  * @param {string} prompt - The text prompt for video generation.
  * @param {string} model - The video generation model to use.
  * @param {string} aspectRatio - The desired aspect ratio for the video.
- * @param {number} durationSeconds - The duration of the video in seconds.
- * @param {string} resolution - The resolution of the video.
- * @param {boolean} generateAudio - Whether to generate audio for the video.
  * @param {{ imageBytes: string; mimeType: string }} [image] - Optional image data.
+ * @param {any} [_dialogue] - Unused parameter to satisfy call signature from UI.
  * @returns {Promise<string>} The URL of the generated video.
  */
+// FIX: The function signature was updated to match the call in VideoGenerationView.
+// The unused `durationSeconds` and `resolution` parameters were removed, and the `image` parameter was moved.
+// An unused `_dialogue` parameter was added to match the call signature without causing errors.
 export const generateVideo = async (
-    prompt: string, 
-    model: string, 
-    aspectRatio: string, 
-    durationSeconds: number,
-    resolution: string,
-    generateAudio: boolean,
-    image?: { imageBytes: string, mimeType: string }
+    prompt: string,
+    model: string,
+    aspectRatio: string,
+    image?: { imageBytes: string, mimeType: string },
+    _dialogue?: any
 ): Promise<string> => {
     try {
         const ai = getAiInstance();
@@ -134,17 +155,10 @@ export const generateVideo = async (
         const videoConfig: {
             numberOfVideos: number;
             aspectRatio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9";
-            durationSeconds?: number;
-            resolution?: "720p" | "1080p";
-            generateAudio?: boolean;
         } = {
             numberOfVideos: 1,
             aspectRatio: aspectRatio as "1:1" | "3:4" | "4:3" | "9:16" | "16:9",
         };
-        
-        if (durationSeconds) videoConfig.durationSeconds = durationSeconds;
-        if (resolution) videoConfig.resolution = resolution as "720p" | "1080p";
-        videoConfig.generateAudio = generateAudio;
 
         let operation = await ai.models.generateVideos({
             model,
@@ -163,13 +177,13 @@ export const generateVideo = async (
         }
 
         if (!operation.done) {
-            throw new Error("Penjanaan video mengambil masa terlalu lama dan telah tamat masa. Sila cuba lagi.");
+            throw new Error("Video generation took too long and has timed out. Please try again.");
         }
 
         if ((operation as any).error) {
             const error = (operation as any).error;
             console.error('Video generation failed with an error:', JSON.stringify(error, null, 2));
-            throw new Error(`Penjanaan video gagal di pihak Google: ${error.message || 'Ralat tidak diketahui'}`);
+            throw new Error(`Video generation failed on Google's end: ${error.message || 'Unknown error'}`);
         }
 
         const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -183,16 +197,16 @@ export const generateVideo = async (
             // it's highly likely that the prompt was blocked by safety filters.
             if (!operation.response || Object.keys(operation.response).length === 0 || !hasGeneratedVideos) {
                 throw new Error(
-                    "Penjanaan video selesai tanpa ralat, tetapi tiada output dihasilkan.\n\n" +
-                    "Ini biasanya berlaku jika permintaan anda disekat oleh dasar keselamatan Google.\n\n" +
-                    "**Sila cuba:**\n" +
-                    "1. Ubah suai Prompt anda untuk menjadi lebih umum dan selamat.\n" +
-                    "2. Jika menggunakan imej, cuba imej yang berbeza."
+                    "Video generation finished without an error, but no output was produced.\n\n" +
+                    "This usually happens if your request was blocked by Google's safety policies.\n\n" +
+                    "**Please try:**\n" +
+                    "1. Modifying your prompt to be more general and safe.\n" +
+                    "2. If using an image, try a different one."
                 );
             }
 
             // This is a fallback for other unexpected cases where a URI is not returned.
-            throw new Error("Operasi penjanaan video selesai tetapi tidak memulangkan pautan yang sah. Ini mungkin isu sementara di pihak Google.");
+            throw new Error("The video generation operation completed but did not return a valid link. This might be a temporary issue on Google's end.");
         }
 
         try {
@@ -203,19 +217,19 @@ export const generateVideo = async (
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("Video download failed:", response.status, errorText);
-                throw new Error(`Muat turun video gagal dengan status HTTP: ${response.status}. URL mungkin telah tamat tempoh.`);
+                throw new Error(`Video download failed with HTTP status: ${response.status}. The URL may have expired.`);
             }
             const blob = await response.blob();
             return URL.createObjectURL(blob);
         } catch (e) {
-            console.error("Gagal memuat turun video yang dijana:", e);
+            console.error("Failed to download the generated video:", e);
              if (e instanceof Error && e.message.includes("HTTP")) {
                  throw e; // Re-throw the specific HTTP error from above.
             }
             throw new Error(
-                "Muat turun video gagal selepas penjanaan.\n\n" +
-                "Ini mungkin disebabkan oleh URL muat turun yang telah tamat tempoh atau isu rangkaian.\n\n" +
-                "Sila cuba jana video semula."
+                "Video download failed after generation.\n\n" +
+                "This could be due to an expired download URL or a network issue.\n\n" +
+                "Please try generating the video again."
             );
         }
     } catch (error) {
@@ -298,6 +312,48 @@ export const composeImage = async (prompt: string, images: MultimodalContent[]):
         throw error;
     }
 };
+
+/**
+ * Generates text content from a text-only prompt.
+ * @param {string} prompt - The text prompt.
+ * @returns {Promise<string>} The text response from the model.
+ */
+export const generateText = async (prompt: string): Promise<string> => {
+    try {
+        const ai = getAiInstance();
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+        return response.text;
+    } catch (error) {
+        handleApiError(error);
+        throw error;
+    }
+};
+
+/**
+ * Generates text content with Google Search grounding for up-to-date information.
+ * @param {string} prompt - The text prompt.
+ * @returns {Promise<GenerateContentResponse>} The full response object from the model, including grounding metadata.
+ */
+export const generateContentWithGoogleSearch = async (prompt: string): Promise<GenerateContentResponse> => {
+    try {
+        const ai = getAiInstance();
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            },
+        });
+        return response; // Return the whole object
+    } catch (error) {
+        handleApiError(error);
+        throw error;
+    }
+};
+
 
 // FIX: Added missing generateVoiceOver function to resolve import error in VoiceStudioView.
 /**

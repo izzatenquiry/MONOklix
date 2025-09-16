@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { initializeAdminAccount } from './services/userService';
 
-// Mulakan akaun admin sebelum memaparkan aplikasi
+// Initialize the admin account before rendering the application
 initializeAdminAccount().then(() => {
   const rootElement = document.getElementById('root');
   if (!rootElement) {

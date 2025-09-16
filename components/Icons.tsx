@@ -263,11 +263,132 @@ export const CheckCircleIcon: React.FC<{ className?: string }> = (props) => (
   </svg>
 );
 
+export const PartyPopperIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4v2.23a2 2 0 0 0 .58 1.42l4.42 4.42a2 2 0 0 1 .58 1.42V19a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4.51a2 2 0 0 1 .58-1.42l4.42-4.42a2 2 0 0 0 .58-1.42V4"/><path d="m14.5 4-5 5"/><path d="M9.5 9.5 4 14.5"/><path d="M14.5 9.5 19.5 4.5"/><path d="m10 4 4 4"/><path d="M6 2 4 4"/><path d="m18 2 2 2"/>
+  </svg>
+);
+
+export const SparklesIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m12 3-1.9 3.8L6.3 8.7l3.8 1.9L12 14.4l1.9-3.8 3.8-1.9-3.8-1.9L12 3z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+  </svg>
+);
+
+export const LeafIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 20A7 7 0 0 1 4 13V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v10a3 3 0 0 0 3 3h3"/><path d="M6 20h2a2 2 0 0 0 2-2v-7a2 2 0 0 1 2-2h2"/>
+  </svg>
+);
+
+export const LightbulbIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-7 7c0 3.04 1.63 5.5 4 6.57V18h6v-2.43c2.37-1.07 4-3.53 4-6.57a7 7 0 0 0-7-7z"/>
+  </svg>
+);
+
+export const DramaMaskIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Z"/><path d="M8 14c1.5 2 4.5 2 6 0"/><path d="M9 9h.01"/><path d="M15 9h.01"/>
+  </svg>
+);
+
+export const SunIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+  </svg>
+);
+
+export const NeonIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 6h8"/><path d="M12 6v12"/><path d="M12 18h-2c-2.2 0-4-1.8-4-4V8c0-2.2 1.8-4 4-4h2"/><path d="M12 18h2c2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4h-2"/>
+  </svg>
+);
+
+export const ExplosionIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.64 4.64a2 2 0 0 1 2.83 0L8 5.17l.53.54a2 2 0 0 1 0 2.82L8 9.06l-.54.53a2 2 0 0 1-2.82 0L4.1 9.06l-.53-.54a2 2 0 0 1 0-2.82l.54-.53.53-.53Z"/><path d="M17.64 4.64a2 2 0 0 1 2.83 0l.53.54a2 2 0 0 1 0 2.82l-.53.54a2 2 0 0 1-2.83 0l-.54-.53a2 2 0 0 1 0-2.83l.54-.53Z"/><path d="M17.64 17.64a2 2 0 0 1 2.83 0l.53.54a2 2 0 0 1 0 2.82l-.53.54a2 2 0 0 1-2.83 0l-.54-.53a2 2 0 0 1 0-2.83l.54-.53Z"/><path d="M4.64 17.64a2 2 0 0 1 2.83 0l.53.54a2 2 0 0 1 0 2.82l-.53.54a2 2 0 0 1-2.83 0l-.54-.53a2 2 0 0 1 0-2.83l.54-.53Z"/>
+  </svg>
+);
+
+export const SmileyIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+  </svg>
+);
+
+export const QuestionSolutionIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 10.29c.26-.43.98-1.29 2-1.29s1.74.86 2 1.29"/><path d="M8 14c1-1 3-2 4-2s3 1 4 2"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="M12 17h.01"/>
+  </svg>
+);
+
+export const PackageIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16.5 9.4a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/><path d="M12 15.5V13"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22.1V12"/>
+  </svg>
+);
+
+export const GraduationCapIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  </svg>
+);
+
 // FIX: Added missing MicIcon for the Voice Studio view.
 export const MicIcon: React.FC<{ className?: string }> = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
     <line x1="12" y1="19" x2="12" y2="22"></line>
+  </svg>
+);
+
+export const MegaphoneIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 11 18-5v12L3 14v-3z"></path>
+    <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
+  </svg>
+);
+
+export const SunriseIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2L12 6"/><path d="M6 12L2 12"/><path d="M22 12L18 12"/>
+    <path d="M19.07 4.93L16.24 7.76"/><path d="M4.93 19.07L7.76 16.24"/>
+    <path d="M12 18a6 6 0 0 0 6-6h-12a6 6 0 0 0 6 6z"/>
+    <path d="M22 22H2"/>
+  </svg>
+);
+
+export const CloudSunIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>
+    <path d="M12 2v2"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/>
+    <path d="M12 16a8 8 0 0 0-8 8h16a8 8 0 0 0-8-8z"/>
+  </svg>
+);
+
+export const ScissorsIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+  </svg>
+);
+
+export const WandIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9a3 3 0 0 0-3-3"/><path d="M12 6a3 3 0 0 0-3 3"/><path d="m19 2-4 4"/><path d="m2 19 4-4"/><path d="m13 13 6 6"/>
+  </svg>
+);
+
+export const TrendingUpIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline>
+  </svg>
+);
+
+export const CreditCardIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+    <line x1="1" y1="10" x2="23" y2="10"></line>
   </svg>
 );

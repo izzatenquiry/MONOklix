@@ -4,10 +4,10 @@ import ChatInterface from '../common/ChatInterface';
 const ChatView: React.FC = () => {
   return (
     <ChatInterface
-      systemInstruction="Anda ialah pembantu AI bernama 1za7, yang sedia membantu dan mesra. Berbual dan berikan respons yang bermaklumat."
-      title="Perbualan"
-      description="Mulakan perbualan dengan AI. Tanya apa sahaja yang anda mahu!"
-      placeholder="Taip mesej anda di sini..."
+      systemInstruction="You are a helpful and friendly AI assistant named 1za7. Chat and provide informative responses."
+      title="Chat"
+      description="Start a conversation with the AI. Ask anything you want!"
+      placeholder="Type your message here..."
     />
   );
 };

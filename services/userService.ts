@@ -34,7 +34,7 @@ export const verifyAndSaveUserApiKey = async (
     key: string
 ): Promise<{ success: true; user: User } | { success: false; message: string }> => {
   if (!key.trim()) {
-    return { success: false, message: 'API Key tidak boleh kosong.' };
+    return { success: false, message: 'API Key cannot be empty.' };
   }
 
   const isValid = await verifyApiKey(key.trim());
@@ -52,30 +52,30 @@ export const verifyAndSaveUserApiKey = async (
 
     if (fetchError || !typedUser) {
         console.error("Could not fetch user role before API key save:", fetchError);
-        return { success: false, message: "Gagal mendapatkan butiran pengguna semasa." };
+        return { success: false, message: "Failed to get current user details." };
     }
 
     // Admins keep 'admin' status, others are upgraded to 'lifetime'.
     const newStatus = typedUser.role === 'admin' ? 'admin' : 'lifetime';
 
     // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
-    const { error: updateError } = await supabase
+    const { data: updatedData, error: updateError } = await supabase
       .from('users')
       .update({ api_key: key.trim(), status: newStatus } as Database['public']['Tables']['users']['Update'])
-      .eq('id', userId);
+      .eq('id', userId)
+      .select()
+      .single();
 
-    if (updateError) {
-      return { success: false, message: `Gagal menyimpan kunci: ${getErrorMessage(updateError)}` };
+    if (updateError || !updatedData) {
+      return { success: false, message: `Failed to save key: ${getErrorMessage(updateError)}` };
     }
-
-    const updatedUser = await getUserProfile(userId);
-    if (!updatedUser) {
-      return { success: false, message: 'Kunci disimpan tetapi gagal memuatkan semula profil pengguna.' };
-    }
+    
+    const typedUpdatedData = updatedData as UserProfileData;
+    const updatedUser = mapProfileToUser(typedUpdatedData, typedUpdatedData.email, typedUpdatedData.id);
 
     return { success: true, user: updatedUser };
   } else {
-    return { success: false, message: 'API Key tidak sah. Sila semak semula.' };
+    return { success: false, message: 'Invalid API Key. Please check it and try again.' };
   }
 };
 
@@ -85,7 +85,7 @@ export const verifyAndSaveUserApiKey = async (
  * @returns A readable string message.
  */
 const getErrorMessage = (error: unknown): string => {
-    let message = 'Ralat tidak diketahui berlaku.';
+    let message = 'An unknown error occurred.';
     if (error instanceof Error) {
         message = error.message;
     } else if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
@@ -97,7 +97,7 @@ const getErrorMessage = (error: unknown): string => {
             message = JSON.stringify(error);
         } catch {
             // Fallback if stringify fails (e.g., circular reference)
-            message = 'Objek ralat yang tidak dapat disirikan.';
+            message = 'Unserializable error object.';
         }
     }
     return message;
@@ -138,39 +138,6 @@ const triggerWebhook = async (user: User) => {
     }
 };
 
-
-// --- Insecure Local Session Management ---
-// This stores a user object WITHOUT the API key for session persistence on refresh.
-export const setLocalUser = (user: User | null): void => {
-  if (!user) {
-    clearLocalUser();
-    return;
-  }
-  try {
-    // IMPORTANT: Never store the API key in localStorage.
-    const { apiKey, ...userToStore } = user;
-    localStorage.setItem('localUser', JSON.stringify(userToStore));
-  } catch (e) {
-    console.error('Failed to save user to local storage', e);
-  }
-};
-
-export const getLocalUser = (): User | null => {
-  try {
-    const userJson = localStorage.getItem('localUser');
-    return userJson ? JSON.parse(userJson) : null;
-  } catch (e) {
-    console.error('Failed to parse user from local storage', e);
-    return null;
-  }
-};
-
-export const clearLocalUser = (): void => {
-  localStorage.removeItem('localUser');
-};
-
-
-
 /**
  * Maps a user profile from the database to the application's User type.
  */
@@ -195,18 +162,20 @@ const mapProfileToUser = (
 
 // Register a new user and log them in immediately.
 export const registerUser = async (username: string, email: string, phone: string): Promise<LoginResult> => {
-    if (!username.trim() || !email.trim() || !phone.trim()) {
-        return { success: false, message: 'Semua medan diperlukan.' };
+    const cleanedUsername = username.trim();
+    const cleanedEmail = email.trim().toLowerCase();
+    const cleanedPhone = phone.trim();
+
+    if (!cleanedUsername || !cleanedEmail || !cleanedPhone) {
+        return { success: false, message: 'All fields are required.' };
     }
 
-    // Generate a secure, random password since the user won't use it.
-    const password = Math.random().toString(36).slice(-16);
+    // Use the cleaned phone number as the password for simplicity in this insecure flow.
+    const password = cleanedPhone;
 
-    // 1. Sign up the user in Supabase Auth. Assuming email confirmation is OFF in Supabase settings.
-    // This will create the user and log them in, returning a session.
-    // FIX: Cast supabase.auth to any to resolve type error for signUp method.
+    // 1. Sign up the user in Supabase Auth.
     const { data: authData, error: authError } = await (supabase.auth as any).signUp({
-        email: email,
+        email: cleanedEmail,
         password: password,
     });
 
@@ -214,7 +183,7 @@ export const registerUser = async (username: string, email: string, phone: strin
         return { success: false, message: getErrorMessage(authError) };
     }
     if (!authData.user) {
-        return { success: false, message: 'Pendaftaran gagal: pengguna tidak dicipta.' };
+        return { success: false, message: 'Registration failed: user was not created.' };
     }
     
     // Set subscription to expire in 30 minutes for trial users
@@ -222,93 +191,110 @@ export const registerUser = async (username: string, email: string, phone: strin
     expiryDate.setMinutes(expiryDate.getMinutes() + 30);
 
     // 2. Create a corresponding profile in the public.users table
-    // FIX: The auto-inferred type for the insert payload is 'never'. Casting to the correct Insert type from the Database interface to resolve this.
     const profileToInsert = {
         id: authData.user.id,
-        full_name: username,
-        email: email,
-        phone: phone,
-        role: 'user',
-        status: 'trial', // Default status
+        full_name: cleanedUsername,
+        email: cleanedEmail,
+        phone: cleanedPhone,
+        role: 'user' as const,
+        status: 'trial' as const,
         api_key: null,
         avatar_url: null,
         subscription_expiry: expiryDate.toISOString(),
     };
+    // FIX: The auto-inferred type for the insert payload is 'never'. Casting to the correct Insert type from the Database interface to resolve this.
     const { error: profileError } = await supabase.from('users').insert(profileToInsert as Database['public']['Tables']['users']['Insert']);
     
     if (profileError) {
         const detailedMessage = getErrorMessage(profileError);
         console.error("Profile creation failed after signup:", detailedMessage);
-        // Attempt to clean up the created auth user if profile creation fails
-        // This requires an admin client, which we don't have on the frontend.
-        // For now, the user will exist in auth but not in profiles, which is a recoverable state.
-        return { success: false, message: `Akaun dicipta tetapi gagal menyimpan profil: ${detailedMessage}` };
+        return { success: false, message: `Account created but failed to save profile: ${detailedMessage}` };
     }
 
-    // 3. Construct the user object to return for immediate login
+    // 3. Construct the user object to return for immediate login session
     const newUser: User = {
         id: authData.user.id,
         email: authData.user.email!,
-        username: email.split('@')[0],
-        fullName: username,
-        phone: phone,
+        username: cleanedEmail.split('@')[0],
+        fullName: cleanedUsername,
+        phone: cleanedPhone,
         role: 'user',
         status: 'trial',
         subscriptionExpiry: expiryDate.getTime(),
     };
 
-    // Trigger webhook after successful registration and profile creation
     await triggerWebhook(newUser);
-
-    // Return the user object for immediate login session
     return { success: true, user: newUser };
 };
 
-// Log in a user instantly by checking if their email exists in the DB.
-// NOTE: This is highly insecure as it does not verify email ownership.
+// Log in a user by creating a valid Supabase session.
 export const loginUser = async (email: string): Promise<LoginResult> => {
-    if (!email.trim()) {
-        return { success: false, message: 'Sila masukkan e-mel.' };
+    const cleanedEmail = email.trim().toLowerCase();
+    if (!cleanedEmail) {
+        return { success: false, message: 'Please enter an email.' };
     }
 
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-    
-    // FIX: Cast `data` to the correct type to access its properties.
-    const typedData = data as UserProfileData | null;
+    const adminEmail = 'izzat.enquiry@gmail.com';
+    const adminPassword = 'M!m@Sept2025';
+    let password;
 
-    if (error || !typedData) {
-        console.error('Login error:', error?.message);
-        return { success: false, message: 'E-mel tidak ditemui. Sila daftar jika anda pengguna baru.' };
+    if (cleanedEmail === adminEmail) {
+        password = adminPassword;
+    } else {
+        // For regular users, the phone number is the password.
+        const { data: profile, error: profileError } = await supabase
+            .from('users')
+            .select('phone')
+            .eq('email', cleanedEmail)
+            .single();
+
+        const typedProfile = profile as Pick<UserProfileData, 'phone'> | null;
+
+        if (profileError || !typedProfile) {
+            return { success: false, message: 'Email not found. Please register if you are a new user.' };
+        }
+        password = typedProfile.phone;
+    }
+
+    // Sign in with Supabase Auth to create a session
+    const { data: signInData, error: signInError } = await (supabase.auth as any).signInWithPassword({
+        email: cleanedEmail,
+        password: password,
+    });
+
+    if (signInError) {
+        console.error('Login failed for user:', cleanedEmail, signInError.message);
+        return { success: false, message: `Log in failed: ${getErrorMessage(signInError)}` };
+    }
+
+    if (!signInData.user) {
+        return { success: false, message: 'Log in failed: User not found after authentication.' };
+    }
+
+    const userProfile = await getUserProfile(signInData.user.id);
+    if (!userProfile) {
+        return { success: false, message: 'Login successful but failed to retrieve user profile.' };
     }
     
-    const user = mapProfileToUser(typedData, typedData.email, typedData.id);
-    return { success: true, user };
+    return { success: true, user: userProfile };
 };
 
-// Sign out the current user (clears both Supabase and local sessions)
+// Sign out the current user (clears Supabase session)
 export const signOutUser = async (): Promise<void> => {
-    // FIX: Cast supabase.auth to any to resolve type error for signOut method.
     const { error } = await (supabase.auth as any).signOut();
     if (error) {
         console.error("Error signing out:", getErrorMessage(error));
     }
-    clearLocalUser(); // Also clear our insecure local session
 };
 
 
-// Get a single user's profile from the database, including sensitive info like API key
+// Get a single user's profile from the database
 export const getUserProfile = async (userId: string): Promise<User | null> => {
-    // FIX: Cast supabase.auth to any to resolve type error for getUser method.
     const { data: authData, error: authError } = await (supabase.auth as any).getUser();
     if (authError || !authData.user) {
         if (getErrorMessage(authError) !== "User not found") {
-            console.error("Error getting auth user:", getErrorMessage(authError));
+            // Don't log expected "Auth session missing!" for insecure local user flow.
         }
-        // It might be our local user, let's try fetching profile anyway if we have a userId
     }
 
     const { data, error } = await supabase
@@ -317,14 +303,12 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
         .eq('id', userId)
         .single();
     
-    // FIX: Add a check for null `data` and cast it to the correct type.
     if (error || !data) {
         console.error('Error fetching user profile:', getErrorMessage(error));
         return null;
     }
     
     const typedData = data as UserProfileData;
-    // Use auth email if available, otherwise fallback to profile email
     const email = authData.user?.email ?? typedData.email;
     return mapProfileToUser(typedData, email, typedData.id);
 };
@@ -338,7 +322,6 @@ export const getAllUsers = async (): Promise<User[] | null> => {
         return null;
     }
 
-    // FIX: Cast each profile object to the correct type before mapping.
     return (data as UserProfileData[]).map(profile => mapProfileToUser(profile, profile.email, profile.id));
 };
 
@@ -373,7 +356,6 @@ export const checkAndDeactivateTrialUser = async (user: User): Promise<User> => 
             return { ...user, status: 'inactive' };
         }
     }
-    // Return original user if not a trial, not expired, or if DB update failed
     return user;
 };
 
@@ -388,19 +370,19 @@ export const updateUserProfile = async (
     if (updates.avatarUrl) profileUpdates.avatar_url = updates.avatarUrl;
 
     // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
-    const { error } = await supabase
+    const { data: updatedData, error } = await supabase
         .from('users')
         .update(profileUpdates as Database['public']['Tables']['users']['Update'])
-        .eq('id', userId);
+        .eq('id', userId)
+        .select()
+        .single();
 
-    if (error) {
+    if (error || !updatedData) {
         return { success: false, message: getErrorMessage(error) };
     }
-
-    const updatedProfile = await getUserProfile(userId);
-    if (!updatedProfile) {
-        return { success: false, message: "Gagal mendapatkan semula profil selepas kemas kini." };
-    }
+    
+    const typedData = updatedData as UserProfileData;
+    const updatedProfile = mapProfileToUser(typedData, typedData.email, typedData.id);
     
     return { success: true, user: updatedProfile };
 };
@@ -412,7 +394,7 @@ export const updateUserProfile = async (
 export const replaceUsers = async (importedUsers: User[]): Promise<{ success: boolean; message: string }> => {
     try {
         if (!Array.isArray(importedUsers)) {
-            return { success: false, message: 'Fail import mestilah tatasusunan pengguna.' };
+            return { success: false, message: 'Import file must be an array of users.' };
         }
         
         const profilesToInsert = importedUsers.map(user => ({
@@ -424,7 +406,6 @@ export const replaceUsers = async (importedUsers: User[]): Promise<{ success: bo
             status: user.status as UserStatus,
             api_key: user.apiKey || null,
             avatar_url: user.avatarUrl || null,
-            // Include subscription_expiry in the import/export logic
             subscription_expiry: user.subscriptionExpiry ? new Date(user.subscriptionExpiry).toISOString() : null,
         }));
         
@@ -435,12 +416,12 @@ export const replaceUsers = async (importedUsers: User[]): Promise<{ success: bo
         const { error: insertError } = await supabase.from('users').insert(profilesToInsert as Database['public']['Tables']['users']['Insert'][]);
         if (insertError) throw insertError;
 
-        return { success: true, message: 'Pangkalan data pengguna berjaya diimport.' };
+        return { success: true, message: 'User database successfully imported.' };
 
     } catch (error) {
         const message = getErrorMessage(error);
-        console.error("Gagal mengimport pengguna:", message);
-        return { success: false, message: `Berlaku ralat semasa mengimport: ${message}` };
+        console.error("Failed to import users:", message);
+        return { success: false, message: `An error occurred during import: ${message}` };
     }
 };
 
@@ -454,12 +435,9 @@ export const exportAllUserData = async (): Promise<UserProfileData[] | null> => 
 };
 
 /**
- * Initializes/repairs the admin account. This is an aggressive function that will sign out any
- * active user session to ensure the admin account is correctly configured in both Auth and the database.
+ * Initializes/repairs the admin account.
  */
 export const initializeAdminAccount = async () => {
-    // Force sign out to ensure we can run the admin check, even if a user is logged in.
-    // FIX: Cast supabase.auth to any to resolve type error for signOut method.
     await (supabase.auth as any).signOut();
     console.log("Session cleared. Forcibly checking/repairing admin account...");
 
@@ -467,101 +445,84 @@ export const initializeAdminAccount = async () => {
     const adminPassword = 'M!m@Sept2025';
     let adminUserId: string | undefined;
 
-    // Try to sign in as admin
-    // FIX: Cast supabase.auth to any to resolve type error for signInWithPassword method.
     const { data: signInData, error: signInError } = await (supabase.auth as any).signInWithPassword({
         email: adminEmail,
         password: adminPassword,
     });
 
     if (signInError && signInError.message.includes('Invalid login credentials')) {
-        // If sign-in fails, the account might not exist in Auth, so try to create it.
         console.log("Admin login failed, attempting to create admin account in Auth service...");
-        // FIX: Cast supabase.auth to any to resolve type error for signUp method.
         const { data: signUpData, error: signUpError } = await (supabase.auth as any).signUp({
             email: adminEmail,
             password: adminPassword,
         });
 
         if (signUpError) {
-            // If sign-up fails because the user is already there, it's a weird state (e.g., unconfirmed email). We can't proceed.
             if (signUpError.message.includes('User already registered')) {
-                console.error('CRITICAL: Admin user exists in auth but could not log in. Manual intervention is required (e.g., email confirmation or password reset in Supabase).');
+                console.error('CRITICAL: Admin user exists in auth but could not log in. Manual intervention is required.');
             } else {
                 console.error('Admin initialization failed during signup:', getErrorMessage(signUpError));
             }
-            // FIX: Cast supabase.auth to any to resolve type error for signOut method.
-            await (supabase.auth as any).signOut(); // Ensure clean state on exit
+            await (supabase.auth as any).signOut();
             return;
         }
         adminUserId = signUpData?.user?.id;
         console.log('Admin account created in Auth service.');
 
     } else if (signInError) {
-        // Any other sign-in error is a problem.
         console.error('Admin initialization failed during sign-in:', getErrorMessage(signInError));
-        // FIX: Cast supabase.auth to any to resolve type error for signOut method.
-        await (supabase.auth as any).signOut(); // Ensure clean state on exit
+        await (supabase.auth as any).signOut();
         return;
     } else {
-        // Sign-in was successful.
         adminUserId = signInData?.user?.id;
     }
 
     if (!adminUserId) {
         console.error('Could not determine admin user ID during initialization.');
-        // FIX: Cast supabase.auth to any to resolve type error for signOut method.
         await (supabase.auth as any).signOut();
         return;
     }
 
     console.log(`Ensuring admin profile for user ID: ${adminUserId}.`);
     
-    // Step 1: Fetch existing profile to preserve data like API key.
     const { data: existingProfile, error: fetchError } = await supabase
         .from('users')
         .select('*')
         .eq('id', adminUserId)
         .single();
     
-    // FIX: Cast `existingProfile` to handle `never` type and potential null value.
     const typedExistingProfile = existingProfile as UserProfileData | null;
         
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "exact one row not found", which is fine.
+    if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error fetching admin profile before upsert:', getErrorMessage(fetchError));
     }
 
-    // Prepare data for upsert, preserving existing values where possible.
     const profileData = {
-        ...(typedExistingProfile || {}), // This carries over api_key, avatar_url etc. if they exist
+        ...(typedExistingProfile || {}),
         id: adminUserId,
         full_name: typedExistingProfile?.full_name || 'Izzat Admin',
         email: adminEmail,
         phone: typedExistingProfile?.phone || '0000000000',
         role: 'admin' as const,
         status: 'admin' as const,
-        subscription_expiry: null, // Admins do not have an expiry
+        subscription_expiry: null,
     };
     
-    // Step 2: Upsert the correct admin profile.
     // FIX: The auto-inferred type for the upsert payload is 'never'. Casting to the correct Insert type from the Database interface to resolve this.
     const { error: upsertError } = await supabase.from('users').upsert(profileData as Database['public']['Tables']['users']['Insert'], { onConflict: 'id' });
 
     if (upsertError) {
         console.error('Failed to upsert admin profile:', getErrorMessage(upsertError));
-        // We don't return here, still attempt cleanup and sign out.
     } else {
         console.log('Admin profile successfully configured in database.');
     }
     
-    // Step 3: Clean up any other potential admin accounts to ensure only one exists.
-    // This is safer than deleting, as it preserves user data but demotes their role.
     // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
     const { error: cleanupError } = await supabase
         .from('users')
-        .update({ role: 'user', status: 'inactive' } as Database['public']['Tables']['users']['Update']) // Demote to a safe, non-privileged state
+        .update({ role: 'user', status: 'inactive' } as Database['public']['Tables']['users']['Update'])
         .eq('role', 'admin')
-        .neq('id', adminUserId); // Do not demote the actual admin
+        .neq('id', adminUserId);
     
     if (cleanupError) {
          console.error('Failed to clean up orphaned admin profiles:', getErrorMessage(cleanupError));
@@ -569,8 +530,6 @@ export const initializeAdminAccount = async () => {
         console.log('Orphaned admin profile cleanup complete.');
     }
 
-    // Final sign out to leave the app in a clean state for the actual user.
-    // FIX: Cast supabase.auth to any to resolve type error for signOut method.
     await (supabase.auth as any).signOut();
     console.log("Admin check/repair complete. Session cleared for user login.");
 };
