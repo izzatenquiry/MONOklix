@@ -5,6 +5,7 @@ import { updateUserProfile, verifyAndSaveUserApiKey } from '../../services/userS
 import AdminDashboardView from './AdminDashboardView';
 import { UserIcon, ImageIcon, GoogleDriveIcon, BookOpenIcon, UsersIcon, WebhookIcon, XIcon, AIAgentIcon, CreditCardIcon } from '../Icons';
 import Spinner from '../common/Spinner';
+import { saveData, loadData, removeData } from '../../services/indexedDBService';
 
 interface SettingsViewProps {
   theme: string;
@@ -323,13 +324,31 @@ const IntegrationPanel: React.FC<{currentUser: User, onUserUpdate: (user: User) 
 
 
 const GoogleDriveSettings: React.FC = () => {
-    const [clientId, setClientId] = useState(localStorage.getItem('googleClientId') || '');
-    const [inputClientId, setInputClientId] = useState(clientId);
-    const [isConnected, setIsConnected] = useState(localStorage.getItem('googleDriveConnected') === 'true');
-    const [userEmail, setUserEmail] = useState(localStorage.getItem('googleDriveUserEmail') || "");
+    const [clientId, setClientId] = useState('');
+    const [inputClientId, setInputClientId] = useState('');
+    const [isConnected, setIsConnected] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
     const [error, setError] = useState<string | null>(null);
     const tokenClient = useRef<any>(null);
-    const accessToken = useRef<string | null>(localStorage.getItem('googleDriveToken'));
+    const accessToken = useRef<string | null>(null);
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            const savedClientId = await loadData<string>('googleClientId');
+            const savedIsConnected = await loadData<boolean>('googleDriveConnected');
+            const savedUserEmail = await loadData<string>('googleDriveUserEmail');
+            const savedToken = await loadData<string>('googleDriveToken');
+
+            if (savedClientId) {
+                setClientId(savedClientId);
+                setInputClientId(savedClientId);
+            }
+            if (savedIsConnected) setIsConnected(true);
+            if (savedUserEmail) setUserEmail(savedUserEmail);
+            if (savedToken) accessToken.current = savedToken;
+        };
+        loadSettings();
+    }, []);
 
     const isClientIdConfigured = clientId && !clientId.startsWith("YOUR_");
 
@@ -349,7 +368,7 @@ const GoogleDriveSettings: React.FC = () => {
                         callback: (tokenResponse: any) => {
                             if (tokenResponse && tokenResponse.access_token) {
                                 accessToken.current = tokenResponse.access_token;
-                                localStorage.setItem('googleDriveToken', tokenResponse.access_token);
+                                saveData('googleDriveToken', tokenResponse.access_token);
                                 
                                 fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                                     headers: { 'Authorization': `Bearer ${tokenResponse.access_token}` }
@@ -358,8 +377,8 @@ const GoogleDriveSettings: React.FC = () => {
                                 .then(data => {
                                     setUserEmail(data.email);
                                     setIsConnected(true);
-                                    localStorage.setItem('googleDriveConnected', 'true');
-                                    localStorage.setItem('googleDriveUserEmail', data.email);
+                                    saveData('googleDriveConnected', true);
+                                    saveData('googleDriveUserEmail', data.email);
                                 })
                                 .catch(err => {
                                     console.error("Failed to fetch user info", err);
@@ -391,7 +410,7 @@ const GoogleDriveSettings: React.FC = () => {
     const handleSaveClientId = () => {
         const trimmedId = inputClientId.trim();
         if (trimmedId && trimmedId.endsWith('.apps.googleusercontent.com')) {
-            localStorage.setItem('googleClientId', trimmedId);
+            saveData('googleClientId', trimmedId);
             setClientId(trimmedId);
             setError(null);
         } else {
@@ -415,16 +434,16 @@ const GoogleDriveSettings: React.FC = () => {
         accessToken.current = null;
         setIsConnected(false);
         setUserEmail("");
-        localStorage.removeItem('googleDriveConnected');
-        localStorage.removeItem('googleDriveUserEmail');
-        localStorage.removeItem('googleDriveToken');
+        removeData('googleDriveConnected');
+        removeData('googleDriveUserEmail');
+        removeData('googleDriveToken');
     }
 
     const handleClearClientId = () => {
         handleDisconnect();
         setClientId('');
         setInputClientId('');
-        localStorage.removeItem('googleClientId');
+        removeData('googleClientId');
         setError(null);
     }
 
@@ -487,17 +506,27 @@ const GoogleDriveSettings: React.FC = () => {
 
 const WebhookSettings: React.FC = () => {
     const WEBHOOK_URL_KEY = '1za7-ai-webhook-url';
-    const [inputUrl, setInputUrl] = useState(localStorage.getItem(WEBHOOK_URL_KEY) || '');
+    const [inputUrl, setInputUrl] = useState('');
     const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
 
-    const handleSave = () => {
+    useEffect(() => {
+        const loadUrl = async () => {
+            const savedUrl = await loadData<string>(WEBHOOK_URL_KEY);
+            if (savedUrl) {
+                setInputUrl(savedUrl);
+            }
+        };
+        loadUrl();
+    }, []);
+
+    const handleSave = async () => {
         try {
             if (inputUrl.trim()) {
                 new URL(inputUrl); // Validate URL format
-                localStorage.setItem(WEBHOOK_URL_KEY, inputUrl);
+                await saveData(WEBHOOK_URL_KEY, inputUrl);
                 setStatus({ type: 'success', message: 'Webhook URL saved!' });
             } else {
-                localStorage.removeItem(WEBHOOK_URL_KEY);
+                await removeData(WEBHOOK_URL_KEY);
                 setStatus({ type: 'success', message: 'Webhook URL deleted.' });
             }
         } catch (_) {
@@ -507,7 +536,7 @@ const WebhookSettings: React.FC = () => {
     };
     
     const handleTest = async () => {
-        const savedUrl = localStorage.getItem(WEBHOOK_URL_KEY);
+        const savedUrl = await loadData<string>(WEBHOOK_URL_KEY);
         if (!savedUrl) {
             setStatus({ type: 'error', message: 'No webhook URL saved to test.' });
             return;
@@ -585,7 +614,11 @@ const TutorialManagementPanel: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   useEffect(() => {
-    setContent(getContent());
+    const fetchContent = async () => {
+        const loadedContent = await getContent();
+        setContent(loadedContent);
+    };
+    fetchContent();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -628,10 +661,10 @@ const TutorialManagementPanel: React.FC = () => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (content) {
       setSaveStatus('saving');
-      saveContent(content);
+      await saveContent(content);
       setTimeout(() => {
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);

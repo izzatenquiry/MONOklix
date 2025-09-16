@@ -1,4 +1,5 @@
 import { type TutorialContent } from '../types';
+import { saveData, loadData } from './indexedDBService';
 
 const CONTENT_KEY = '1za7-ai-tutorial-content';
 
@@ -13,25 +14,24 @@ const defaultContent: TutorialContent = {
    ]
 };
 
-export const getContent = (): TutorialContent => {
+export const getContent = async (): Promise<TutorialContent> => {
   try {
-    const contentJson = localStorage.getItem(CONTENT_KEY);
-    if (contentJson) {
+    const savedContent = await loadData<TutorialContent>(CONTENT_KEY);
+    if (savedContent) {
       // Basic validation to merge with default if structure changed
-      const savedContent = JSON.parse(contentJson);
       return { ...defaultContent, ...savedContent, tutorials: savedContent.tutorials || defaultContent.tutorials };
     }
     return defaultContent;
   } catch (error) {
-    console.error("Failed to parse tutorial content from localStorage:", error);
+    console.error("Failed to parse tutorial content from IndexedDB:", error);
     return defaultContent;
   }
 };
 
-export const saveContent = (content: TutorialContent) => {
+export const saveContent = async (content: TutorialContent) => {
   try {
-    localStorage.setItem(CONTENT_KEY, JSON.stringify(content));
+    await saveData(CONTENT_KEY, content);
   } catch (error) {
-    console.error("Failed to save tutorial content to localStorage:", error);
+    console.error("Failed to save tutorial content to IndexedDB:", error);
   }
 };

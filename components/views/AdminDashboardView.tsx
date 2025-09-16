@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllUsers, updateUserStatus, replaceUsers, exportAllUserData } from '../../services/userService';
 import { type User, type UserStatus } from '../../types';
 import { UsersIcon, XIcon, DownloadIcon, UploadIcon } from '../Icons';
+import { saveData, loadData } from '../../services/indexedDBService';
 
 const formatStatus = (user: User): { text: string; color: 'green' | 'yellow' | 'red' | 'blue' } => {
     switch(user.status) {
@@ -78,29 +79,36 @@ const AIAgentPanel: React.FC = () => {
         { id: 'voice-studio', label: 'Voice Studio' },
     ];
 
-    const getInitialState = () => {
-        try {
-            const savedSettings = localStorage.getItem(SETTINGS_KEY);
-            if (savedSettings) {
-                return JSON.parse(savedSettings);
-            }
-        } catch (e) {
-            console.error("Failed to parse AI Agent settings:", e);
-        }
-        const defaultState: Record<string, boolean> = {};
-        allAgents.forEach(agent => {
-            defaultState[agent.id] = true;
-        });
-        return defaultState;
-    };
+    const [enabledAgents, setEnabledAgents] = useState<Record<string, boolean> | null>(null);
 
-    const [enabledAgents, setEnabledAgents] = useState<Record<string, boolean>>(getInitialState());
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const savedSettings = await loadData<Record<string, boolean>>(SETTINGS_KEY);
+                if (savedSettings) {
+                    setEnabledAgents(savedSettings);
+                    return;
+                }
+            } catch (e) {
+                console.error("Failed to parse AI Agent settings:", e);
+            }
+            // Default state if nothing is loaded
+            const defaultState: Record<string, boolean> = {};
+            allAgents.forEach(agent => {
+                defaultState[agent.id] = true;
+            });
+            setEnabledAgents(defaultState);
+        };
+        loadSettings();
+    }, []);
+
 
     const handleToggle = (id: string) => {
         setEnabledAgents(prev => {
+            if (!prev) return null;
             const newState = { ...prev, [id]: !prev[id] };
             try {
-                localStorage.setItem(SETTINGS_KEY, JSON.stringify(newState));
+                saveData(SETTINGS_KEY, newState);
             } catch (e) {
                 console.error("Failed to save AI Agent settings:", e);
             }
@@ -127,6 +135,11 @@ const AIAgentPanel: React.FC = () => {
             </label>
         </div>
     );
+    
+    if (!enabledAgents) {
+        return <div>Loading agent settings...</div>;
+    }
+
 
     return (
         <>

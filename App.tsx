@@ -24,6 +24,7 @@ import { getUserProfile, signOutUser, checkAndDeactivateTrialUser } from './serv
 import { setActiveApiKey } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
 import Spinner from './components/common/Spinner';
+import { loadData, saveData } from './services/indexedDBService';
 
 
 interface VideoGenPreset {
@@ -35,10 +36,20 @@ const App: React.FC = () => {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeView, setActiveView] = useState<View>('e-course');
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState('light'); // Default to light, load async
   const [videoGenPreset, setVideoGenPreset] = useState<VideoGenPreset | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isShowingWelcome, setIsShowingWelcome] = useState(false);
+
+  useEffect(() => {
+    const loadTheme = async () => {
+        const savedTheme = await loadData<string>('theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        }
+    };
+    loadTheme();
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -47,7 +58,7 @@ const App: React.FC = () => {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('theme', theme);
+    saveData('theme', theme);
   }, [theme]);
 
   // Effect to manage the active API key for the session

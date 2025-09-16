@@ -2,12 +2,13 @@
 
 import { type HistoryItem, type HistoryItemType } from '../types';
 import { supabase } from './supabaseClient';
+import { saveData, loadData, removeData } from './indexedDBService';
 
 const HISTORY_KEY_PREFIX = '1za7-ai-generation-history-';
 const MAX_HISTORY_ITEMS = 15; // Set a reasonable limit to prevent storage quota errors
 
 /**
- * Gets the localStorage key specific to the current user.
+ * Gets the IndexedDB key specific to the current user.
  * It now relies solely on the secure Supabase session.
  * @returns {Promise<string | null>} The user-specific key or null if not authenticated.
  */
@@ -30,7 +31,7 @@ const getUserHistoryKey = async (): Promise<string | null> => {
 };
 
 /**
- * Retrieves the entire generation history for the current user from localStorage.
+ * Retrieves the entire generation history for the current user from IndexedDB.
  * @returns {Promise<HistoryItem[]>} A promise that resolves to an array of history items.
  */
 export const getHistory = async (): Promise<HistoryItem[]> => {
@@ -38,16 +39,16 @@ export const getHistory = async (): Promise<HistoryItem[]> => {
     if (!userHistoryKey) return [];
 
     try {
-        const historyJson = localStorage.getItem(userHistoryKey);
-        return historyJson ? JSON.parse(historyJson) : [];
+        const history = await loadData<HistoryItem[]>(userHistoryKey);
+        return history || [];
     } catch (error) {
-        console.error("Failed to parse history from localStorage:", error);
+        console.error("Failed to load history from IndexedDB:", error);
         return [];
     }
 };
 
 /**
- * Adds a new item to the current user's generation history.
+ * Adds a new item to the current user's generation history in IndexedDB.
  * @param {object} newItemData - The data for the new history item.
  */
 export const addHistoryItem = async (newItemData: { type: HistoryItemType; prompt: string; result: string; }) => {
@@ -68,14 +69,14 @@ export const addHistoryItem = async (newItemData: { type: HistoryItemType; promp
     }
 
     try {
-        localStorage.setItem(userHistoryKey, JSON.stringify(updatedHistory));
+        await saveData(userHistoryKey, updatedHistory);
     } catch (error) {
-        console.error("Failed to save history to localStorage:", error);
+        console.error("Failed to save history to IndexedDB:", error);
     }
 };
 
 /**
- * Deletes a specific item from the current user's generation history.
+ * Deletes a specific item from the current user's generation history in IndexedDB.
  * @param {string} id - The ID of the history item to delete.
  */
 export const deleteHistoryItem = async (id: string) => {
@@ -85,22 +86,22 @@ export const deleteHistoryItem = async (id: string) => {
     const history = await getHistory();
     const updatedHistory = history.filter(item => item.id !== id);
     try {
-        localStorage.setItem(userHistoryKey, JSON.stringify(updatedHistory));
+        await saveData(userHistoryKey, updatedHistory);
     } catch (error) {
-        console.error("Failed to update history in localStorage after deletion:", error);
+        console.error("Failed to update history in IndexedDB after deletion:", error);
     }
 };
 
 /**
- * Clears the entire generation history for the current user from localStorage.
+ * Clears the entire generation history for the current user from IndexedDB.
  */
 export const clearHistory = async () => {
     const userHistoryKey = await getUserHistoryKey();
     if (!userHistoryKey) return;
 
     try {
-        localStorage.removeItem(userHistoryKey);
+        await removeData(userHistoryKey);
     } catch (error) {
-        console.error("Failed to clear history from localStorage:", error);
+        console.error("Failed to clear history from IndexedDB:", error);
     }
 };

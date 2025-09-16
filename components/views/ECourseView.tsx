@@ -7,7 +7,11 @@ const ECourseView: React.FC = () => {
   const [content, setContent] = useState<TutorialContent | null>(null);
 
   useEffect(() => {
-    setContent(getContent());
+    const fetchContent = async () => {
+        const content = await getContent();
+        setContent(content);
+    };
+    fetchContent();
   }, []);
 
   if (!content) {

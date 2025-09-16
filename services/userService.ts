@@ -1,6 +1,7 @@
 import { type User, type LoginResult, UserRole, UserStatus } from '../types';
 import { supabase, type Database } from './supabaseClient';
 import { verifyApiKey } from './geminiService';
+import { loadData } from './indexedDBService';
 
 // --- New API Key Management ---
 type UserProfileData = Database['public']['Tables']['users']['Row'];
@@ -108,7 +109,7 @@ const getErrorMessage = (error: unknown): string => {
  * @param user The newly registered user object.
  */
 const triggerWebhook = async (user: User) => {
-    const webhookUrl = localStorage.getItem('1za7-ai-webhook-url');
+    const webhookUrl = await loadData<string>('1za7-ai-webhook-url');
     if (!webhookUrl) return;
 
     const payload = {
@@ -438,6 +439,15 @@ export const exportAllUserData = async (): Promise<UserProfileData[] | null> => 
  * Initializes/repairs the admin account.
  */
 export const initializeAdminAccount = async () => {
+    const { data: { session } } = await (supabase.auth as any).getSession();
+
+    // If a user session already exists, do not proceed with the admin initialization.
+    // This function is destructive to the current session and should only run
+    // on a clean slate (e.g., first load) to prevent logging out users on page refresh.
+    if (session) {
+        return;
+    }
+
     await (supabase.auth as any).signOut();
     console.log("Session cleared. Forcibly checking/repairing admin account...");
 

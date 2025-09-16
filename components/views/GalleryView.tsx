@@ -61,9 +61,9 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
 
     useEffect(() => {
         refreshHistory();
-        const handleStorageChange = () => refreshHistory();
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        // IndexedDB does not have a native 'storage' event,
+        // so cross-tab updates won't be reflected live without more complex logic (like BroadcastChannel API),
+        // which is beyond the scope of this refactor. The gallery will refresh on mount.
     }, [refreshHistory]);
 
 
