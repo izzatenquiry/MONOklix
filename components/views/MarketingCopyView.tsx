@@ -3,6 +3,7 @@ import { generateText } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { MegaphoneIcon, DownloadIcon } from '../Icons';
+import { sendToTelegram } from '../../services/telegramService';
 
 const tones = ["Professional", "Casual", "Witty", "Persuasive", "Empathetic", "Bold"];
 
@@ -63,6 +64,7 @@ const MarketingCopyView: React.FC = () => {
                 prompt: `Marketing Copy for: ${productDetails.substring(0, 50)}...`,
                 result: result,
             });
+            sendToTelegram(`*Marketing Copy for "${productDetails.substring(0, 50)}..."*:\n\n${result}`, 'text');
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);
@@ -75,7 +77,7 @@ const MarketingCopyView: React.FC = () => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
             {/* Left Panel: Controls */}
-            <div className="flex flex-col gap-5 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5 overflow-y-auto pr-4 custom-scrollbar">
                 <h1 className="text-3xl font-bold">Generate Marketing Copy</h1>
                 <p className="text-gray-500 dark:text-gray-400 -mt-3">Create powerful marketing text with just a few inputs.</p>
 
@@ -140,9 +142,9 @@ const MarketingCopyView: React.FC = () => {
             </div>
 
             {/* Right Panel: Results */}
-            <div className="bg-white dark:bg-black rounded-lg flex flex-col p-4">
+            <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Generated Copy</h2>
+                    <h2 className="text-xl font-bold">Output</h2>
                     {generatedCopy && !isLoading && (
                         <div className="flex gap-2">
                             <button
@@ -160,24 +162,20 @@ const MarketingCopyView: React.FC = () => {
                         </div>
                     )}
                 </div>
-                <div className="flex-1 bg-gray-100 dark:bg-gray-900/50 rounded-md overflow-hidden">
-                    {isLoading ? (
+                <div className="flex-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4 overflow-y-auto">
+                     {isLoading ? (
                         <div className="flex items-center justify-center h-full text-center">
                             <div>
                                 <Spinner />
-                                <p className="mt-4 text-gray-500 dark:text-gray-400">Crafting your copy...</p>
+                                <p className="mt-4 text-neutral-500 dark:text-neutral-400">Crafting your copy...</p>
                             </div>
                         </div>
+                    ) : generatedCopy ? (
+                        <div className="prose dark:prose-invert max-w-none text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                            {generatedCopy}
+                        </div>
                     ) : (
-                        <textarea
-                            value={generatedCopy}
-                            onChange={(e) => setGeneratedCopy(e.target.value)}
-                            placeholder="Your generated marketing copy will appear here."
-                            className="w-full h-full p-4 bg-transparent resize-none border-none focus:outline-none focus:ring-0 text-gray-800 dark:text-gray-200"
-                        />
-                    )}
-                    {!isLoading && !generatedCopy && !error && (
-                         <div className="flex items-center justify-center h-full text-center text-gray-500 dark:text-gray-600 p-4">
+                         <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600 p-4">
                             <div>
                                 <MegaphoneIcon className="w-16 h-16 mx-auto" />
                                 <p>Your output will appear here.</p>

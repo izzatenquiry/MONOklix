@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { type View, type User } from './types';
 import Sidebar from './components/Sidebar';
-import ChatView from './components/views/ChatView';
-import ImageGenerationView from './components/views/ImageGenerationView';
-import VideoGenerationView from './components/views/VideoGenerationView';
-import ProductAdView from './components/views/ProductAdView';
-import ProductReviewView from './components/views/ProductReviewView';
-import TiktokAffiliateView from './components/views/TiktokAffiliateView';
-import ProductPhotoView from './components/views/ProductPhotoView';
+import AiTextSuiteView from './components/views/AiTextSuiteView';
+import AiImageSuiteView from './components/views/AiImageSuiteView';
+import AiVideoSuiteView from './components/views/AiVideoSuiteView';
 import ECourseView from './components/views/ECourseView';
-import SettingsView from './components/views/SettingsView';
+import UserProfileView from './components/views/UserProfileView';
+import IntegrationsView from './components/views/IntegrationsView';
+import AdminDashboardView from './components/views/AdminDashboardView';
+import ETutorialAdminView from './components/views/ETutorialAdminView';
 import LoginPage from './components/LoginPage';
 import GalleryView from './components/views/GalleryView';
 import WelcomeAnimation from './components/WelcomeAnimation';
-import VideoCombinerView from './components/views/VideoCombinerView';
-import MarketingCopyView from './components/views/MarketingCopyView';
-import BackgroundRemoverView from './components/views/BackgroundRemoverView';
-import ImageEnhancerView from './components/views/ImageEnhancerView';
-import ContentIdeasView from './components/views/ContentIdeasView';
-import VoiceStudioView from './components/views/VoiceStudioView';
+import LibraryView from './components/views/LibraryView';
 import { MenuIcon, LogoIcon, XIcon } from './components/Icons';
-import { getUserProfile, signOutUser, checkAndDeactivateTrialUser } from './services/userService';
+import { getUserProfile, signOutUser, checkAndDeactivateTrialUser, getTrialApiKey } from './services/userService';
 import { setActiveApiKey } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
 import Spinner from './components/common/Spinner';
@@ -63,19 +57,31 @@ const App: React.FC = () => {
 
   // Effect to manage the active API key for the session
   useEffect(() => {
-    if (currentUser) {
-        // All users, regardless of status, will use their own saved API key.
-        // If they don't have one, AI features will be blocked by the UI logic.
-        setActiveApiKey(currentUser.apiKey || null);
-    } else {
-        setActiveApiKey(null);
-    }
+    const configureApiKey = async () => {
+        if (currentUser) {
+            if (currentUser.status === 'trial') {
+                // Trial users use the admin's API key.
+                const trialKey = await getTrialApiKey();
+                setActiveApiKey(trialKey);
+            } else {
+                // Lifetime, Admin, and Inactive users use their own saved API key.
+                // If they don't have one, AI features will be blocked by other logic,
+                // or API calls will fail gracefully.
+                setActiveApiKey(currentUser.apiKey || null);
+            }
+        } else {
+            // No user, no key.
+            setActiveApiKey(null);
+        }
+    };
+    
+    configureApiKey();
   }, [currentUser]);
 
   useEffect(() => {
     // This listener handles session logic on initial load and auth state changes (login/logout)
-    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange(
-      async (_event: string, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
         if (session) {
           let profile = await getUserProfile(session.user.id);
           if (profile) {
@@ -120,43 +126,31 @@ const App: React.FC = () => {
 
   const handleCreateVideoFromImage = (preset: VideoGenPreset) => {
     setVideoGenPreset(preset);
-    setActiveView('video-generation');
+    setActiveView('ai-video-suite');
   };
 
   const renderView = () => {
     switch (activeView) {
       case 'e-course':
         return <ECourseView />;
-      case 'chat':
-        return <ChatView />;
-      case 'image-generation':
-        return <ImageGenerationView onCreateVideo={handleCreateVideoFromImage} />;
-      case 'video-generation':
-        return <VideoGenerationView preset={videoGenPreset} clearPreset={() => setVideoGenPreset(null)} />;
-      case 'product-ad':
-        return <ProductAdView />;
-      case 'marketing-copy':
-        return <MarketingCopyView />;
-      case 'product-review':
-        return <ProductReviewView />;
-      case 'tiktok-affiliate':
-        return <TiktokAffiliateView />;
-      case 'product-photo':
-        return <ProductPhotoView />;
+      case 'ai-text-suite':
+        return <AiTextSuiteView />;
+      case 'ai-image-suite':
+        return <AiImageSuiteView onCreateVideo={handleCreateVideoFromImage} />;
+      case 'ai-video-suite':
+        return <AiVideoSuiteView preset={videoGenPreset} clearPreset={() => setVideoGenPreset(null)} />;
       case 'gallery':
         return <GalleryView onCreateVideo={handleCreateVideoFromImage} />;
-      case 'video-combiner':
-        return <VideoCombinerView />;
-      case 'background-remover':
-        return <BackgroundRemoverView />;
-      case 'image-enhancer':
-        return <ImageEnhancerView />;
-      case 'content-ideas':
-        return <ContentIdeasView />;
-      case 'voice-studio':
-        return <VoiceStudioView />;
-      case 'settings':
-          return <SettingsView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} setActiveView={setActiveView} />;
+      case 'library':
+        return <LibraryView />;
+      case 'user-profile':
+          return <UserProfileView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
+      case 'integrations':
+          return <IntegrationsView currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
+      case 'user-database':
+          return <AdminDashboardView />;
+      case 'e-tutorial-admin':
+          return <ETutorialAdminView />;
       default:
         return <ECourseView />;
     }
@@ -182,28 +176,31 @@ const App: React.FC = () => {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // --- Simplified Access Control Logic ---
+  // --- Access Control Logic ---
   let isBlocked = false;
   let blockMessage = { title: '', body: '' };
 
-  // Views that are always accessible, regardless of API key or status
-  const alwaysAllowedViews: View[] = ['e-course', 'settings', 'gallery'];
+  // Define which views are considered AI-powered and require an API key
+  const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite'];
 
-  if (!alwaysAllowedViews.includes(activeView)) {
-      // For any AI-powered view, check for the user's API key first.
-      if (!currentUser.apiKey) {
+  if (aiPoweredViews.includes(activeView)) {
+      const isTrial = currentUser.status === 'trial';
+      const hasPersonalKey = !!currentUser.apiKey;
+
+      // Block access if the user is NOT on a trial AND does not have their own API key.
+      if (!isTrial && !hasPersonalKey) {
           isBlocked = true;
           if (currentUser.status === 'inactive') {
               // Specific message for expired trials
               blockMessage = {
                   title: 'Account Inactive',
-                  body: 'Your trial period has expired. Please update your Gemini API Key in Settings to unlock lifetime access to all AI features.',
+                  body: 'Your trial period has expired. Please update your Gemini API Key in the Integrations page to unlock lifetime access to all AI features.',
               };
           } else {
-              // Generic message for anyone without a key (admin, new trial user, etc.)
+              // Generic message for anyone without a key (admin, lifetime user, etc.)
               blockMessage = {
                   title: 'API Key Required',
-                  body: 'To use this AI feature, you must provide your own Gemini API Key on the Settings page.',
+                  body: 'To use this AI feature, you must provide your own Gemini API Key on the Integrations page.',
               };
           }
       }

@@ -3,6 +3,7 @@ import { MicIcon, DownloadIcon } from '../Icons';
 import { generateVoiceOver } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
+import { sendToTelegram } from '../../services/telegramService';
 
 const voiceActors = [
     { id: 'Puck', name: 'Puck', language: 'English', gender: 'Male' },
@@ -85,6 +86,7 @@ const VoiceStudioView: React.FC = () => {
                 prompt: `Voice Studio (${selectedActor}): ${script.substring(0, 50)}...`,
                 result: resultUrl
             });
+            sendToTelegram(resultUrl, 'audio', `Voice Studio (${selectedActor}):\n\n${script.substring(0, 900)}...`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);
@@ -107,7 +109,7 @@ const VoiceStudioView: React.FC = () => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
             {/* Left Panel */}
-            <div className="flex flex-col gap-5 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5 overflow-y-auto pr-4 custom-scrollbar">
                 <h1 className="text-3xl font-bold">Generate Audio</h1>
                 <p className="text-gray-500 dark:text-gray-400 -mt-3">Turn text into high-quality audio with a variety of voices.</p>
                 
@@ -180,13 +182,13 @@ const VoiceStudioView: React.FC = () => {
             </div>
 
             {/* Right Panel */}
-             <div className="bg-white dark:bg-black rounded-lg flex flex-col p-4">
+             <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
                 <h2 className="text-xl font-bold mb-4">Output</h2>
-                <div className="flex-1 flex items-center justify-center bg-gray-200 dark:bg-gray-900/50 rounded-md p-4">
+                <div className="flex-1 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4">
                     {isLoading ? (
                         <div className="text-center">
                            <Spinner />
-                           <p className="mt-4 text-gray-500 dark:text-gray-400">Generating audio...</p>
+                           <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating audio...</p>
                         </div>
                     ) : audioUrl ? (
                         <div className="w-full space-y-4">
@@ -206,7 +208,7 @@ const VoiceStudioView: React.FC = () => {
                              <p className="text-xs mt-2">{error}</p>
                         </div>
                     ) : (
-                        <div className="text-center text-gray-500 dark:text-gray-600">
+                        <div className="text-center text-neutral-500 dark:text-neutral-600">
                             <MicIcon className="w-16 h-16 mx-auto" />
                             <p className="mt-2">Your Audio Output Will Appear Here.</p>
                         </div>

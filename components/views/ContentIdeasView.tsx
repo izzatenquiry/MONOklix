@@ -5,6 +5,7 @@ import Spinner from '../common/Spinner';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { type GenerateContentResponse } from '@google/genai';
 import { TrendingUpIcon } from '../Icons';
+import { sendToTelegram } from '../../services/telegramService';
 
 const ContentIdeasView: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -34,6 +35,7 @@ const ContentIdeasView: React.FC = () => {
                 prompt: `Content Ideas for: ${topic}`,
                 result: result.text,
             });
+            sendToTelegram(`*Content Ideas for "${topic}"*:\n\n${result.text}`, 'text');
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);
@@ -46,42 +48,45 @@ const ContentIdeasView: React.FC = () => {
     const groundingChunks = response?.candidates?.[0]?.groundingMetadata?.groundingChunks;
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <div className="text-center">
-                <h2 className="text-3xl font-bold">AI Content Idea Generator</h2>
-                <p className="text-gray-500 dark:text-gray-400">Get trendy and relevant content ideas for any topic, powered by Google Search.</p>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+            {/* Left Panel: Controls */}
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5">
+                <h1 className="text-3xl font-bold">AI Content Idea Generator</h1>
+                <p className="text-gray-500 dark:text-gray-400 -mt-3">Get trendy and relevant content ideas for any topic, powered by Google Search.</p>
 
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl shadow-lg space-y-4">
-                <div className="space-y-2">
-                    <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400">Enter your topic or niche</label>
-                    <input
-                        id="topic-input"
-                        type="text"
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        placeholder="e.g., Sustainable fashion, home cooking, AI technology"
-                        className="w-full bg-white dark:bg-gray-700/60 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
-                    />
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Enter your topic or niche</label>
+                        <input
+                            id="topic-input"
+                            type="text"
+                            value={topic}
+                            onChange={(e) => setTopic(e.target.value)}
+                            placeholder="e.g., Sustainable fashion, home cooking, AI technology"
+                            className="w-full bg-white dark:bg-gray-700/60 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                        />
+                    </div>
+                    <button
+                        onClick={handleGenerate}
+                        disabled={isLoading}
+                        className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? <Spinner /> : 'Generate Ideas'}
+                    </button>
+                    {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
                 </div>
-                <button
-                    onClick={handleGenerate}
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isLoading ? <Spinner /> : 'Generate Ideas'}
-                </button>
             </div>
 
-            {error && <p className="text-red-500 dark:text-red-400 text-center">{error}</p>}
-
-            {(isLoading || response) && (
-                <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl">
-                    <h3 className="text-xl font-semibold mb-4">Generated Ideas</h3>
+            {/* Right Panel: Output */}
+            <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
+                <h2 className="text-xl font-bold mb-4">Output</h2>
+                <div className="flex-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4 overflow-y-auto">
                     {isLoading ? (
-                        <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400">
-                            <Spinner />
-                            <p>Searching for the latest trends and ideas...</p>
+                        <div className="flex items-center justify-center h-full text-center">
+                             <div>
+                                <Spinner />
+                                <p className="mt-4 text-neutral-500 dark:text-neutral-400">Searching for ideas...</p>
+                            </div>
                         </div>
                     ) : response ? (
                         <div>
@@ -103,16 +108,16 @@ const ContentIdeasView: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
+                            <div>
+                                <TrendingUpIcon className="w-16 h-16 mx-auto" />
+                                <p>Your brilliant content ideas will appear here.</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            )}
-            
-            {!isLoading && !response && !error && (
-                 <div className="text-center py-16 text-gray-500 dark:text-gray-400">
-                    <TrendingUpIcon className="w-16 h-16 mx-auto" />
-                    <p className="mt-2">Your brilliant content ideas will appear here.</p>
-                </div>
-            )}
+            </div>
         </div>
     );
 };

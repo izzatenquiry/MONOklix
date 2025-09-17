@@ -1,21 +1,18 @@
-
 export type View =
   | 'e-course'
-  | 'chat'
-  | 'image-generation'
-  | 'video-generation'
-  | 'product-ad'
-  | 'product-review'
-  | 'tiktok-affiliate'
-  | 'product-photo'
+  // Text suite already exists and handles its own internal views
+  | 'ai-text-suite'
+  // The new suites for image and video
+  | 'ai-image-suite'
+  | 'ai-video-suite'
+  // Standalone tools/pages
   | 'gallery'
-  | 'settings'
-  | 'video-combiner'
-  | 'marketing-copy'
-  | 'background-remover'
-  | 'image-enhancer'
-  | 'content-ideas'
-  | 'voice-studio';
+  | 'library'
+  // Settings & Admin
+  | 'user-profile'
+  | 'user-database'
+  | 'integrations'
+  | 'e-tutorial-admin';
 
 export interface NavItem {
   id: View | 'logout';

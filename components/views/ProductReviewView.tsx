@@ -5,6 +5,7 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { StarIcon, DownloadIcon } from '../Icons';
 import { type User } from '../../types';
+import { sendToTelegram } from '../../services/telegramService';
 
 const backgroundVibes = [
     "Aesthetic Cafe", "Urban Style (Dining)", "Tropical Beach", "Luxury Apartment", "Flower Garden", "Old Building", "Classic Library", 
@@ -78,6 +79,7 @@ const ProductReviewView: React.FC = () => {
         prompt: `Product Review: ${productDesc.substring(0, 50)}...`,
         result: result,
       });
+      sendToTelegram(`*Product Review Storyboard for "${productDesc.substring(0, 50)}..."*:\n\n${result}`, 'text');
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
       console.error("Generation failed:", e);

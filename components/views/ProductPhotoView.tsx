@@ -5,6 +5,7 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { CameraIcon, DownloadIcon, SunIcon, SparklesIcon, LeafIcon } from '../Icons';
 import { type User } from '../../types';
+import { sendToTelegram } from '../../services/telegramService';
 
 const downloadImage = (base64Image: string, fileName: string) => {
   const link = document.createElement('a');
@@ -75,6 +76,7 @@ const ProductPhotoView: React.FC = () => {
             prompt: `Product Photo: Vibe - ${vibe}`,
             result: result.imageBase64,
         });
+        sendToTelegram(result.imageBase64, 'image', `Product Photo: Vibe - ${vibe}`);
       } else {
         setError("The AI could not generate an image. Please try different settings.");
       }

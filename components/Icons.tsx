@@ -392,3 +392,19 @@ export const CreditCardIcon: React.FC<{ className?: string }> = (props) => (
     <line x1="1" y1="10" x2="23" y2="10"></line>
   </svg>
 );
+
+export const LibraryIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2z" />
+    <polyline points="14 2 14 8 20 8" />
+    <path d="M4.26 10a2 2 0 0 1 2-2h1.48" />
+    <path d="M4.26 14a2 2 0 0 1 2-2h3.48" />
+    <path d="M4.26 18a2 2 0 0 1 2-2h5.48" />
+  </svg>
+);
+
+export const TelegramIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-1.37.2-1.64l16.4-6.2c.75-.29 1.4.22 1.2.98l-3.23 15.38c-.2 1.02-1.07 1.25-1.72.79l-4.83-3.8-2.31 2.2a.83.83 0 01-.58.28z"></path>
+  </svg>
+);

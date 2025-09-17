@@ -2,7 +2,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generateVideo } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
-import { VideoIcon, DownloadIcon, TrashIcon, UploadIcon } from '../Icons';
+import { VideoIcon, DownloadIcon, TrashIcon, UploadIcon, StarIcon } from '../Icons';
+import { sendToTelegram } from '../../services/telegramService';
 
 interface ImageData {
   base64: string;
@@ -158,6 +159,7 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
         prompt: `Generate Video: ${finalPrompt}`,
         result: url
       });
+      sendToTelegram(url, 'video', `Generate Video: ${finalPrompt}`);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
       console.error("Generation failed:", e);
@@ -180,7 +182,7 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
       {/* Left Panel: Controls */}
-      <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-4 overflow-y-auto pr-4 custom-scrollbar">
         <h1 className="text-3xl font-bold">Generate Veo Video</h1>
         
         <Section title="Reference Image (Optional)">
@@ -262,14 +264,14 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       </div>
 
       {/* Right Panel: Results */}
-      <div className="bg-white dark:bg-black rounded-lg flex flex-col p-4">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
         <h2 className="text-xl font-bold mb-4">Output</h2>
-        <div className="flex-1 flex items-center justify-center bg-gray-200 dark:bg-gray-900/50 rounded-md relative group">
+        <div className="flex-1 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/50 rounded-md relative group">
           {isLoading && (
             <div className="flex flex-col items-center justify-center text-center p-8 space-y-4">
               <Spinner />
-              <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">Generating Video</p>
-              <p className="text-gray-500 dark:text-gray-400">This may take a few minutes. Please be patient.</p>
+              <p className="text-xl font-semibold text-neutral-700 dark:text-neutral-300">Generating Video</p>
+              <p className="text-neutral-500 dark:text-neutral-400">This may take a few minutes. Please be patient.</p>
               <p className="text-primary-500 dark:text-primary-400 italic">{loadingMessage}</p>
             </div>
           )}
@@ -286,13 +288,15 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
           {error && !isLoading && (
             <div className="text-left p-4 max-w-md mx-auto">
               <h3 className="font-bold text-center text-red-600 dark:text-red-400">Generation Failed</h3>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{error}</p>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 whitespace-pre-wrap">{error}</p>
             </div>
           )}
           {!isLoading && !videoUrl && !error && (
-             <div className="text-center text-gray-500 dark:text-gray-600">
-              <VideoIcon className="w-16 h-16 mx-auto" />
-              <p>Your output will appear here</p>
+             <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
+                <div>
+                    <StarIcon className="w-16 h-16 mx-auto" />
+                    <p>Your Content Output will appear here.</p>
+                </div>
             </div>
           )}
         </div>

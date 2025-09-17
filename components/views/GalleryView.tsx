@@ -61,9 +61,6 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
 
     useEffect(() => {
         refreshHistory();
-        // IndexedDB does not have a native 'storage' event,
-        // so cross-tab updates won't be reflected live without more complex logic (like BroadcastChannel API),
-        // which is beyond the scope of this refactor. The gallery will refresh on mount.
     }, [refreshHistory]);
 
 
@@ -148,36 +145,13 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
             </div>
         );
     };
-
-    return (
-        <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold mb-2">Gallery & History</h1>
-            <p className="text-neutral-500 dark:text-neutral-400 mb-6">Browse, download, or reuse all the content you've generated.</p>
-            
-            <div className="flex border-b border-neutral-200 dark:border-neutral-700 mb-6">
-                <TabButton 
-                    label="Images" 
-                    count={imageItems.length} 
-                    isActive={activeTab === 'images'} 
-                    onClick={() => setActiveTab('images')}
-                />
-                <TabButton 
-                    label="Videos" 
-                    count={videoItems.length} 
-                    isActive={activeTab === 'videos'} 
-                    onClick={() => setActiveTab('videos')}
-                />
-                 <TabButton 
-                    label="History" 
-                    count={allItems.length} 
-                    isActive={activeTab === 'history'} 
-                    onClick={() => setActiveTab('history')}
-                />
-            </div>
-
-            {activeTab === 'history' ? (
+    
+    const renderContent = () => {
+        if (activeTab === 'history') {
+            return (
                 <div>
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Full History</h2>
                         {allItems.length > 0 && (
                             <button onClick={handleClearHistory} className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 font-semibold">
                                 <TrashIcon className="w-4 h-4" />
@@ -186,14 +160,16 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                         )}
                     </div>
                     {allItems.length === 0 ? (
-                         <div className="text-center py-16 text-neutral-500 dark:text-neutral-400">
-                             <p className="font-semibold">Your Generation History is Empty</p>
-                             <p className="text-sm">Start generating content and it will appear here.</p>
+                         <div className="flex items-center justify-center min-h-[400px] text-center text-neutral-500 dark:text-neutral-400">
+                             <div>
+                                <p className="font-semibold">Your Generation History is Empty</p>
+                                <p className="text-sm">Start generating content and it will appear here.</p>
+                             </div>
                          </div>
                     ) : (
-                        <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+                        <div className="space-y-3 max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 custom-scrollbar">
                             {allItems.map(item => (
-                                <div key={item.id} className="bg-white dark:bg-neutral-900/50 p-3 rounded-lg flex items-center gap-4 shadow-sm">
+                                <div key={item.id} className="bg-white dark:bg-neutral-900/50 p-3 rounded-lg flex items-center gap-4 shadow-sm border border-neutral-200 dark:border-neutral-800">
                                     <div className="text-neutral-500 dark:text-neutral-400">{getIconForType(item.type)}</div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-semibold text-primary-600 dark:text-primary-400 text-sm">{item.type}</p>
@@ -224,19 +200,61 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                         </div>
                     )}
                 </div>
-            ) : itemsToDisplay.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            );
+        }
+
+        if (itemsToDisplay.length > 0) {
+            return (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-h-[calc(100vh-20rem)] overflow-y-auto pr-2 custom-scrollbar">
                     {itemsToDisplay.map(renderGridItem)}
                 </div>
-            ) : (
-                <div className="text-center py-16 text-neutral-500 dark:text-neutral-400">
+            );
+        }
+
+        return (
+            <div className="flex items-center justify-center min-h-[400px] text-center text-neutral-500 dark:text-neutral-400">
+                <div>
                     <div className="inline-block p-4 bg-neutral-100 dark:bg-neutral-800/50 rounded-full mb-4">
                         {activeTab === 'images' ? <ImageIcon className="w-10 h-10" /> : <VideoIcon className="w-10 h-10" />}
                     </div>
                     <p className="font-semibold">Your {activeTab === 'images' ? 'Image' : 'Video'} Gallery is Empty</p>
                     <p className="text-sm">Start generating content and it will appear here.</p>
                 </div>
-            )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold">Gallery & History</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">Browse, download, or reuse all the content you've generated.</p>
+            </div>
+            
+            <div className="flex border-b border-neutral-200 dark:border-neutral-700">
+                <TabButton 
+                    label="Images" 
+                    count={imageItems.length} 
+                    isActive={activeTab === 'images'} 
+                    onClick={() => setActiveTab('images')}
+                />
+                <TabButton 
+                    label="Videos" 
+                    count={videoItems.length} 
+                    isActive={activeTab === 'videos'} 
+                    onClick={() => setActiveTab('videos')}
+                />
+                 <TabButton 
+                    label="History" 
+                    count={allItems.length} 
+                    isActive={activeTab === 'history'} 
+                    onClick={() => setActiveTab('history')}
+                />
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
+                {renderContent()}
+            </div>
         </div>
     );
 };

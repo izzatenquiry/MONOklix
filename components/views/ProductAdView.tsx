@@ -5,6 +5,7 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { StoreIcon, DownloadIcon } from '../Icons';
 import { type MultimodalContent } from '../../services/geminiService';
+import { sendToTelegram } from '../../services/telegramService';
 
 const vibeOptions = ["Energetic & Fun", "Cinematic & Epic", "Modern & Clean", "Natural & Organic", "Tech & Futuristic"];
 const lightingOptions = ["Studio Light", "Dramatic", "Natural Light", "Neon", "Golden Hour", "Soft Daylight"];
@@ -96,6 +97,7 @@ const ProductAdView: React.FC = () => {
         prompt: `Product Ad: ${productDesc.substring(0, 50)}...`,
         result: result,
       });
+      sendToTelegram(`*Video Storyline for "${productDesc.substring(0, 50)}..."*:\n\n${result}`, 'text');
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
       console.error("Generation failed:", e);

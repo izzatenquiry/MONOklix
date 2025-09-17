@@ -5,6 +5,7 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { TikTokIcon, DownloadIcon, UserIcon } from '../Icons';
 import { type User } from '../../types';
+import { sendToTelegram } from '../../services/telegramService';
 
 const CreativeButton: React.FC<{
   label: string;
@@ -113,6 +114,7 @@ const TiktokAffiliateView: React.FC = () => {
                     prompt: `TikTok Affiliate: Vibe - ${vibe}, Model - ${gender}`,
                     result: result.imageBase64,
                 });
+                sendToTelegram(result.imageBase64, 'image', `TikTok Affiliate: Vibe - ${vibe}, Model - ${gender}`);
             } else {
                 setError("The AI could not generate an image. Please try different settings.");
             }

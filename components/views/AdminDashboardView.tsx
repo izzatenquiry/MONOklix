@@ -121,8 +121,7 @@ const AIAgentPanel: React.FC = () => {
         isChecked: boolean;
         onToggle: (id: string) => void;
     }> = ({ service, isChecked, onToggle }) => (
-        <div className="flex items-center justify-between p-4 bg-white dark:bg-neutral-900/50 rounded-lg">
-            <span className="font-medium text-neutral-800 dark:text-neutral-200">{service.label}</span>
+        <div className="flex items-center p-4 bg-white dark:bg-neutral-900/50 rounded-lg">
             <label htmlFor={`toggle-${service.id}`} className="relative inline-flex items-center cursor-pointer">
                 <input
                     type="checkbox"
@@ -133,6 +132,7 @@ const AIAgentPanel: React.FC = () => {
                 />
                 <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
             </label>
+            <label htmlFor={`toggle-${service.id}`} className="ml-4 font-medium text-neutral-800 dark:text-neutral-200 cursor-pointer flex-1">{service.label}</label>
         </div>
     );
     

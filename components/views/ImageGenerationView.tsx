@@ -2,9 +2,10 @@ import React, { useState, useCallback, useRef } from 'react';
 import { generateImages, composeImage } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
-import { ImageIcon, UploadIcon, TrashIcon, DownloadIcon, VideoIcon } from '../Icons';
+import { ImageIcon, UploadIcon, TrashIcon, DownloadIcon, VideoIcon, StarIcon } from '../Icons';
 import { type MultimodalContent } from '../../services/geminiService';
 import { type User } from '../../types';
+import { sendToTelegram } from '../../services/telegramService';
 
 interface ImageData extends MultimodalContent {
   id: string;
@@ -112,6 +113,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
             prompt: `Image Edit: ${prompt}`,
             result: result.imageBase64,
           });
+          sendToTelegram(result.imageBase64, 'image', `Image Edit: ${prompt}`);
         }
       } else {
         // Image Generation Mode
@@ -133,6 +135,9 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
             prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`,
             result: result[0],
           });
+          result.forEach(imgBase64 => {
+            sendToTelegram(imgBase64, 'image', `Generate Image: ${prompt} (Ratio: ${aspectRatio})`);
+          });
         }
       }
     } catch (e) {
@@ -147,7 +152,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
       {/* Left Panel: Controls */}
-      <div className="flex flex-col gap-4">
+      <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-4 overflow-y-auto pr-4 custom-scrollbar">
         <h1 className="text-3xl font-bold">Generate & Edit Images</h1>
         
         <div>
@@ -295,13 +300,13 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
       </div>
 
       {/* Right Panel: Results */}
-      <div className="bg-white dark:bg-black rounded-lg flex flex-col p-4">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
         <h2 className="text-xl font-bold mb-4">Output</h2>
-        <div className="flex-1 flex items-center justify-center bg-gray-200 dark:bg-gray-900/50 rounded-md overflow-hidden relative group">
+        <div className="flex-1 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/50 rounded-md overflow-hidden relative group">
           {isLoading && (
             <div className="text-center">
               <Spinner />
-              <p className="mt-4 text-gray-500 dark:text-gray-400">Generating your masterpiece...</p>
+              <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating your masterpiece...</p>
             </div>
           )}
           {!isLoading && images.length > 0 && (
@@ -344,9 +349,11 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
              </div>
           )}
            {!isLoading && images.length === 0 && !editedResult && (
-            <div className="text-center text-gray-500 dark:text-gray-600">
-              <ImageIcon className="w-16 h-16 mx-auto" />
-              <p>Your output will appear here</p>
+            <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
+                <div>
+                    <StarIcon className="w-16 h-16 mx-auto" />
+                    <p>Your Content Output will appear here.</p>
+                </div>
             </div>
           )}
         </div>

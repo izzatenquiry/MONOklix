@@ -175,7 +175,7 @@ export const registerUser = async (username: string, email: string, phone: strin
     const password = cleanedPhone;
 
     // 1. Sign up the user in Supabase Auth.
-    const { data: authData, error: authError } = await (supabase.auth as any).signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanedEmail,
         password: password,
     });
@@ -258,7 +258,7 @@ export const loginUser = async (email: string): Promise<LoginResult> => {
     }
 
     // Sign in with Supabase Auth to create a session
-    const { data: signInData, error: signInError } = await (supabase.auth as any).signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: cleanedEmail,
         password: password,
     });
@@ -282,7 +282,7 @@ export const loginUser = async (email: string): Promise<LoginResult> => {
 
 // Sign out the current user (clears Supabase session)
 export const signOutUser = async (): Promise<void> => {
-    const { error } = await (supabase.auth as any).signOut();
+    const { error } = await supabase.auth.signOut();
     if (error) {
         console.error("Error signing out:", getErrorMessage(error));
     }
@@ -291,7 +291,7 @@ export const signOutUser = async (): Promise<void> => {
 
 // Get a single user's profile from the database
 export const getUserProfile = async (userId: string): Promise<User | null> => {
-    const { data: authData, error: authError } = await (supabase.auth as any).getUser();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData.user) {
         if (getErrorMessage(authError) !== "User not found") {
             // Don't log expected "Auth session missing!" for insecure local user flow.
@@ -439,7 +439,7 @@ export const exportAllUserData = async (): Promise<UserProfileData[] | null> => 
  * Initializes/repairs the admin account.
  */
 export const initializeAdminAccount = async () => {
-    const { data: { session } } = await (supabase.auth as any).getSession();
+    const { data: { session } } = await supabase.auth.getSession();
 
     // If a user session already exists, do not proceed with the admin initialization.
     // This function is destructive to the current session and should only run
@@ -448,21 +448,21 @@ export const initializeAdminAccount = async () => {
         return;
     }
 
-    await (supabase.auth as any).signOut();
+    await supabase.auth.signOut();
     console.log("Session cleared. Forcibly checking/repairing admin account...");
 
     const adminEmail = 'izzat.enquiry@gmail.com';
     const adminPassword = 'M!m@Sept2025';
     let adminUserId: string | undefined;
 
-    const { data: signInData, error: signInError } = await (supabase.auth as any).signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: adminEmail,
         password: adminPassword,
     });
 
     if (signInError && signInError.message.includes('Invalid login credentials')) {
         console.log("Admin login failed, attempting to create admin account in Auth service...");
-        const { data: signUpData, error: signUpError } = await (supabase.auth as any).signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: adminEmail,
             password: adminPassword,
         });
@@ -473,7 +473,7 @@ export const initializeAdminAccount = async () => {
             } else {
                 console.error('Admin initialization failed during signup:', getErrorMessage(signUpError));
             }
-            await (supabase.auth as any).signOut();
+            await supabase.auth.signOut();
             return;
         }
         adminUserId = signUpData?.user?.id;
@@ -481,7 +481,7 @@ export const initializeAdminAccount = async () => {
 
     } else if (signInError) {
         console.error('Admin initialization failed during sign-in:', getErrorMessage(signInError));
-        await (supabase.auth as any).signOut();
+        await supabase.auth.signOut();
         return;
     } else {
         adminUserId = signInData?.user?.id;
@@ -489,7 +489,7 @@ export const initializeAdminAccount = async () => {
 
     if (!adminUserId) {
         console.error('Could not determine admin user ID during initialization.');
-        await (supabase.auth as any).signOut();
+        await supabase.auth.signOut();
         return;
     }
 
@@ -540,6 +540,6 @@ export const initializeAdminAccount = async () => {
         console.log('Orphaned admin profile cleanup complete.');
     }
 
-    await (supabase.auth as any).signOut();
+    await supabase.auth.signOut();
     console.log("Admin check/repair complete. Session cleared for user login.");
 };
