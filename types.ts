@@ -9,9 +9,8 @@ export type View =
   | 'gallery'
   | 'library'
   // Settings & Admin
-  | 'user-profile'
+  | 'settings'
   | 'user-database'
-  | 'integrations'
   | 'e-tutorial-admin';
 
 export interface NavItem {

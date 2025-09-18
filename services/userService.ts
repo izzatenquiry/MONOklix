@@ -38,9 +38,9 @@ export const verifyAndSaveUserApiKey = async (
     return { success: false, message: 'API Key cannot be empty.' };
   }
 
-  const isValid = await verifyApiKey(key.trim());
+  const isKeyValid = await verifyApiKey(key.trim());
 
-  if (isValid) {
+  if (isKeyValid) {
     // Fetch the user's current role to ensure an admin's status is preserved.
     const { data: user, error: fetchError } = await supabase
         .from('users')

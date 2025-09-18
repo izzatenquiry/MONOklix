@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { type User } from '../../types';
 import { updateUserProfile } from '../../services/userService';
-import { CreditCardIcon } from '../Icons';
+import { CreditCardIcon, CheckCircleIcon, XIcon } from '../Icons';
+import Spinner from '../common/Spinner';
 
 interface UserProfileViewProps {
   theme: string;
@@ -94,7 +95,16 @@ const BillingUsagePanel: React.FC = () => {
 const ProfileAndAppearancePanel: React.FC<UserProfileViewProps> = ({ theme, setTheme, currentUser, onUserUpdate }) => {
     const [fullName, setFullName] = useState(currentUser.fullName || currentUser.username);
     const [email, setEmail] = useState(currentUser.email);
-    const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
+    const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error' | 'loading'; message: string }>({ type: 'idle', message: '' });
+    const statusTimeoutRef = useRef<number | null>(null);
+
+     useEffect(() => {
+        return () => {
+            if (statusTimeoutRef.current) {
+                clearTimeout(statusTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const getAccountStatus = (user: User): { text: string; colorClass: string } => {
         switch (user.status) {
@@ -113,7 +123,11 @@ const ProfileAndAppearancePanel: React.FC<UserProfileViewProps> = ({ theme, setT
     
 
     const handleSave = async () => {
-        setStatus({ type: 'idle', message: '' });
+        if (statusTimeoutRef.current) {
+            clearTimeout(statusTimeoutRef.current);
+        }
+
+        setStatus({ type: 'loading', message: 'Saving profile...' });
         const result = await updateUserProfile(currentUser.id, {
             fullName: fullName,
             email: email,
@@ -126,7 +140,7 @@ const ProfileAndAppearancePanel: React.FC<UserProfileViewProps> = ({ theme, setT
             setStatus({ type: 'success', message: 'Profile updated successfully!' });
         }
         
-        setTimeout(() => setStatus({ type: 'idle', message: '' }), 4000);
+        statusTimeoutRef.current = window.setTimeout(() => setStatus({ type: 'idle', message: '' }), 4000);
     };
 
     const isDarkMode = theme === 'dark';
@@ -166,19 +180,40 @@ const ProfileAndAppearancePanel: React.FC<UserProfileViewProps> = ({ theme, setT
                 
                 <div>
                     <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Full Name</label>
-                    <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition" />
+                    <input 
+                        type="text" 
+                        value={fullName} 
+                        onChange={(e) => setFullName(e.target.value)} 
+                        disabled={status.type === 'loading'}
+                        className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition disabled:opacity-50" 
+                    />
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-1">Email Address</label>
                     <input type="email" value={email} readOnly disabled className="w-full bg-neutral-200 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition cursor-not-allowed" />
                     <p className="text-xs text-neutral-400 mt-1">Changing email is not currently supported.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <button onClick={handleSave} className="bg-primary-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-primary-700 transition-colors">
-                        Save Changes
-                    </button>
-                    {status.message && (
-                        <p className={`text-sm ${status.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>{status.message}</p>
+                <div>
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={handleSave} 
+                            disabled={status.type === 'loading'}
+                            className="bg-primary-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center w-48 disabled:opacity-50"
+                        >
+                           {status.type === 'loading' ? <Spinner /> : 'Save Changes'}
+                        </button>
+                    </div>
+                     {status.type !== 'idle' && (
+                        <div className={`flex items-center gap-3 p-3 mt-4 rounded-md text-sm ${
+                            status.type === 'success' ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' :
+                            status.type === 'error' ? 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200' :
+                            'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200'
+                        }`}>
+                            {status.type === 'loading' && <Spinner />}
+                            {status.type === 'success' && <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />}
+                            {status.type === 'error' && <XIcon className="w-5 h-5 flex-shrink-0" />}
+                            <span>{status.message}</span>
+                        </div>
                     )}
                 </div>
             </div>

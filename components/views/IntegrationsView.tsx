@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { type User } from '../../types';
 import { verifyAndSaveUserApiKey } from '../../services/userService';
-import { GoogleDriveIcon, WebhookIcon, TelegramIcon } from '../Icons';
+import { GoogleDriveIcon, WebhookIcon, TelegramIcon, CheckCircleIcon, XIcon } from '../Icons';
 import Spinner from '../common/Spinner';
 import { saveData, loadData, removeData } from '../../services/indexedDBService';
 import { sendToTelegram } from '../../services/telegramService';
@@ -14,17 +14,36 @@ interface IntegrationsViewProps {
 const ApiKeyPanel: React.FC<{ currentUser: User, onUserUpdate: (user: User) => void }> = ({ currentUser, onUserUpdate }) => {
     const [apiKey, setApiKey] = useState('');
     const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error' | 'loading'; message: string }>({ type: 'idle', message: '' });
+    const statusTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (statusTimeoutRef.current) {
+                clearTimeout(statusTimeoutRef.current);
+            }
+        };
+    }, []);
+
 
     const handleSave = async () => {
+        if (statusTimeoutRef.current) {
+            clearTimeout(statusTimeoutRef.current);
+        }
         setStatus({ type: 'loading', message: 'Verifying API Key...' });
         const result = await verifyAndSaveUserApiKey(currentUser.id, apiKey);
 
         if (result.success === false) {
             setStatus({ type: 'error', message: result.message });
+            statusTimeoutRef.current = window.setTimeout(() => {
+                setStatus({ type: 'idle', message: '' });
+            }, 5000);
         } else {
             setStatus({ type: 'success', message: `API Key successfully verified and saved.` });
-            onUserUpdate(result.user); // Update parent state immediately
-            setApiKey(''); // Clear input on success
+            onUserUpdate(result.user);
+            setApiKey('');
+            statusTimeoutRef.current = window.setTimeout(() => {
+                setStatus({ type: 'idle', message: '' });
+            }, 3000);
         }
     };
     
@@ -49,24 +68,28 @@ const ApiKeyPanel: React.FC<{ currentUser: User, onUserUpdate: (user: User) => v
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder="Enter a new API Key here to update"
-                    className="flex-grow bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                    className="flex-grow bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none transition disabled:opacity-50"
+                    disabled={status.type === 'loading'}
                 />
                  <button 
                     onClick={handleSave} 
-                    disabled={status.type === 'loading'} 
-                    className="bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center w-24"
+                    disabled={status.type === 'loading' || !apiKey.trim()} 
+                    className="bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center w-24 disabled:opacity-50"
                 >
                     {status.type === 'loading' ? <Spinner /> : 'Save'}
                 </button>
             </div>
-             {status.message && (
-                <p className={`text-sm mt-2 ${
-                    status.type === 'success' ? 'text-green-600' :
-                    status.type === 'error' ? 'text-red-500' :
-                    'text-neutral-500'
+             {status.type !== 'idle' && (
+                <div className={`flex items-center gap-3 p-3 mt-4 rounded-md text-sm ${
+                    status.type === 'success' ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200' :
+                    status.type === 'error' ? 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200' :
+                    'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200'
                 }`}>
-                    {status.message}
-                </p>
+                    {status.type === 'loading' && <Spinner />}
+                    {status.type === 'success' && <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />}
+                    {status.type === 'error' && <XIcon className="w-5 h-5 flex-shrink-0" />}
+                    <span>{status.message}</span>
+                </div>
             )}
         </div>
     );

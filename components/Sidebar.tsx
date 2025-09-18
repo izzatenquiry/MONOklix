@@ -27,8 +27,7 @@ const navItems: NavItem[] = [
   { id: 'e-tutorial-admin', label: 'e-Tutorial Settings', section: 'admin', icon: BookOpenIcon, roles: ['admin'] },
   
   // Bottom Section
-  { id: 'user-profile', label: 'User Profile', section: 'bottom', icon: UserIcon, roles: ['admin', 'user'] },
-  { id: 'integrations', label: 'Integrations', section: 'bottom', icon: WebhookIcon, roles: ['admin', 'user'] },
+  { id: 'settings', label: 'Settings', section: 'bottom', icon: SettingsIcon, roles: ['admin', 'user'] },
   { id: 'logout', label: 'Log Out', section: 'bottom', icon: LogoutIcon }
 ];
 

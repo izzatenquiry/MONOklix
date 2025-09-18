@@ -5,8 +5,7 @@ import AiTextSuiteView from './components/views/AiTextSuiteView';
 import AiImageSuiteView from './components/views/AiImageSuiteView';
 import AiVideoSuiteView from './components/views/AiVideoSuiteView';
 import ECourseView from './components/views/ECourseView';
-import UserProfileView from './components/views/UserProfileView';
-import IntegrationsView from './components/views/IntegrationsView';
+import SettingsView from './components/views/SettingsView';
 import AdminDashboardView from './components/views/AdminDashboardView';
 import ETutorialAdminView from './components/views/ETutorialAdminView';
 import LoginPage from './components/LoginPage';
@@ -143,10 +142,8 @@ const App: React.FC = () => {
         return <GalleryView onCreateVideo={handleCreateVideoFromImage} />;
       case 'library':
         return <LibraryView />;
-      case 'user-profile':
-          return <UserProfileView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
-      case 'integrations':
-          return <IntegrationsView currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
+      case 'settings':
+          return <SettingsView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
       case 'user-database':
           return <AdminDashboardView />;
       case 'e-tutorial-admin':
@@ -194,13 +191,13 @@ const App: React.FC = () => {
               // Specific message for expired trials
               blockMessage = {
                   title: 'Account Inactive',
-                  body: 'Your trial period has expired. Please update your Gemini API Key in the Integrations page to unlock lifetime access to all AI features.',
+                  body: 'Your trial period has expired. Please update your Gemini API Key in the Settings page to unlock lifetime access to all AI features.',
               };
           } else {
               // Generic message for anyone without a key (admin, lifetime user, etc.)
               blockMessage = {
                   title: 'API Key Required',
-                  body: 'To use this AI feature, you must provide your own Gemini API Key on the Integrations page.',
+                  body: 'To use this AI feature, you must provide your own Gemini API Key on the Settings page.',
               };
           }
       }
