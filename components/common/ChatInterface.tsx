@@ -5,6 +5,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import { SendIcon } from '../Icons';
 import Spinner from './Spinner';
 import { sendToTelegram } from '../../services/telegramService';
+import { triggerUserWebhook } from '../../services/webhookService';
 
 interface Message {
   role: 'user' | 'model';
@@ -13,12 +14,10 @@ interface Message {
 
 interface ChatInterfaceProps {
   systemInstruction: string;
-  title: string;
-  description: string;
   placeholder: string;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title, description, placeholder }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeholder }) => {
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -32,7 +31,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
   useEffect(scrollToBottom, [messages]);
 
   useEffect(() => {
-    setChat(createChatSession(systemInstruction));
+    const session = createChatSession(systemInstruction);
+    setChat(session);
+    setMessages([]); // Clear messages when system instruction changes
   }, [systemInstruction]);
 
   const handleSend = useCallback(async () => {
@@ -59,6 +60,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
       }
       // Send the final result to Telegram
       sendToTelegram(`*User Prompt:*\n${currentInput}\n\n*AI Response:*\n${modelResponse}`, 'text');
+      // Send the final result to the user's personal webhook
+      triggerUserWebhook({ type: 'text', prompt: currentInput, result: modelResponse });
+
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessageText = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -86,18 +90,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
-      <div className="text-center mb-6">
-        <h2 className="text-3xl font-bold text-neutral-800 dark:text-white">{title}</h2>
-        <p className="text-neutral-500 dark:text-neutral-400">{description}</p>
-      </div>
+    <div className="h-full flex flex-col bg-white dark:bg-neutral-900 p-2 sm:p-4 rounded-lg shadow-sm">
       <div className="flex-1 overflow-y-auto pr-2 space-y-6">
         {messages.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+          <div key={index} className={`flex items-start gap-3 sm:gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
             {msg.role === 'model' && (
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex-shrink-0"></div>
             )}
-            <div className={`max-w-xl p-4 rounded-2xl shadow-sm ${
+            <div className={`max-w-[85%] sm:max-w-md lg:max-w-lg p-3 sm:p-4 rounded-2xl shadow-sm ${
               msg.role === 'user'
                 ? 'bg-primary-600 text-white rounded-br-none'
                 : 'bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-none'
@@ -109,7 +109,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
             )}
           </div>
         ))}
-        {isLoading && messages[messages.length-1].role === 'user' && (
+        {isLoading && messages.length > 0 && messages[messages.length-1].role === 'user' && (
           <div className="flex items-start gap-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex-shrink-0"></div>
             <div className="max-w-xl p-4 rounded-2xl bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-none">
@@ -119,7 +119,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="mt-6">
+      <div className="mt-4 flex-shrink-0">
         <div className="relative">
           <textarea
             value={input}
@@ -134,6 +134,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, title,
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 transition-transform duration-200"
+            aria-label="Send message"
           >
             <SendIcon className="w-5 h-5" />
           </button>

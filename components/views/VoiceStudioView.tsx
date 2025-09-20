@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MicIcon, DownloadIcon } from '../Icons';
 import { generateVoiceOver } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { sendToTelegram } from '../../services/telegramService';
+import TwoColumnLayout from '../common/TwoColumnLayout';
 
 const voiceActors = [
     { id: 'Puck', name: 'Puck', language: 'English', gender: 'Male' },
@@ -21,7 +22,7 @@ const voiceActors = [
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <div>
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">{title}</h3>
+        <h2 className="text-lg font-semibold mb-2">{title}</h2>
         {children}
     </div>
 );
@@ -52,6 +53,17 @@ const SliderControl: React.FC<{
   </div>
 );
 
+const triggerDownload = (data: Blob, fileNameBase: string) => {
+    const url = URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileNameBase}-${Date.now()}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Clean up immediately
+};
+
 
 const VoiceStudioView: React.FC = () => {
     const [script, setScript] = useState('');
@@ -69,9 +81,18 @@ const VoiceStudioView: React.FC = () => {
         return acc;
     }, {} as Record<string, typeof voiceActors>);
 
+    // Cleanup object URLs to prevent memory leaks
+    useEffect(() => {
+        return () => {
+        if (audioUrl && audioUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(audioUrl);
+        }
+        };
+    }, [audioUrl]);
+
     const handleGenerate = async () => {
         if (!script.trim()) {
-            setError("Please enter a script for the voice-over.");
+            setError("A script is required to generate a voice-over.");
             return;
         }
         setIsLoading(true);
@@ -79,12 +100,16 @@ const VoiceStudioView: React.FC = () => {
         setAudioUrl(null);
 
         try {
-            const resultUrl = await generateVoiceOver(script, selectedActor, speed, pitch, volume);
+            const resultBlob = await generateVoiceOver(script, selectedActor, speed, pitch, volume);
+            triggerDownload(resultBlob, `monoklix-voiceover-${selectedActor}`);
+            
+            const resultUrl = URL.createObjectURL(resultBlob);
             setAudioUrl(resultUrl);
+            
             await addHistoryItem({
                 type: 'Audio',
                 prompt: `Voice Studio (${selectedActor}): ${script.substring(0, 50)}...`,
-                result: resultUrl
+                result: resultBlob // Save the Blob itself for persistence
             });
             sendToTelegram(resultUrl, 'audio', `Voice Studio (${selectedActor}):\n\n${script.substring(0, 900)}...`);
         } catch (e) {
@@ -100,123 +125,125 @@ const VoiceStudioView: React.FC = () => {
         if (!audioUrl) return;
         const link = document.createElement('a');
         link.href = audioUrl;
-        link.download = `1za7-ai-audio-${Date.now()}.mp3`;
+        link.download = `monoklix-audio-${Date.now()}.mp3`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-            {/* Left Panel */}
-            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5 overflow-y-auto pr-4 custom-scrollbar">
-                <h1 className="text-3xl font-bold">Generate Audio</h1>
-                <p className="text-gray-500 dark:text-gray-400 -mt-3">Turn text into high-quality audio with a variety of voices.</p>
-                
-                <Section title="1. Write Your Script">
-                    <div className="relative h-48">
-                        <textarea
-                            value={script}
-                            onChange={(e) => setScript(e.target.value)}
-                            placeholder="Type or paste your voice-over script here..."
-                            className="w-full h-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4 resize-none focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
-                        />
-                        <span className="absolute bottom-3 right-3 text-xs text-gray-500">{script.length} characters</span>
-                    </div>
-                </Section>
-                
-                <Section title="2. Select Voice Actor">
-                    <select
-                        value={selectedActor}
-                        onChange={(e) => setSelectedActor(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
-                    >
-                        {Object.entries(groupedActors).map(([group, actors]) => (
-                            <optgroup key={group} label={group}>
-                                {actors.map(actor => (
-                                    <option key={actor.id} value={actor.id}>
-                                        {actor.name}
-                                    </option>
-                                ))}
-                            </optgroup>
-                        ))}
-                    </select>
-                </Section>
-                
-                <Section title="3. Advanced Settings">
-                    <div className="space-y-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
-                        <SliderControl
-                          label="Speech Speed"
-                          value={speed}
-                          min={0.5} max={2.0} step={0.01}
-                          onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                          displayValue={speed.toFixed(2)}
-                          unit="x"
-                        />
-                        <SliderControl
-                          label="Pitch"
-                          value={pitch}
-                          min={-20} max={20} step={0.1}
-                          onChange={(e) => setPitch(parseFloat(e.target.value))}
-                          displayValue={pitch.toFixed(1)}
-                          unit=""
-                        />
-                        <SliderControl
-                          label="Volume"
-                          value={volume}
-                          min={-96} max={16} step={0.1}
-                          onChange={(e) => setVolume(parseFloat(e.target.value))}
-                          displayValue={volume.toFixed(1)}
-                          unit="dB"
-                        />
-                    </div>
-                </Section>
+    const leftPanel = (
+        <>
+            <div>
+              <h1 className="text-2xl font-bold sm:text-3xl">Generate Audio</h1>
+              <p className="text-neutral-500 dark:text-neutral-400 mt-1">Turn text into high-quality audio with a variety of voices.</p>
+            </div>
+            
+            <Section title="1. Write Your Script">
+                <div className="relative h-48">
+                    <textarea
+                        value={script}
+                        onChange={(e) => setScript(e.target.value)}
+                        placeholder="Type or paste your voice-over script here..."
+                        className="w-full h-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4 resize-none focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                    />
+                    <span className="absolute bottom-3 right-3 text-xs text-gray-500">{script.length} characters</span>
+                </div>
+            </Section>
+            
+            <Section title="2. Select Voice Actor">
+                <select
+                    value={selectedActor}
+                    onChange={(e) => setSelectedActor(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                >
+                    {Object.entries(groupedActors).map(([group, actors]) => (
+                        <optgroup key={group} label={group}>
+                            {actors.map(actor => (
+                                <option key={actor.id} value={actor.id}>
+                                    {actor.name}
+                                </option>
+                            ))}
+                        </optgroup>
+                    ))}
+                </select>
+            </Section>
+            
+            <Section title="3. Advanced Settings">
+                <div className="space-y-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
+                    <SliderControl
+                      label="Speech Speed"
+                      value={speed}
+                      min={0.5} max={2.0} step={0.01}
+                      onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                      displayValue={speed.toFixed(2)}
+                      unit="x"
+                    />
+                    <SliderControl
+                      label="Pitch"
+                      value={pitch}
+                      min={-20} max={20} step={0.1}
+                      onChange={(e) => setPitch(parseFloat(e.target.value))}
+                      displayValue={pitch.toFixed(1)}
+                      unit=""
+                    />
+                    <SliderControl
+                      label="Volume"
+                      value={volume}
+                      min={-96} max={16} step={0.1}
+                      onChange={(e) => setVolume(parseFloat(e.target.value))}
+                      displayValue={volume.toFixed(1)}
+                      unit="dB"
+                    />
+                </div>
+            </Section>
 
+            <div className="pt-4 mt-auto">
                 <button
                   onClick={handleGenerate}
                   disabled={isLoading}
-                  className="w-full mt-2 flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? <Spinner/> : 'Generate Voice Over'}
                 </button>
+                 {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
             </div>
-
-            {/* Right Panel */}
-             <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
-                <h2 className="text-xl font-bold mb-4">Output</h2>
-                <div className="flex-1 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4">
-                    {isLoading ? (
-                        <div className="text-center">
-                           <Spinner />
-                           <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating audio...</p>
-                        </div>
-                    ) : audioUrl ? (
-                        <div className="w-full space-y-4">
-                            <audio controls src={audioUrl} className="w-full">
-                                Your browser does not support the audio element.
-                            </audio>
-                            <button 
-                                onClick={handleDownload}
-                                className="w-full flex items-center justify-center gap-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-semibold py-2 px-3 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
-                            >
-                                <DownloadIcon className="w-4 h-4"/> Download Audio
-                            </button>
-                        </div>
-                    ) : error ? (
-                        <div className="text-center text-red-500 dark:text-red-400">
-                             <p className="font-semibold">Generation Failed</p>
-                             <p className="text-xs mt-2">{error}</p>
-                        </div>
-                    ) : (
-                        <div className="text-center text-neutral-500 dark:text-neutral-600">
-                            <MicIcon className="w-16 h-16 mx-auto" />
-                            <p className="mt-2">Your Audio Output Will Appear Here.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+        </>
     );
+
+    const rightPanel = (
+        <>
+            {isLoading ? (
+                <div className="text-center">
+                   <Spinner />
+                   <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating audio...</p>
+                </div>
+            ) : audioUrl ? (
+                <div className="w-full space-y-4">
+                    <audio controls src={audioUrl} className="w-full">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <button 
+                        onClick={handleDownload}
+                        className="w-full flex items-center justify-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 font-semibold py-2 px-3 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                    >
+                        <DownloadIcon className="w-4 h-4"/> Download Audio
+                    </button>
+                </div>
+            ) : error ? (
+                <div className="text-center text-red-500 dark:text-red-400">
+                     <p className="font-semibold">Generation Failed</p>
+                     <p className="text-xs mt-2">{error}</p>
+                </div>
+            ) : (
+                <div className="text-center text-neutral-500 dark:text-neutral-600">
+                    <MicIcon className="w-16 h-16 mx-auto" />
+                    <p className="mt-2">Your Audio Output Will Appear Here.</p>
+                </div>
+            )}
+        </>
+    );
+
+    return <TwoColumnLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
 };
 
 export default VoiceStudioView;

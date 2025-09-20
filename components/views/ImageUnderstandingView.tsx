@@ -4,7 +4,7 @@ import ImageUpload from '../common/ImageUpload';
 import Spinner from '../common/Spinner';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { type MultimodalContent } from '../../services/geminiService';
-import { DownloadIcon, QuestionSolutionIcon } from '../Icons';
+import { DownloadIcon, QuestionSolutionIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 
 const downloadText = (text: string, fileName: string) => {
     const blob = new Blob([text], { type: 'text/plain' });
@@ -24,6 +24,7 @@ const ImageUnderstandingView: React.FC = () => {
   const [response, setResponse] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleImageUpload = useCallback((base64: string, mimeType: string) => {
     setImageData({ base64, mimeType });
@@ -31,16 +32,18 @@ const ImageUnderstandingView: React.FC = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!imageData) {
-      setError("Please upload an image first.");
+      setError("An image is required. Please upload an image to analyze.");
       return;
     }
     if (!prompt.trim()) {
-      setError("Please enter a question or prompt.");
+      setError("Please enter a question to ask about the image.");
       return;
     }
     setIsLoading(true);
     setError(null);
     setResponse(null);
+    setCopied(false);
+
     try {
       const result = await generateMultimodalContent(prompt, [imageData]);
       setResponse(result);
@@ -52,15 +55,25 @@ const ImageUnderstandingView: React.FC = () => {
       setIsLoading(false);
     }
   }, [prompt, imageData]);
+  
+  const handleCopy = () => {
+    if (!response) return;
+    navigator.clipboard.writeText(response);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
         {/* Left Panel: Controls */}
-        <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5">
-            <h1 className="text-3xl font-bold">Image Understanding</h1>
-            <p className="text-gray-500 dark:text-gray-400 -mt-3">Upload an image and ask the AI anything about it.</p>
+        <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-4">
+            <div>
+              <h1 className="text-2xl font-bold sm:text-3xl">Image Understanding</h1>
+              <p className="text-neutral-500 dark:text-neutral-400 mt-1">Upload an image and ask the AI anything about it.</p>
+            </div>
             
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1">
                 <ImageUpload id="image-understand-upload" onImageUpload={handleImageUpload} />
                 <textarea
                   value={prompt}
@@ -69,6 +82,8 @@ const ImageUnderstandingView: React.FC = () => {
                   rows={3}
                   className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                 />
+            </div>
+            <div className="pt-4">
                 <button
                   onClick={handleAnalyze}
                   disabled={isLoading || !imageData}
@@ -77,7 +92,7 @@ const ImageUnderstandingView: React.FC = () => {
                   {isLoading && <Spinner />}
                   Analyze Image
                 </button>
-                 {error && <p className="text-red-500 dark:text-red-400 text-center">{error}</p>}
+                 {error && <p className="text-red-500 dark:text-red-400 text-center mt-2">{error}</p>}
             </div>
         </div>
 
@@ -86,12 +101,21 @@ const ImageUnderstandingView: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Output</h2>
                 {response && !isLoading && (
-                    <button 
-                      onClick={() => downloadText(response, `1za7-ai-analysis-${Date.now()}.txt`)} 
-                      className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
-                    >
-                        <DownloadIcon className="w-4 h-4"/> Download
-                    </button>
+                     <div className="flex gap-2">
+                        <button 
+                          onClick={handleCopy}
+                          className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                        >
+                          {copied ? <CheckCircleIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
+                          {copied ? 'Copied!' : 'Copy'}
+                        </button>
+                        <button 
+                          onClick={() => downloadText(response, `monoklix-analysis-${Date.now()}.txt`)} 
+                          className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                        >
+                            <DownloadIcon className="w-4 h-4"/> Download
+                        </button>
+                    </div>
                 )}
             </div>
             <div className="flex-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4 overflow-y-auto">

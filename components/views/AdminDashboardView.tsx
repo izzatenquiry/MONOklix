@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllUsers, updateUserStatus, replaceUsers, exportAllUserData } from '../../services/userService';
 import { type User, type UserStatus } from '../../types';
 import { UsersIcon, XIcon, DownloadIcon, UploadIcon } from '../Icons';
-import { saveData, loadData } from '../../services/indexedDBService';
 
 const formatStatus = (user: User): { text: string; color: 'green' | 'yellow' | 'red' | 'blue' } => {
     switch(user.status) {
@@ -58,104 +57,6 @@ const TrialCountdown: React.FC<{ expiry: number }> = ({ expiry }) => {
         </span>
     );
 };
-
-
-const AIAgentPanel: React.FC = () => {
-    const SETTINGS_KEY = '1za7-ai-agent-settings';
-    
-    const allAgents = [
-        { id: 'chat', label: 'Chat GPT' },
-        { id: 'content-ideas', label: 'Content Ideas Generator' },
-        { id: 'marketing-copy', label: 'Copywriting Generator' },
-        { id: 'image-generation', label: 'Image Generation' },
-        { id: 'background-remover', label: 'Image Background Remover' },
-        { id: 'image-enhancer', label: 'Image Enhancer' },
-        { id: 'product-photo', label: 'Image Product Photos' },
-        { id: 'tiktok-affiliate', label: 'Image Model Photos' },
-        { id: 'product-ad', label: 'Video Storyline Generator' },
-        { id: 'product-review', label: 'Video Storyboard Generator' },
-        { id: 'video-generation', label: 'Video Generation' },
-        { id: 'video-combiner', label: 'Video Combiner' },
-        { id: 'voice-studio', label: 'Voice Studio' },
-    ];
-
-    const [enabledAgents, setEnabledAgents] = useState<Record<string, boolean> | null>(null);
-
-    useEffect(() => {
-        const loadSettings = async () => {
-            try {
-                const savedSettings = await loadData<Record<string, boolean>>(SETTINGS_KEY);
-                if (savedSettings) {
-                    setEnabledAgents(savedSettings);
-                    return;
-                }
-            } catch (e) {
-                console.error("Failed to parse AI Agent settings:", e);
-            }
-            // Default state if nothing is loaded
-            const defaultState: Record<string, boolean> = {};
-            allAgents.forEach(agent => {
-                defaultState[agent.id] = true;
-            });
-            setEnabledAgents(defaultState);
-        };
-        loadSettings();
-    }, []);
-
-
-    const handleToggle = (id: string) => {
-        setEnabledAgents(prev => {
-            if (!prev) return null;
-            const newState = { ...prev, [id]: !prev[id] };
-            try {
-                saveData(SETTINGS_KEY, newState);
-            } catch (e) {
-                console.error("Failed to save AI Agent settings:", e);
-            }
-            return newState;
-        });
-    };
-    
-    const ToggleItem: React.FC<{
-        service: { id: string; label: string };
-        isChecked: boolean;
-        onToggle: (id: string) => void;
-    }> = ({ service, isChecked, onToggle }) => (
-        <div className="flex items-center p-4 bg-white dark:bg-neutral-900/50 rounded-lg">
-            <label htmlFor={`toggle-${service.id}`} className="relative inline-flex items-center cursor-pointer">
-                <input
-                    type="checkbox"
-                    id={`toggle-${service.id}`}
-                    className="sr-only peer"
-                    checked={isChecked}
-                    onChange={() => onToggle(service.id)}
-                />
-                <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-600"></div>
-            </label>
-            <label htmlFor={`toggle-${service.id}`} className="ml-4 font-medium text-neutral-800 dark:text-neutral-200 cursor-pointer flex-1">{service.label}</label>
-        </div>
-    );
-    
-    if (!enabledAgents) {
-        return <div>Loading agent settings...</div>;
-    }
-
-
-    return (
-        <>
-            <h2 className="text-xl font-semibold">AI Agent</h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 mb-6">
-                Enable or disable AI generation features for all users. Changes take effect immediately.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {allAgents.map(service => (
-                    <ToggleItem key={service.id} service={service} isChecked={!!enabledAgents[service.id]} onToggle={handleToggle} />
-                ))}
-            </div>
-        </>
-    );
-};
-
 
 const AdminDashboardView: React.FC = () => {
     const [users, setUsers] = useState<User[] | null>([]);
@@ -292,7 +193,7 @@ const AdminDashboardView: React.FC = () => {
     }
 
     return (
-        <>
+        <div className="max-w-7xl mx-auto space-y-8">
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
                 <h2 className="text-xl font-semibold mb-2">User Database</h2>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">Manage users, subscriptions, and database backups.</p>
@@ -405,10 +306,6 @@ const AdminDashboardView: React.FC = () => {
                 </div>
             </div>
             
-            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg mt-8 shadow-sm">
-                <AIAgentPanel />
-            </div>
-
             {isModalOpen && selectedUser && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" aria-modal="true" role="dialog">
                     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-full max-w-md m-4">
@@ -453,7 +350,7 @@ const AdminDashboardView: React.FC = () => {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 

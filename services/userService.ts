@@ -18,7 +18,6 @@ export const getTrialApiKey = async (): Promise<string | null> => {
         .limit(1)
         .single();
     
-    // FIX: Cast `data` to the correct partial type to access `api_key`.
     const typedData = data as Pick<UserProfileData, 'api_key'> | null;
 
     if (error || !typedData || !typedData.api_key) {
@@ -48,7 +47,6 @@ export const verifyAndSaveUserApiKey = async (
         .eq('id', userId)
         .single();
     
-    // FIX: Cast `user` to the correct partial type to access `role`.
     const typedUser = user as Pick<UserProfileData, 'role'> | null;
 
     if (fetchError || !typedUser) {
@@ -59,9 +57,9 @@ export const verifyAndSaveUserApiKey = async (
     // Admins keep 'admin' status, others are upgraded to 'lifetime'.
     const newStatus = typedUser.role === 'admin' ? 'admin' : 'lifetime';
 
-    // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
     const { data: updatedData, error: updateError } = await supabase
       .from('users')
+      // FIX: Explicitly cast the update object to the correct type to resolve the 'never' type inference issue.
       .update({ api_key: key.trim(), status: newStatus } as Database['public']['Tables']['users']['Update'])
       .eq('id', userId)
       .select()
@@ -158,6 +156,7 @@ const mapProfileToUser = (
     apiKey: profile.api_key,
     avatarUrl: profile.avatar_url || undefined,
     subscriptionExpiry: profile.subscription_expiry ? new Date(profile.subscription_expiry).getTime() : undefined,
+    webhookUrl: profile.webhook_url || undefined,
   };
 };
 
@@ -192,7 +191,7 @@ export const registerUser = async (username: string, email: string, phone: strin
     expiryDate.setMinutes(expiryDate.getMinutes() + 30);
 
     // 2. Create a corresponding profile in the public.users table
-    const profileToInsert = {
+    const profileToInsert: Database['public']['Tables']['users']['Insert'] = {
         id: authData.user.id,
         full_name: cleanedUsername,
         email: cleanedEmail,
@@ -202,8 +201,9 @@ export const registerUser = async (username: string, email: string, phone: strin
         api_key: null,
         avatar_url: null,
         subscription_expiry: expiryDate.toISOString(),
+        webhook_url: null,
     };
-    // FIX: The auto-inferred type for the insert payload is 'never'. Casting to the correct Insert type from the Database interface to resolve this.
+    // FIX: Explicitly cast the insert object to the correct type to resolve the 'never' type inference issue.
     const { error: profileError } = await supabase.from('users').insert(profileToInsert as Database['public']['Tables']['users']['Insert']);
     
     if (profileError) {
@@ -265,7 +265,10 @@ export const loginUser = async (email: string): Promise<LoginResult> => {
 
     if (signInError) {
         console.error('Login failed for user:', cleanedEmail, signInError.message);
-        return { success: false, message: `Log in failed: ${getErrorMessage(signInError)}` };
+        const friendlyMessage = signInError.message.toLowerCase().includes('invalid login credentials')
+            ? 'Invalid email or password. Please try again.'
+            : `Log in failed: ${getErrorMessage(signInError)}`;
+        return { success: false, message: friendlyMessage };
     }
 
     if (!signInData.user) {
@@ -328,9 +331,9 @@ export const getAllUsers = async (): Promise<User[] | null> => {
 
 // Update a user's status
 export const updateUserStatus = async (userId: string, status: UserStatus): Promise<boolean> => {
-    // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
     const { error } = await supabase
         .from('users')
+        // FIX: Explicitly cast the update object to the correct type to resolve the 'never' type inference issue.
         .update({ status: status } as Database['public']['Tables']['users']['Update'])
         .eq('id', userId);
 
@@ -370,9 +373,9 @@ export const updateUserProfile = async (
     if (updates.fullName) profileUpdates.full_name = updates.fullName;
     if (updates.avatarUrl) profileUpdates.avatar_url = updates.avatarUrl;
 
-    // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
     const { data: updatedData, error } = await supabase
         .from('users')
+        // FIX: Explicitly cast the update object to the correct type to resolve the 'never' type inference issue.
         .update(profileUpdates as Database['public']['Tables']['users']['Update'])
         .eq('id', userId)
         .select()
@@ -398,7 +401,7 @@ export const replaceUsers = async (importedUsers: User[]): Promise<{ success: bo
             return { success: false, message: 'Import file must be an array of users.' };
         }
         
-        const profilesToInsert = importedUsers.map(user => ({
+        const profilesToInsert: Database['public']['Tables']['users']['Insert'][] = importedUsers.map(user => ({
             id: user.id,
             full_name: user.fullName || null,
             email: user.email,
@@ -408,12 +411,13 @@ export const replaceUsers = async (importedUsers: User[]): Promise<{ success: bo
             api_key: user.apiKey || null,
             avatar_url: user.avatarUrl || null,
             subscription_expiry: user.subscriptionExpiry ? new Date(user.subscriptionExpiry).toISOString() : null,
+            webhook_url: user.webhookUrl || null,
         }));
         
         const { error: deleteError } = await supabase.from('users').delete().neq('role', 'admin');
         if (deleteError) throw deleteError;
 
-        // FIX: The auto-inferred type for the insert payload is 'never'. Casting to the correct Insert type from the Database interface to resolve this.
+        // FIX: Explicitly cast the insert array to the correct type to resolve the 'never' type inference issue.
         const { error: insertError } = await supabase.from('users').insert(profilesToInsert as Database['public']['Tables']['users']['Insert'][]);
         if (insertError) throw insertError;
 
@@ -507,18 +511,18 @@ export const initializeAdminAccount = async () => {
         console.error('Error fetching admin profile before upsert:', getErrorMessage(fetchError));
     }
 
-    const profileData = {
+    const profileData: Database['public']['Tables']['users']['Insert'] = {
         ...(typedExistingProfile || {}),
         id: adminUserId,
         full_name: typedExistingProfile?.full_name || 'Izzat Admin',
         email: adminEmail,
         phone: typedExistingProfile?.phone || '0000000000',
-        role: 'admin' as const,
-        status: 'admin' as const,
+        role: 'admin',
+        status: 'admin',
         subscription_expiry: null,
     };
     
-    // FIX: The auto-inferred type for the upsert payload is 'never'. Casting to the correct Insert type from the Database interface to resolve this.
+    // FIX: Explicitly cast the upsert object to the correct type to resolve the 'never' type inference issue.
     const { error: upsertError } = await supabase.from('users').upsert(profileData as Database['public']['Tables']['users']['Insert'], { onConflict: 'id' });
 
     if (upsertError) {
@@ -527,9 +531,9 @@ export const initializeAdminAccount = async () => {
         console.log('Admin profile successfully configured in database.');
     }
     
-    // FIX: The auto-inferred type for the update payload is 'never'. Casting to the correct Update type from the Database interface to resolve this.
     const { error: cleanupError } = await supabase
         .from('users')
+        // FIX: Explicitly cast the update object to the correct type to resolve the 'never' type inference issue.
         .update({ role: 'user', status: 'inactive' } as Database['public']['Tables']['users']['Update'])
         .eq('role', 'admin')
         .neq('id', adminUserId);
@@ -542,4 +546,26 @@ export const initializeAdminAccount = async () => {
 
     await supabase.auth.signOut();
     console.log("Admin check/repair complete. Session cleared for user login.");
+};
+
+// Update user webhook URL
+export const updateUserWebhookUrl = async (
+  userId: string,
+  webhookUrl: string | null
+): Promise<{ success: true; user: User } | { success: false; message: string }> => {
+    const { data: updatedData, error } = await supabase
+        .from('users')
+        .update({ webhook_url: webhookUrl })
+        .eq('id', userId)
+        .select()
+        .single();
+
+    if (error || !updatedData) {
+        return { success: false, message: getErrorMessage(error) };
+    }
+    
+    const typedData = updatedData as UserProfileData;
+    const updatedProfile = mapProfileToUser(typedData, typedData.email, typedData.id);
+    
+    return { success: true, user: updatedProfile };
 };

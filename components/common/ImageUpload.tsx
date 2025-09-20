@@ -11,7 +11,7 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({ 
   id,
   onImageUpload, 
-  title = "Click to upload",
+  title = "Upload Image",
   description
 }) => {
   const [preview, setPreview] = useState<string | null>(null);
@@ -53,7 +53,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors duration-300 h-48 ${isDragging ? 'border-primary-500 bg-primary-500/10' : 'border-neutral-300 dark:border-neutral-700 hover:border-primary-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/50'}`}
+        className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors duration-300 h-40 ${isDragging ? 'border-primary-500 bg-primary-500/10' : 'border-neutral-300 dark:border-neutral-700 hover:border-primary-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/50'}`}
       >
         <input
           type="file"
@@ -66,8 +66,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           <img src={preview} alt="Preview" className="mx-auto max-h-full rounded-md object-contain" />
         ) : (
           <div className="flex flex-col items-center text-neutral-500 dark:text-neutral-400">
-            <UploadIcon className="w-10 h-10 mb-2" />
-            <p className="font-semibold text-neutral-800 dark:text-neutral-300">{title}</p>
+            <UploadIcon className="w-6 h-6 mb-2" />
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">{title}</p>
           </div>
         )}
       </label>

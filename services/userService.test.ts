@@ -2,10 +2,12 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
-// FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
-const mockSignUp = jest.fn() as jest.Mock;
-const mockInsert = jest.fn() as jest.Mock;
-const mockSingle = jest.fn() as jest.Mock;
+// FIX: Removed `as jest.Mock` to allow for better type inference and prevent 'never' type errors.
+const mockSignUp = jest.fn();
+// FIX: Removed `as jest.Mock` to allow for better type inference and prevent 'never' type errors.
+const mockInsert = jest.fn();
+// FIX: Removed `as jest.Mock` to allow for better type inference and prevent 'never' type errors.
+const mockSingle = jest.fn();
 const mockEq = jest.fn().mockReturnValue({ single: mockSingle });
 const mockSelect = jest.fn().mockReturnValue({ eq: mockEq });
 
@@ -36,12 +38,10 @@ describe('userService with Supabase', () => {
 
   describe('registerUser', () => {
     it('should register a new user successfully', async () => {
-      // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
       mockSignUp.mockResolvedValueOnce({
-        data: { user: { id: '123' }, session: {} },
+        data: { user: { id: '123' }, session: null },
         error: null,
       } as any);
-      // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
       mockInsert.mockResolvedValueOnce({ error: null } as any);
 
       const result = await registerUser('newuser', 'new@example.com', '0123456789');
@@ -61,7 +61,6 @@ describe('userService with Supabase', () => {
     });
 
     it('should fail if Supabase auth returns an error', async () => {
-      // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
       mockSignUp.mockResolvedValueOnce({
         data: { user: null, session: null },
         error: { message: 'User already registered' },
@@ -70,7 +69,6 @@ describe('userService with Supabase', () => {
       const result = await registerUser('testuser', 'test@example.com', '123');
       
       expect(result.success).toBe(false);
-      // Fix: Added a type guard to safely access 'message' property on failed result.
       if (result.success === false) {
         expect(result.message).toBe('User already registered');
       }
@@ -79,7 +77,6 @@ describe('userService with Supabase', () => {
     it('should fail if any field is empty', async () => {
       const result = await registerUser('', 'email@test.com', '123');
       expect(result.success).toBe(false);
-      // Fix: Added a type guard to safely access 'message' property on failed result.
       if (result.success === false) {
         expect(result.message).toBe('All fields are required.');
       }
@@ -100,8 +97,21 @@ describe('userService with Supabase', () => {
         created_at: new Date().toISOString(),
         subscription_expiry: new Date().toISOString()
       };
-      // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
       mockSingle.mockResolvedValueOnce({ data: mockProfile, error: null } as any);
+
+      // Mock the signInWithPassword call which is now part of the login flow
+      // FIX: Removed `as jest.Mock` to prevent type inference issues.
+      ((jest.requireMock('./supabaseClient') as any).supabase.auth.signInWithPassword) = jest.fn().mockResolvedValueOnce({
+          data: { user: { id: 'user-123', email: 'test@example.com' } },
+          error: null
+      } as any);
+       // Mock the getUser call inside getUserProfile
+      // FIX: Removed `as jest.Mock` to prevent type inference issues.
+      ((jest.requireMock('./supabaseClient') as any).supabase.auth.getUser) = jest.fn().mockResolvedValueOnce({
+          data: { user: { id: 'user-123', email: 'test@example.com' } },
+          error: null
+      } as any);
+
 
       const result = await loginUser('test@example.com');
 
@@ -113,7 +123,6 @@ describe('userService with Supabase', () => {
     });
 
     it('should fail to log in if user is not found', async () => {
-      // FIX: Cast mock functions to jest.Mock to resolve 'never' type errors.
       mockSingle.mockResolvedValueOnce({
         data: null,
         error: { message: 'user not found' },
@@ -122,7 +131,6 @@ describe('userService with Supabase', () => {
       const result = await loginUser('test@example.com');
 
       expect(result.success).toBe(false);
-      // Fix: Added a type guard to safely access 'message' property on failed result.
       if (result.success === false) {
         expect(result.message).toBe('Email not found. Please register if you are a new user.');
       }

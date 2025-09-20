@@ -1,58 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getHistory, deleteHistoryItem, clearHistory } from '../../services/historyService';
 import { type HistoryItem } from '../../types';
-import { ImageIcon, VideoIcon, DownloadIcon, TrashIcon, PlayIcon, FileTextIcon } from '../Icons';
+import { ImageIcon, VideoIcon, DownloadIcon, TrashIcon, PlayIcon, FileTextIcon, AudioIcon, WandIcon } from '../Icons';
 
 interface VideoGenPreset {
   prompt: string;
   image: { base64: string; mimeType: string; };
 }
 
-interface GalleryViewProps {
-  onCreateVideo: (preset: VideoGenPreset) => void;
+interface ImageEditPreset {
+  base64: string;
+  mimeType: string;
 }
 
-const downloadAsset = (item: HistoryItem) => {
-    const link = document.createElement('a');
-    let fileName: string;
-    let href: string;
+interface GalleryViewProps {
+  onCreateVideo: (preset: VideoGenPreset) => void;
+  onReEdit: (preset: ImageEditPreset) => void;
+}
 
-    switch (item.type) {
-        case 'Image':
-        case 'Canvas':
-            fileName = `1za7-ai-${item.type.toLowerCase()}-${item.id}.png`;
-            href = `data:image/png;base64,${item.result}`;
-            break;
-        case 'Video':
-        case 'Audio':
-            const extension = item.type === 'Video' ? 'mp4' : 'mp3';
-            fileName = `1za7-ai-${item.type.toLowerCase()}-${item.id}.${extension}`;
-            href = item.result; // This is a blob URL
-            break;
-        case 'Storyboard':
-        case 'Copy':
-            fileName = `1za7-ai-${item.type.toLowerCase()}-${item.id}.txt`;
-            const blob = new Blob([item.result], { type: 'text/plain;charset=utf-8' });
-            href = URL.createObjectURL(blob);
-            break;
-        default:
-            return;
-    }
-
-    link.href = href;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    if (href.startsWith('blob:')) {
-      URL.revokeObjectURL(href);
-    }
-};
-
-
-const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
+const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) => {
     const [allItems, setAllItems] = useState<HistoryItem[]>([]);
     const [activeTab, setActiveTab] = useState<'images' | 'videos' | 'history'>('images');
+    const [blobUrls, setBlobUrls] = useState<Map<string, string>>(new Map());
 
     const refreshHistory = useCallback(async () => {
         const history = await getHistory();
@@ -62,6 +31,80 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
     useEffect(() => {
         refreshHistory();
     }, [refreshHistory]);
+
+    // Effect to create and revoke blob URLs for persistent display
+    useEffect(() => {
+        const newUrls = new Map<string, string>();
+        allItems.forEach(item => {
+            if (item.result instanceof Blob) {
+                const url = URL.createObjectURL(item.result);
+                newUrls.set(item.id, url);
+            }
+        });
+        setBlobUrls(newUrls);
+
+        // Cleanup function to revoke URLs when the component unmounts or items change
+        return () => {
+            newUrls.forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [allItems]);
+    
+    const getDisplayUrl = (item: HistoryItem): string => {
+        if (item.type === 'Image' || item.type === 'Canvas') {
+            return `data:image/png;base64,${item.result as string}`;
+        }
+        if (item.result instanceof Blob) {
+            return blobUrls.get(item.id) || '';
+        }
+        // Fallback for potentially invalid, old string-based blob URLs
+        return item.result as string;
+    };
+    
+    const downloadAsset = (item: HistoryItem) => {
+        const link = document.createElement('a');
+        let fileName: string;
+        let href: string | null = null;
+        let shouldRevoke = false; // Flag to revoke object URLs created just for download
+    
+        switch (item.type) {
+            case 'Image':
+            case 'Canvas':
+                fileName = `monoklix-${item.type.toLowerCase()}-${item.id}.png`;
+                href = `data:image/png;base64,${item.result}`;
+                break;
+            case 'Video':
+            case 'Audio':
+                const extension = item.type === 'Video' ? 'mp4' : 'mp3';
+                fileName = `monoklix-${item.type.toLowerCase()}-${item.id}.${extension}`;
+                href = blobUrls.get(item.id) || null;
+                // If the URL isn't in state (rare), create it temporarily
+                if (!href && item.result instanceof Blob) {
+                    href = URL.createObjectURL(item.result);
+                    shouldRevoke = true;
+                }
+                break;
+            case 'Storyboard':
+            case 'Copy':
+                fileName = `monoklix-${item.type.toLowerCase()}-${item.id}.txt`;
+                const blob = new Blob([item.result as string], { type: 'text/plain;charset=utf-8' });
+                href = URL.createObjectURL(blob);
+                shouldRevoke = true;
+                break;
+            default:
+                return;
+        }
+    
+        if (!href) return;
+    
+        link.href = href;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (shouldRevoke && href.startsWith('blob:')) {
+            URL.revokeObjectURL(href);
+        }
+    };
 
 
     const handleDelete = async (id: string) => {
@@ -85,6 +128,8 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                 return <ImageIcon className="w-5 h-5"/>
             case 'Video':
                 return <VideoIcon className="w-5 h-5"/>
+            case 'Audio':
+                return <AudioIcon className="w-5 h-5"/>
             case 'Copy':
             case 'Storyboard':
                 return <FileTextIcon className="w-5 h-5"/>
@@ -101,13 +146,14 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
     const renderGridItem = (item: HistoryItem) => {
         const isImage = item.type === 'Image' || item.type === 'Canvas';
         const isVideo = item.type === 'Video';
+        const displayUrl = getDisplayUrl(item);
 
         return (
             <div key={item.id} className="group relative aspect-square bg-neutral-200 dark:bg-neutral-800 rounded-lg overflow-hidden shadow-md">
-                {isImage && <img src={`data:image/png;base64,${item.result}`} alt={item.prompt} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />}
-                {isVideo && (
+                {isImage && <img src={displayUrl} alt={item.prompt} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />}
+                {isVideo && displayUrl && (
                     <div className="w-full h-full flex items-center justify-center">
-                        <video src={item.result} className="w-full h-full object-cover" loop muted playsInline/>
+                        <video src={displayUrl} className="w-full h-full object-cover" loop muted playsInline title={item.prompt}/>
                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                             <PlayIcon className="w-12 h-12 text-white/80" />
                         </div>
@@ -118,13 +164,22 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                     <p className="text-white text-xs line-clamp-3 drop-shadow-md">{item.prompt}</p>
                     <div className="flex justify-end gap-2">
                         {isImage && (
+                          <>
                             <button
-                                onClick={() => onCreateVideo({ prompt: item.prompt, image: { base64: item.result, mimeType: 'image/png' } })}
+                                onClick={() => onReEdit({ base64: item.result as string, mimeType: 'image/png' })}
+                                className="p-2 bg-purple-600/80 text-white rounded-full hover:bg-purple-600 transition-colors transform hover:scale-110"
+                                title="Re-edit Image"
+                            >
+                                <WandIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => onCreateVideo({ prompt: item.prompt, image: { base64: item.result as string, mimeType: 'image/png' } })}
                                 className="p-2 bg-primary-600/80 text-white rounded-full hover:bg-primary-600 transition-colors transform hover:scale-110"
                                 title="Create Video"
                             >
                                 <VideoIcon className="w-4 h-4" />
                             </button>
+                          </>
                         )}
                         <button
                             onClick={() => downloadAsset(item)}
@@ -168,7 +223,9 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                          </div>
                     ) : (
                         <div className="space-y-3 max-h-[calc(100vh-22rem)] overflow-y-auto pr-2 custom-scrollbar">
-                            {allItems.map(item => (
+                            {allItems.map(item => {
+                                const displayUrl = getDisplayUrl(item);
+                                return (
                                 <div key={item.id} className="bg-white dark:bg-neutral-900/50 p-3 rounded-lg flex items-center gap-4 shadow-sm border border-neutral-200 dark:border-neutral-800">
                                     <div className="text-neutral-500 dark:text-neutral-400">{getIconForType(item.type)}</div>
                                     <div className="flex-1 min-w-0">
@@ -178,9 +235,9 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                                     </div>
                                     <div className="w-20 h-20 bg-neutral-200 dark:bg-neutral-800 rounded-md flex-shrink-0 flex items-center justify-center">
                                         {item.type === 'Image' || item.type === 'Canvas' ? (
-                                            <img src={`data:image/png;base64,${item.result}`} alt="Generated content" className="w-full h-full object-cover rounded-md"/>
-                                        ) : item.type === 'Video' ? (
-                                            <a href={item.result} target="_blank" rel="noopener noreferrer" className="text-primary-500">
+                                            <img src={displayUrl} alt="Generated content" className="w-full h-full object-cover rounded-md"/>
+                                        ) : item.type === 'Video' || item.type === 'Audio' ? (
+                                            <a href={displayUrl} target="_blank" rel="noopener noreferrer" className="text-primary-500">
                                                 <PlayIcon className="w-8 h-8" />
                                             </a>
                                         ) : (
@@ -196,7 +253,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
                 </div>
@@ -227,7 +284,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo }) => {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Gallery & History</h1>
+                <h1 className="text-2xl font-bold sm:text-3xl">Gallery & History</h1>
                 <p className="text-neutral-500 dark:text-neutral-400 mt-1">Browse, download, or reuse all the content you've generated.</p>
             </div>
             

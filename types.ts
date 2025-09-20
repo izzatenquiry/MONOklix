@@ -11,7 +11,8 @@ export type View =
   // Settings & Admin
   | 'settings'
   | 'user-database'
-  | 'e-tutorial-admin';
+  | 'e-tutorial-admin'
+  | 'ai-support';
 
 export interface NavItem {
   id: View | 'logout';
@@ -28,11 +29,25 @@ export type HistoryItemType = 'Image' | 'Video' | 'Storyboard' | 'Canvas' | 'Aud
 
 export interface HistoryItem {
   id: string;
+  userId: string;
   type: HistoryItemType;
   prompt: string;
-  // result can be a base64 string, a blob URL, or plain text
-  result: string; 
+  // result can be a base64 string for images/canvas, a Blob for video/audio, or plain text for copy/storyboard.
+  result: string | Blob; 
   timestamp: number;
+}
+
+export interface AiLogItem {
+  id: string;
+  userId: string;
+  timestamp: number;
+  model: string;
+  prompt: string;
+  output: string; // Can be text, a message like "1 image generated", or an error message
+  tokenCount: number;
+  status: 'Success' | 'Error';
+  error?: string;
+  mediaOutput?: string | Blob; // Base64 string for images, Blob for video/audio.
 }
 
 export interface Tutorial {
@@ -63,6 +78,7 @@ export interface User {
   avatarUrl?: string;
   username: string; // Keeping this for consistency in UI
   subscriptionExpiry?: number; // Added back for trial management
+  webhookUrl?: string | null;
 }
 
 export type LoginResult = 
@@ -73,3 +89,19 @@ export type LoginResult =
 // export type RegisterResult = 
 //   | { success: true; message: string; } // User object is not returned as confirmation is required
 //   | { success: false; message: string; };
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  category: 'New Feature' | 'Improvement' | 'Maintenance' | 'General';
+  createdAt: string; // ISO string date
+}
+
+export type PlatformSystemStatus = 'operational' | 'degraded' | 'outage';
+
+export interface PlatformStatus {
+  status: PlatformSystemStatus;
+  message: string;
+  lastUpdated: string; // ISO string date
+}

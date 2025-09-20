@@ -1,5 +1,6 @@
-
 import { GoogleGenAI, Chat, GenerateContentResponse, Modality, PersonGeneration } from "@google/genai";
+import { addLogEntry } from './aiLogService';
+import { triggerUserWebhook } from './webhookService';
 
 // This will hold the key for the current user session. It is set by App.tsx.
 let activeApiKey: string | null = null;
@@ -26,25 +27,41 @@ const getAiInstance = () => {
  */
 const handleApiError = (error: unknown): void => {
     console.error("Original API Error:", error);
-    let userFriendlyMessage = 'An unknown error occurred. Please try again.';
+    let userFriendlyMessage = 'An unexpected error occurred. Please check the console for details and try again.';
 
-    if (error && typeof error === 'object') {
-        if ('message' in error) {
-            const message = (error as { message: string }).message;
-            
-            if (message.includes('429') || message.includes('RESOURCE_EXHAUSTED') || message.includes('quota')) {
-                userFriendlyMessage = 'You have exceeded your API quota. Please check your Google AI Studio account for usage details or try again later.';
-            } else if (message.includes('403') || message.includes('PERMISSION_DENIED')) {
-                userFriendlyMessage = 'Permission denied. Please check that your API key has the correct permissions and is not restricted by IP address or referrer.';
-            } else if (message.includes('400') && message.toLowerCase().includes('api key not valid')) {
-                userFriendlyMessage = 'Your API key is not valid. Please check it in the Settings page and try again.';
-            } else if (message.includes('safety policies')) {
-                // This error is already user-friendly, let's keep it.
-                userFriendlyMessage = message;
-            } else {
-                // Use the error message if it exists but doesn't match specific cases
-                userFriendlyMessage = message;
-            }
+    if (error instanceof Error) {
+        const message = error.message.toLowerCase();
+
+        // Network Errors
+        if (message.includes('failed to fetch')) {
+            userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+        } 
+        // Quota/Billing Errors
+        else if (message.includes('429') || message.includes('resource_exhausted') || message.includes('quota')) {
+            userFriendlyMessage = 'API quota exceeded. Please check your Google AI Studio billing and usage details, or try again later.';
+        } 
+        // API Key and Permission Errors
+        else if (message.includes('api key not valid') || message.includes('api_key_invalid')) {
+            userFriendlyMessage = 'Your API key is not valid. Please verify it in the Settings page and try again.';
+        } else if (message.includes('permission_denied')) {
+            userFriendlyMessage = 'Permission denied. Ensure your API key has the correct permissions and is not restricted (e.g., by IP address).';
+        }
+        // Input/Request Errors
+        else if (message.includes('400 bad request') || message.includes('invalid argument')) {
+            userFriendlyMessage = `Invalid request. The prompt or parameters might be malformed. Details: ${error.message}`;
+        }
+        // Safety Policy Errors
+        else if (message.includes('safety policies') || message.includes('safety settings')) {
+             // The safety message from Google is already user-friendly.
+            userFriendlyMessage = error.message;
+        }
+        // Server-side errors
+        else if (message.includes('500') || message.includes('internal')) {
+            userFriendlyMessage = "An internal error occurred on the server. Please wait a few moments and try again.";
+        }
+        // Fallback to the original error message if it seems descriptive
+        else {
+             userFriendlyMessage = error.message;
         }
     }
     
@@ -69,6 +86,7 @@ export const createChatSession = (systemInstruction: string): Chat => {
     model: 'gemini-2.5-flash',
     config: {
       systemInstruction: systemInstruction,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 };
@@ -81,8 +99,27 @@ export const createChatSession = (systemInstruction: string): Chat => {
  */
 export const streamChatResponse = async (chat: Chat, prompt: string) => {
     try {
-        return await chat.sendMessageStream({ message: prompt });
+        const stream = await chat.sendMessageStream({ message: prompt });
+        // Note: Logging for streaming is complex. We'll log the initial prompt.
+        // A more advanced implementation could aggregate chunks, but for now this is sufficient.
+        addLogEntry({
+            model: 'gemini-2.5-flash (stream)',
+            prompt,
+            output: 'Streaming response started...',
+            tokenCount: 0, // Token count is not available until the end of the stream
+            status: 'Success'
+        });
+        return stream;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({
+            model: 'gemini-2.5-flash (stream)',
+            prompt,
+            output: `Error: ${errorMessage}`,
+            tokenCount: 0,
+            status: 'Error',
+            error: errorMessage
+        });
         handleApiError(error);
         throw error;
     }
@@ -108,10 +145,11 @@ export const generateImages = async (
     highDynamicRange?: boolean,
     personGeneration?: "DONT_GENERATE" | "GENERATE_DEFAULT" | "GENERATE_PHOTOREALISTIC_FACES"
 ): Promise<string[]> => {
+    const model = 'imagen-4.0-generate-001';
     try {
         const ai = getAiInstance();
         const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
+            model,
             prompt,
             config: {
             numberOfImages,
@@ -124,8 +162,24 @@ export const generateImages = async (
             ...(personGeneration && { personGeneration: personGeneration as PersonGeneration }),
             },
         });
-        return response.generatedImages.map(img => img.image.imageBytes);
+        addLogEntry({
+            model,
+            prompt,
+            output: `${response.generatedImages.length} image(s) generated.`,
+            tokenCount: 0, // Not provided by this API endpoint
+            status: 'Success',
+            mediaOutput: response.generatedImages.length > 0 ? response.generatedImages[0].image.imageBytes : undefined
+        });
+
+        const images = response.generatedImages.map(img => img.image.imageBytes);
+        images.forEach(imgBase64 => {
+            triggerUserWebhook({ type: 'image', prompt, result: imgBase64, mimeType: 'image/png' });
+        });
+        return images;
+
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({ model, prompt, output: `Error: ${errorMessage}`, tokenCount: 0, status: 'Error', error: errorMessage });
         handleApiError(error);
         throw error;
     }
@@ -138,18 +192,15 @@ export const generateImages = async (
  * @param {string} aspectRatio - The desired aspect ratio for the video.
  * @param {{ imageBytes: string; mimeType: string }} [image] - Optional image data.
  * @param {any} [_dialogue] - Unused parameter to satisfy call signature from UI.
- * @returns {Promise<string>} The URL of the generated video.
+ * @returns {Promise<Blob>} The blob of the generated video.
  */
-// FIX: The function signature was updated to match the call in VideoGenerationView.
-// The unused `durationSeconds` and `resolution` parameters were removed, and the `image` parameter was moved.
-// An unused `_dialogue` parameter was added to match the call signature without causing errors.
 export const generateVideo = async (
     prompt: string,
     model: string,
     aspectRatio: string,
     image?: { imageBytes: string, mimeType: string },
     _dialogue?: any
-): Promise<string> => {
+): Promise<Blob> => {
     try {
         const ai = getAiInstance();
         
@@ -184,7 +235,22 @@ export const generateVideo = async (
         if ((operation as any).error) {
             const error = (operation as any).error;
             console.error('Video generation failed with an error:', JSON.stringify(error, null, 2));
-            throw new Error(`Video generation failed on Google's end: ${error.message || 'Unknown error'}`);
+            
+            const errorMessage = error.message || 'Unknown error';
+
+            // Check for the specific face generation safety error
+            if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('person/face generation')) {
+                throw new Error(
+                    "Video Generation Blocked by Safety Policy\n\n" +
+                    "The provided image was blocked because it contains a person's face. Google's video model has strict safety settings to prevent the generation of videos with specific people.\n\n" +
+                    "**Please try one of the following:**\n" +
+                    "1. **Use an image without a clear face.** A photo showing a person from behind or from a distance might work.\n" +
+                    "2. **Use a product-only image.** The model is excellent at animating objects.\n" +
+                    "3. **Generate a video from text only,** without providing a reference image."
+                );
+            }
+
+            throw new Error(`Video generation failed on Google's end: ${errorMessage}`);
         }
 
         const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -194,8 +260,6 @@ export const generateVideo = async (
             
             const hasGeneratedVideos = operation.response?.generatedVideos && operation.response.generatedVideos.length > 0;
 
-            // If the response is empty, or if the generatedVideos array is missing or empty,
-            // it's highly likely that the prompt was blocked by safety filters.
             if (!operation.response || Object.keys(operation.response).length === 0 || !hasGeneratedVideos) {
                 throw new Error(
                     "Video generation finished without an error, but no output was produced.\n\n" +
@@ -206,14 +270,10 @@ export const generateVideo = async (
                 );
             }
 
-            // This is a fallback for other unexpected cases where a URI is not returned.
             throw new Error("The video generation operation completed but did not return a valid link. This might be a temporary issue on Google's end.");
         }
 
         try {
-            // FIX: The download link is a pre-signed URL and should not have the API key appended,
-            // as this can cause conflicts with API key referrer restrictions, leading to a 403 error.
-            // We now fetch from the URI directly.
             const response = await fetch(downloadLink);
             if (!response.ok) {
                 const errorText = await response.text();
@@ -221,7 +281,16 @@ export const generateVideo = async (
                 throw new Error(`Video download failed with HTTP status: ${response.status}. The URL may have expired.`);
             }
             const blob = await response.blob();
-            return URL.createObjectURL(blob);
+            addLogEntry({
+                model,
+                prompt,
+                output: '1 video generated successfully.',
+                tokenCount: 0, // Not provided
+                status: 'Success',
+                mediaOutput: blob
+            });
+            triggerUserWebhook({ type: 'video', prompt, result: blob });
+            return blob;
         } catch (e) {
             console.error("Failed to download the generated video:", e);
              if (e instanceof Error && e.message.includes("HTTP")) {
@@ -234,6 +303,8 @@ export const generateVideo = async (
             );
         }
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({ model, prompt, output: `Error: ${errorMessage}`, tokenCount: 0, status: 'Error', error: errorMessage });
         handleApiError(error);
         throw error;
     }
@@ -246,6 +317,7 @@ export const generateVideo = async (
  * @returns {Promise<string>} The text response from the model.
  */
 export const generateMultimodalContent = async (prompt: string, images: MultimodalContent[]): Promise<string> => {
+    const model = 'gemini-2.5-flash';
     try {
         const ai = getAiInstance();
         const textPart = { text: prompt };
@@ -257,12 +329,25 @@ export const generateMultimodalContent = async (prompt: string, images: Multimod
         }));
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model,
             contents: { parts: [...imageParts, textPart] },
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+            }
         });
 
+        addLogEntry({
+            model,
+            prompt: `${prompt} [${images.length} image(s)]`,
+            output: response.text,
+            tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+            status: 'Success'
+        });
+        triggerUserWebhook({ type: 'text', prompt, result: response.text });
         return response.text;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({ model, prompt: `${prompt} [${images.length} image(s)]`, output: `Error: ${errorMessage}`, tokenCount: 0, status: 'Error', error: errorMessage });
         handleApiError(error);
         throw error;
     }
@@ -275,6 +360,8 @@ export const generateMultimodalContent = async (prompt: string, images: Multimod
  * @returns {Promise<{text?: string, imageBase64?: string}>} An object containing the text response and/or the edited image.
  */
 export const composeImage = async (prompt: string, images: MultimodalContent[]): Promise<{text?: string, imageBase64?: string}> => {
+    const model = 'gemini-2.5-flash-image-preview';
+    const webhookPrompt = `${prompt} [${images.length} image(s)]`;
     try {
         const ai = getAiInstance();
         const textPart = { text: prompt };
@@ -286,7 +373,7 @@ export const composeImage = async (prompt: string, images: MultimodalContent[]):
         }));
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image-preview',
+            model,
             contents: {
                 parts: [...imageParts, textPart ],
             },
@@ -306,9 +393,26 @@ export const composeImage = async (prompt: string, images: MultimodalContent[]):
                 }
             }
         }
+        
+        addLogEntry({
+            model,
+            prompt: webhookPrompt,
+            output: result.imageBase64 ? '1 image generated.' : (result.text || 'No output.'),
+            tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+            status: 'Success',
+            mediaOutput: result.imageBase64
+        });
 
+        if (result.imageBase64) {
+            triggerUserWebhook({ type: 'image', prompt: webhookPrompt, result: result.imageBase64, mimeType: 'image/png' });
+        }
+        if (result.text) {
+             triggerUserWebhook({ type: 'text', prompt: webhookPrompt, result: result.text });
+        }
         return result;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({ model, prompt: webhookPrompt, output: `Error: ${errorMessage}`, tokenCount: 0, status: 'Error', error: errorMessage });
         handleApiError(error);
         throw error;
     }
@@ -320,14 +424,28 @@ export const composeImage = async (prompt: string, images: MultimodalContent[]):
  * @returns {Promise<string>} The text response from the model.
  */
 export const generateText = async (prompt: string): Promise<string> => {
+    const model = 'gemini-2.5-flash';
     try {
         const ai = getAiInstance();
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+            model,
+            contents: { parts: [{ text: prompt }] },
+            config: {
+                thinkingConfig: { thinkingBudget: 0 },
+            }
         });
+        addLogEntry({
+            model,
+            prompt,
+            output: response.text,
+            tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+            status: 'Success'
+        });
+        triggerUserWebhook({ type: 'text', prompt, result: response.text });
         return response.text;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({ model, prompt, output: `Error: ${errorMessage}`, tokenCount: 0, status: 'Error', error: errorMessage });
         handleApiError(error);
         throw error;
     }
@@ -339,17 +457,29 @@ export const generateText = async (prompt: string): Promise<string> => {
  * @returns {Promise<GenerateContentResponse>} The full response object from the model, including grounding metadata.
  */
 export const generateContentWithGoogleSearch = async (prompt: string): Promise<GenerateContentResponse> => {
+    const model = 'gemini-2.5-flash';
     try {
         const ai = getAiInstance();
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+            model,
+            contents: { parts: [{ text: prompt }] },
             config: {
                 tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingBudget: 0 },
             },
         });
+        addLogEntry({
+            model,
+            prompt,
+            output: response.text,
+            tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+            status: 'Success'
+        });
+        triggerUserWebhook({ type: 'text', prompt, result: response.text });
         return response; // Return the whole object
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({ model, prompt, output: `Error: ${errorMessage}`, tokenCount: 0, status: 'Error', error: errorMessage });
         handleApiError(error);
         throw error;
     }
@@ -364,7 +494,7 @@ export const generateContentWithGoogleSearch = async (prompt: string): Promise<G
  * @param {number} speed - The speaking speed.
  * @param {number} pitch - The speaking pitch.
  * @param {number} volume - The output volume.
- * @returns {Promise<string>} A URL to the generated audio file.
+ * @returns {Promise<Blob>} A blob containing the generated audio file.
  */
 export const generateVoiceOver = async (
     script: string,
@@ -372,19 +502,40 @@ export const generateVoiceOver = async (
     speed: number,
     pitch: number,
     volume: number
-): Promise<string> => {
+): Promise<Blob> => {
+    const model = 'TTS (simulated)';
+    const webhookPrompt = `Voice: ${actorId}, Script: ${script.substring(0, 100)}...`;
     try {
         // This is a placeholder as the Gemini TTS API is not in the provided guidelines.
         // It simulates a successful API call and returns a dummy audio URL.
         console.log('Generating voice over with:', { script, actorId, speed, pitch, volume });
         
         // Simulate network delay to mimic a real API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Create a dummy audio blob to make the UI functional
-        const blob = new Blob([`Dummy audio for: ${script}`], { type: "audio/mpeg" });
-        return URL.createObjectURL(blob);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        const dummyBlob = new Blob([`Dummy audio for: ${script}`], { type: "audio/mpeg" });
+        
+        addLogEntry({
+            model,
+            prompt: webhookPrompt,
+            output: '1 audio file generated.',
+            tokenCount: 0, // Not applicable
+            status: 'Success',
+            mediaOutput: dummyBlob
+        });
+        
+        triggerUserWebhook({ type: 'audio', prompt: webhookPrompt, result: dummyBlob });
+        return dummyBlob;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLogEntry({
+            model,
+            prompt: webhookPrompt,
+            output: `Error: ${errorMessage}`,
+            tokenCount: 0,
+            status: 'Error',
+            error: errorMessage
+        });
         handleApiError(error);
         throw error;
     }

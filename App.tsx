@@ -12,6 +12,7 @@ import LoginPage from './components/LoginPage';
 import GalleryView from './components/views/GalleryView';
 import WelcomeAnimation from './components/WelcomeAnimation';
 import LibraryView from './components/views/LibraryView';
+import AiSupportView from './components/views/AiSupportView';
 import { MenuIcon, LogoIcon, XIcon } from './components/Icons';
 import { getUserProfile, signOutUser, checkAndDeactivateTrialUser, getTrialApiKey } from './services/userService';
 import { setActiveApiKey } from './services/geminiService';
@@ -25,12 +26,18 @@ interface VideoGenPreset {
   image: { base64: string; mimeType: string; };
 }
 
+interface ImageEditPreset {
+  base64: string;
+  mimeType: string;
+}
+
 const App: React.FC = () => {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeView, setActiveView] = useState<View>('e-course');
   const [theme, setTheme] = useState('light'); // Default to light, load async
   const [videoGenPreset, setVideoGenPreset] = useState<VideoGenPreset | null>(null);
+  const [imageToReEdit, setImageToReEdit] = useState<ImageEditPreset | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isShowingWelcome, setIsShowingWelcome] = useState(false);
 
@@ -114,7 +121,9 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     await signOutUser();
-    // onAuthStateChange will handle setting currentUser to null
+    // Set the user to null immediately to force a re-render to the login page.
+    // The onAuthStateChange listener will also fire, but this provides a faster UI update.
+    setCurrentUser(null);
     setActiveView('e-course');
   };
 
@@ -128,6 +137,11 @@ const App: React.FC = () => {
     setActiveView('ai-video-suite');
   };
 
+  const handleReEditImage = (preset: ImageEditPreset) => {
+    setImageToReEdit(preset);
+    setActiveView('ai-image-suite');
+  };
+
   const renderView = () => {
     switch (activeView) {
       case 'e-course':
@@ -135,11 +149,21 @@ const App: React.FC = () => {
       case 'ai-text-suite':
         return <AiTextSuiteView />;
       case 'ai-image-suite':
-        return <AiImageSuiteView onCreateVideo={handleCreateVideoFromImage} />;
+        return <AiImageSuiteView 
+                  onCreateVideo={handleCreateVideoFromImage} 
+                  onReEdit={handleReEditImage}
+                  imageToReEdit={imageToReEdit}
+                  clearReEdit={() => setImageToReEdit(null)}
+                />;
       case 'ai-video-suite':
-        return <AiVideoSuiteView preset={videoGenPreset} clearPreset={() => setVideoGenPreset(null)} />;
+        return <AiVideoSuiteView 
+                  preset={videoGenPreset} 
+                  clearPreset={() => setVideoGenPreset(null)}
+                  onCreateVideo={handleCreateVideoFromImage}
+                  onReEdit={handleReEditImage}
+                />;
       case 'gallery':
-        return <GalleryView onCreateVideo={handleCreateVideoFromImage} />;
+        return <GalleryView onCreateVideo={handleCreateVideoFromImage} onReEdit={handleReEditImage} />;
       case 'library':
         return <LibraryView />;
       case 'settings':
@@ -148,6 +172,8 @@ const App: React.FC = () => {
           return <AdminDashboardView />;
       case 'e-tutorial-admin':
           return <ETutorialAdminView />;
+      case 'ai-support':
+          return <AiSupportView />;
       default:
         return <ECourseView />;
     }
@@ -178,7 +204,7 @@ const App: React.FC = () => {
   let blockMessage = { title: '', body: '' };
 
   // Define which views are considered AI-powered and require an API key
-  const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite'];
+  const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite', 'ai-support'];
 
   if (aiPoweredViews.includes(activeView)) {
       const isTrial = currentUser.status === 'trial';
@@ -210,7 +236,7 @@ const App: React.FC = () => {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/50">
           <XIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
         </div>
-        <h2 className="mt-5 text-2xl font-bold text-neutral-800 dark:text-white">{blockMessage.title}</h2>
+        <h2 className="mt-5 text-xl font-bold text-neutral-800 dark:text-white sm:text-2xl">{blockMessage.title}</h2>
         <p className="mt-2 text-neutral-600 dark:text-neutral-300">{blockMessage.body}</p>
       </div>
     </div>
@@ -226,19 +252,24 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
-      <main className="flex-1 flex flex-col overflow-hidden">
-         {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between p-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 sticky top-0 z-10">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2" aria-label="Open menu">
-            <MenuIcon className="w-6 h-6" />
-          </button>
-          <div className="flex items-center gap-2">
-            <LogoIcon className="w-20 text-neutral-800 dark:text-neutral-200" />
-            <span className="font-bold text-lg">AI</span>
+      <main className="flex-1 flex flex-col overflow-y-auto">
+        {/* Mobile Header */}
+        <header className="lg:hidden grid grid-cols-3 items-center p-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 sticky top-0 z-10">
+          {/* Left Column */}
+          <div className="flex justify-start">
+            <button onClick={() => setIsSidebarOpen(true)} className="p-2" aria-label="Open menu">
+              <MenuIcon className="w-6 h-6" />
+            </button>
           </div>
-          <div className="w-10"></div> {/* Spacer */}
+          {/* Center Column */}
+          <div className="flex justify-center items-center gap-2">
+            <LogoIcon className="w-20 text-neutral-800 dark:text-neutral-200" />
+            <span className="font-bold text-lg">.com</span>
+          </div>
+          {/* Right Column (empty for balance) */}
+          <div />
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 p-4 md:p-8">
           {PageContent}
         </div>
       </main>

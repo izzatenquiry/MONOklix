@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { type TutorialContent } from '../../types';
-import { getContent, saveContent } from '../../services/contentService';
-import { ImageIcon } from '../Icons';
+import { type TutorialContent, type PlatformStatus, type Announcement, type PlatformSystemStatus } from '../../types';
+import { getContent, saveContent, getPlatformStatus, savePlatformStatus, getAnnouncements, saveAnnouncements } from '../../services/contentService';
+import { ImageIcon, TrashIcon } from '../Icons';
 
 const TutorialManagementPanel: React.FC = () => {
   const [content, setContent] = useState<TutorialContent | null>(null);
@@ -75,7 +75,7 @@ const TutorialManagementPanel: React.FC = () => {
       <div>
         <h2 className="text-xl font-semibold mb-4">e-Tutorial Content Management</h2>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Update the content displayed on the e-Tutorial page. Changes are saved locally to your browser.
+          Update the content displayed on the e-Tutorial page.
         </p>
       </div>
 
@@ -179,7 +179,7 @@ const TutorialManagementPanel: React.FC = () => {
           disabled={saveStatus === 'saving'}
           className="bg-primary-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
         >
-          {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
+          {saveStatus === 'saving' ? 'Saving...' : 'Save Tutorial Content'}
         </button>
         {saveStatus === 'saved' && <p className="text-sm text-green-600">Changes have been saved!</p>}
       </div>
@@ -187,10 +187,129 @@ const TutorialManagementPanel: React.FC = () => {
   );
 };
 
+const PlatformUpdatesPanel: React.FC = () => {
+    const [status, setStatus] = useState<PlatformStatus | null>(null);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', category: 'General' as Announcement['category'] });
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const [statusData, announcementsData] = await Promise.all([getPlatformStatus(), getAnnouncements()]);
+            setStatus(statusData);
+            setAnnouncements(announcementsData);
+        };
+        fetchData();
+    }, []);
+
+    const handleStatusChange = (field: keyof PlatformStatus, value: string) => {
+        setStatus(prev => prev ? { ...prev, [field]: value, lastUpdated: new Date().toISOString() } : null);
+    };
+
+    const handleSaveStatus = async () => {
+        if (status) {
+            setSaveStatus('saving');
+            await savePlatformStatus(status);
+            setTimeout(() => {
+                setSaveStatus('saved');
+                setTimeout(() => setSaveStatus('idle'), 2000);
+            }, 500);
+        }
+    };
+    
+    const handleAddAnnouncement = async () => {
+        if (!newAnnouncement.title || !newAnnouncement.content) return;
+        
+        const announcementToAdd: Announcement = {
+            ...newAnnouncement,
+            id: `anno-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+
+        const updatedAnnouncements = [announcementToAdd, ...announcements];
+        setAnnouncements(updatedAnnouncements);
+        setNewAnnouncement({ title: '', content: '', category: 'General' });
+
+        await saveAnnouncements(updatedAnnouncements);
+    };
+    
+    const handleDeleteAnnouncement = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this announcement?")) {
+            const updatedAnnouncements = announcements.filter(a => a.id !== id);
+            setAnnouncements(updatedAnnouncements);
+            await saveAnnouncements(updatedAnnouncements);
+        }
+    };
+    
+    if (!status) return <div>Loading...</div>;
+
+    return (
+        <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg space-y-8 shadow-sm">
+            <h2 className="text-xl font-semibold">Platform Updates & Status Management</h2>
+            
+            {/* Status Management */}
+            <div className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-md space-y-4">
+                <h3 className="font-semibold text-lg">Platform Status</h3>
+                <div>
+                    <label htmlFor="platform-status" className="block text-sm font-medium mb-1">Current Status</label>
+                    <select id="platform-status" value={status.status} onChange={(e) => handleStatusChange('status', e.target.value)} className="w-full p-2 border rounded-md bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600">
+                        <option value="operational">Operational</option>
+                        <option value="degraded">Degraded Performance</option>
+                        <option value="outage">Major Outage</option>
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="status-message" className="block text-sm font-medium mb-1">Status Message</label>
+                    <input id="status-message" type="text" value={status.message} onChange={(e) => handleStatusChange('message', e.target.value)} className="w-full p-2 border rounded-md bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600" />
+                </div>
+                <div className="flex items-center gap-4">
+                    <button onClick={handleSaveStatus} className="bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-primary-700">Update Status</button>
+                    {saveStatus === 'saved' && <p className="text-sm text-green-600">Status updated!</p>}
+                </div>
+            </div>
+
+            {/* Announcement Management */}
+            <div className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-md space-y-4">
+                <h3 className="font-semibold text-lg">Announcements</h3>
+                {/* New Announcement Form */}
+                <div className="space-y-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-md">
+                    <h4 className="font-medium">Post New Announcement</h4>
+                    <input type="text" placeholder="Title" value={newAnnouncement.title} onChange={(e) => setNewAnnouncement(p => ({...p, title: e.target.value}))} className="w-full p-2 border rounded-md bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600"/>
+                    <textarea placeholder="Content..." value={newAnnouncement.content} onChange={(e) => setNewAnnouncement(p => ({...p, content: e.target.value}))} rows={3} className="w-full p-2 border rounded-md bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600"></textarea>
+                    <select value={newAnnouncement.category} onChange={(e) => setNewAnnouncement(p => ({...p, category: e.target.value as Announcement['category']}))} className="w-full p-2 border rounded-md bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600">
+                        <option>New Feature</option>
+                        <option>Improvement</option>
+                        <option>Maintenance</option>
+                        <option>General</option>
+                    </select>
+                    <button onClick={handleAddAnnouncement} className="bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-primary-700">Post</button>
+                </div>
+
+                {/* Existing Announcements List */}
+                <div className="space-y-3">
+                    {announcements.map(ann => (
+                        <div key={ann.id} className="flex justify-between items-start p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-md">
+                            <div>
+                                <p className="font-bold">{ann.title} <span className="text-xs font-normal text-neutral-500">({ann.category})</span></p>
+                                <p className="text-sm mt-1">{ann.content}</p>
+                                <p className="text-xs text-neutral-400 mt-2">{new Date(ann.createdAt).toLocaleString()}</p>
+                            </div>
+                            <button onClick={() => handleDeleteAnnouncement(ann.id)} className="p-2 text-red-500 hover:text-red-700">
+                                <TrashIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ETutorialAdminView: React.FC = () => {
     return (
-        <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">e-Tutorial Settings</h1>
+        <div className="max-w-4xl mx-auto space-y-8">
+            <h1 className="text-2xl font-bold sm:text-3xl">Admin Content Settings</h1>
+            <PlatformUpdatesPanel />
             <TutorialManagementPanel />
         </div>
     );

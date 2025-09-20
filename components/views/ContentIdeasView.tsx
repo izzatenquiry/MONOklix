@@ -4,23 +4,39 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { type GenerateContentResponse } from '@google/genai';
-import { TrendingUpIcon } from '../Icons';
+import { TrendingUpIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
+import TwoColumnLayout from '../common/TwoColumnLayout';
+
+const downloadText = (text: string, fileName: string) => {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
 
 const ContentIdeasView: React.FC = () => {
     const [topic, setTopic] = useState('');
     const [response, setResponse] = useState<GenerateContentResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const handleGenerate = useCallback(async () => {
         if (!topic.trim()) {
-            setError("Please enter a topic or niche.");
+            setError("Please enter a topic to generate content ideas.");
             return;
         }
         setIsLoading(true);
         setError(null);
         setResponse(null);
+        setCopied(false);
 
         const prompt = `
             Generate a list of 5 engaging content ideas (e.g., blog posts, social media updates, video scripts) for the following topic: "${topic}".
@@ -45,81 +61,87 @@ const ContentIdeasView: React.FC = () => {
         }
     }, [topic]);
 
-    const groundingChunks = response?.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const handleCopy = () => {
+        if (!response?.text) return;
+        navigator.clipboard.writeText(response.text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-            {/* Left Panel: Controls */}
-            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5">
-                <h1 className="text-3xl font-bold">AI Content Idea Generator</h1>
-                <p className="text-gray-500 dark:text-gray-400 -mt-3">Get trendy and relevant content ideas for any topic, powered by Google Search.</p>
-
-                <div className="space-y-4">
-                    <div>
-                        <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Enter your topic or niche</label>
-                        <input
-                            id="topic-input"
-                            type="text"
-                            value={topic}
-                            onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g., Sustainable fashion, home cooking, AI technology"
-                            className="w-full bg-white dark:bg-gray-700/60 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
-                        />
-                    </div>
-                    <button
-                        onClick={handleGenerate}
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isLoading ? <Spinner /> : 'Generate Ideas'}
-                    </button>
-                    {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
-                </div>
+    const leftPanel = (
+        <>
+            <div>
+                <h1 className="text-2xl font-bold sm:text-3xl">Generate Content Ideas</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">Discover trending content ideas for any topic or niche.</p>
             </div>
-
-            {/* Right Panel: Output */}
-            <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
-                <h2 className="text-xl font-bold mb-4">Output</h2>
-                <div className="flex-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4 overflow-y-auto">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center h-full text-center">
-                             <div>
-                                <Spinner />
-                                <p className="mt-4 text-neutral-500 dark:text-neutral-400">Searching for ideas...</p>
-                            </div>
-                        </div>
-                    ) : response ? (
-                        <div>
-                            <MarkdownRenderer content={response.text} />
-                            {groundingChunks && groundingChunks.length > 0 && (
-                                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                    <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Sources:</h4>
-                                    <ul className="space-y-1 list-disc list-inside">
-                                        {groundingChunks.map((chunk, index) => (
-                                            chunk.web && (
-                                                <li key={index} className="text-sm">
-                                                    <a href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">
-                                                        {chunk.web.title || chunk.web.uri}
-                                                    </a>
-                                                </li>
-                                            )
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
-                            <div>
-                                <TrendingUpIcon className="w-16 h-16 mx-auto" />
-                                <p>Your brilliant content ideas will appear here.</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
+            
+            <div className="flex-1 flex flex-col justify-center">
+                <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Topic or Niche</label>
+                <textarea
+                    id="topic-input"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="e.g., sustainable fashion, home gardening for beginners, AI in marketing"
+                    rows={4}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                />
             </div>
-        </div>
+            
+            <div className="pt-4 mt-auto">
+                <button
+                    onClick={handleGenerate}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isLoading ? <Spinner /> : 'Generate Ideas'}
+                </button>
+                {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
+            </div>
+        </>
     );
+
+    const rightPanel = (
+        <>
+             {response && !isLoading && (
+                <div className="absolute top-3 right-3 flex gap-2 z-10">
+                     <button 
+                      onClick={handleCopy}
+                      className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                    >
+                      {copied ? <CheckCircleIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <button
+                        onClick={() => downloadText(response.text, `1za7-content-ideas-${Date.now()}.txt`)}
+                        className="flex items-center gap-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                    >
+                        <DownloadIcon className="w-4 h-4" /> Download
+                    </button>
+                </div>
+            )}
+            {isLoading ? (
+                <div className="flex items-center justify-center h-full text-center">
+                    <div>
+                        <Spinner />
+                        <p className="mt-4 text-neutral-500 dark:text-neutral-400">Searching for trending ideas...</p>
+                    </div>
+                </div>
+            ) : response ? (
+                <div className="w-full h-full overflow-y-auto pr-2 custom-scrollbar">
+                    <MarkdownRenderer content={response.text} />
+                </div>
+            ) : (
+                 <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600 p-4">
+                    <div>
+                        <TrendingUpIcon className="w-16 h-16 mx-auto" />
+                        <p>Your output will appear here.</p>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+
+    return <TwoColumnLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
 };
 
 export default ContentIdeasView;

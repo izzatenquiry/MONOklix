@@ -3,13 +3,15 @@ import ImageUpload from '../common/ImageUpload';
 import { generateMultimodalContent } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
-import { StoreIcon, DownloadIcon } from '../Icons';
+import { StoreIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import { type MultimodalContent } from '../../services/geminiService';
 import { sendToTelegram } from '../../services/telegramService';
+import TwoColumnLayout from '../common/TwoColumnLayout';
 
-const vibeOptions = ["Energetic & Fun", "Cinematic & Epic", "Modern & Clean", "Natural & Organic", "Tech & Futuristic"];
-const lightingOptions = ["Studio Light", "Dramatic", "Natural Light", "Neon", "Golden Hour", "Soft Daylight"];
-const contentTypeOptions = ["Hard Selling", "Soft Selling", "Storytelling", "Problem/Solution", "ASMR / Sensory", "Unboxing", "Educational", "Testimonial"];
+const vibeOptions = ["Random", "Energetic & Fun", "Cinematic & Epic", "Modern & Clean", "Natural & Organic", "Tech & Futuristic"];
+const lightingOptions = ["Random","Studio Light", "Dramatic", "Natural Light", "Neon", "Golden Hour", "Soft Daylight"];
+const contentTypeOptions = ["Random", "Hard Selling", "Soft Selling", "Storytelling", "Problem/Solution", "ASMR / Sensory", "Unboxing", "Educational", "Testimonial"];
+const languages = ["English", "Bahasa Malaysia", "Chinese"];
 
 const downloadText = (text: string, fileName: string) => {
     const blob = new Blob([text], { type: 'text/plain' });
@@ -30,7 +32,7 @@ const SelectControl: React.FC<{
   options: string[];
 }> = ({ label, value, onChange, options }) => (
   <div>
-    <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-2">{label}</h3>
+    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{label}</label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -49,10 +51,12 @@ const ProductAdView: React.FC = () => {
     vibe: vibeOptions[0],
     lighting: lightingOptions[0],
     contentType: contentTypeOptions[0],
+    language: languages[0],
   });
   const [storyboard, setStoryboard] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleImageUpload = useCallback((base64: string, mimeType: string) => {
     setProductImage({ base64, mimeType });
@@ -64,18 +68,19 @@ const ProductAdView: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!productImage || !productDesc) {
-      setError("Please upload a product image and provide a description.");
+      setError("A product image and description are required to generate a storyline.");
       return;
     }
     
     setIsLoading(true);
     setError(null);
     setStoryboard(null);
+    setCopied(false);
 
     const prompt = `
       You are an expert advertising copywriter and storyboard artist for social media video ads.
       Create a compelling 1-scene storyboard for a video ad based on the provided product image and details.
-      The output should be a clear and concise storyboard.
+      The output language for the storyboard must be in ${selections.language}.
 
       **Product Description:**
       ${productDesc}
@@ -94,7 +99,7 @@ const ProductAdView: React.FC = () => {
       setStoryboard(result);
       await addHistoryItem({
         type: 'Storyboard',
-        prompt: `Product Ad: ${productDesc.substring(0, 50)}...`,
+        prompt: `Product Ad: ${productDesc.substring(0, 50)}... (Lang: ${selections.language})`,
         result: result,
       });
       sendToTelegram(`*Video Storyline for "${productDesc.substring(0, 50)}..."*:\n\n${result}`, 'text');
@@ -106,14 +111,19 @@ const ProductAdView: React.FC = () => {
       setIsLoading(false);
     }
   };
+  
+  const handleCopy = () => {
+    if (!storyboard) return;
+    navigator.clipboard.writeText(storyboard);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-      {/* Left Panel: Controls */}
-      <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-6 overflow-y-auto pr-4 custom-scrollbar">
+  const leftPanel = (
+      <>
         <div>
-          <h1 className="text-3xl font-bold">Generate Video Storyline</h1>
-          <p className="text-neutral-500 dark:text-neutral-400">Automatically create a storyboard for your product ad.</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Generate Storyline</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Automatically create a story for your product ad.</p>
         </div>
         <div>
           <h2 className="text-lg font-semibold mb-2">1. Upload Product</h2>
@@ -131,26 +141,34 @@ const ProductAdView: React.FC = () => {
           />
         </div>
 
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">3. Creative Direction</h2>
-          <SelectControl
-            label="Vibe"
-            value={selections.vibe}
-            onChange={(value) => handleSelection('vibe', value)}
-            options={vibeOptions}
-          />
-          <SelectControl
-            label="Lighting"
-            value={selections.lighting}
-            onChange={(value) => handleSelection('lighting', value)}
-            options={lightingOptions}
-          />
-          <SelectControl
-            label="Content Type"
-            value={selections.contentType}
-            onChange={(value) => handleSelection('contentType', value)}
-            options={contentTypeOptions}
-          />
+        <div>
+          <h2 className="text-lg font-semibold mb-2">3. Creative Direction</h2>
+          <div className="space-y-4">
+            <SelectControl
+              label="Vibe"
+              value={selections.vibe}
+              onChange={(value) => handleSelection('vibe', value)}
+              options={vibeOptions}
+            />
+            <SelectControl
+              label="Lighting"
+              value={selections.lighting}
+              onChange={(value) => handleSelection('lighting', value)}
+              options={lightingOptions}
+            />
+            <SelectControl
+              label="Content Type"
+              value={selections.contentType}
+              onChange={(value) => handleSelection('contentType', value)}
+              options={contentTypeOptions}
+            />
+            <SelectControl
+              label="Output Language"
+              value={selections.language}
+              onChange={(value) => handleSelection('language', value)}
+              options={languages}
+            />
+          </div>
         </div>
 
         <div className="pt-4 mt-auto">
@@ -163,47 +181,53 @@ const ProductAdView: React.FC = () => {
             </button>
             {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
         </div>
-      </div>
+      </>
+  );
 
-      {/* Right Panel: Results */}
-      <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Output</h2>
-            {storyboard && !isLoading && (
-                <button 
-                  onClick={() => downloadText(storyboard, `1za7-storyboard-${Date.now()}.txt`)} 
+  const rightPanel = (
+      <>
+        {storyboard && !isLoading && (
+            <div className="absolute top-3 right-3 z-10 flex gap-2">
+              <button 
+                  onClick={handleCopy}
                   className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                 >
-                    <DownloadIcon className="w-4 h-4"/> Download
-                </button>
-            )}
-        </div>
-        <div className="flex-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4 overflow-y-auto">
-          {isLoading && (
-            <div className="flex items-center justify-center h-full text-center">
-              <div>
-                <Spinner />
-                <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating storyboard...</p>
-              </div>
+                  {copied ? <CheckCircleIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
+                  {copied ? 'Copied!' : 'Copy'}
+              </button>
+              <button 
+                onClick={() => downloadText(storyboard, `monoklix-storyboard-${Date.now()}.txt`)} 
+                className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+              >
+                  <DownloadIcon className="w-4 h-4"/> Download
+              </button>
             </div>
-          )}
-          {storyboard && (
-            <div className="prose dark:prose-invert max-w-none text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
-              {storyboard}
+        )}
+        {isLoading && (
+          <div className="flex items-center justify-center h-full text-center">
+            <div>
+              <Spinner />
+              <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating storyboard...</p>
             </div>
-          )}
-          {!isLoading && !storyboard && (
-            <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
-              <div>
-                <StoreIcon className="w-16 h-16 mx-auto" />
-                <p>Your Ad Output will appear here</p>
-              </div>
+          </div>
+        )}
+        {storyboard && !isLoading && (
+          <div className="prose dark:prose-invert max-w-none text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap w-full h-full overflow-y-auto pr-2 custom-scrollbar">
+            {storyboard}
+          </div>
+        )}
+        {!isLoading && !storyboard && (
+          <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
+            <div>
+              <StoreIcon className="w-16 h-16 mx-auto" />
+              <p>Your Ad Output will appear here</p>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        )}
+      </>
   );
+  
+  return <TwoColumnLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
 };
 
 export default ProductAdView;

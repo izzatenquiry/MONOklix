@@ -33,11 +33,11 @@ const ImageEditingView: React.FC = () => {
 
   const handleEdit = useCallback(async () => {
     if (!imageData) {
-      setError("Please upload an image to edit.");
+      setError("An image is required. Please upload an image to edit.");
       return;
     }
     if (!prompt.trim()) {
-      setError("Please enter an editing instruction.");
+      setError("Please provide instructions on how to edit the image.");
       return;
     }
     setIsLoading(true);
@@ -58,11 +58,13 @@ const ImageEditingView: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
         {/* Left Panel: Controls */}
-        <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5">
-            <h1 className="text-3xl font-bold">Image Editing</h1>
-            <p className="text-gray-500 dark:text-gray-400 -mt-3">Modify your images with simple text commands.</p>
+        <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-4">
+            <div>
+              <h1 className="text-2xl font-bold sm:text-3xl">Image Editing</h1>
+              <p className="text-neutral-500 dark:text-neutral-400 mt-1">Modify your images with simple text commands.</p>
+            </div>
             
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1">
                 <ImageUpload id="image-edit-upload" onImageUpload={handleImageUpload} title="Upload Image to Edit"/>
                 <textarea
                   value={prompt}
@@ -71,6 +73,8 @@ const ImageEditingView: React.FC = () => {
                   rows={3}
                   className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                 />
+            </div>
+            <div className="pt-4">
                 <button
                   onClick={handleEdit}
                   disabled={isLoading || !imageData}
@@ -79,7 +83,7 @@ const ImageEditingView: React.FC = () => {
                   {isLoading && <Spinner />}
                   Apply Edit
                 </button>
-                 {error && <p className="text-red-500 dark:text-red-400 text-center">{error}</p>}
+                 {error && <p className="text-red-500 dark:text-red-400 text-center mt-2">{error}</p>}
             </div>
         </div>
 
@@ -107,7 +111,7 @@ const ImageEditingView: React.FC = () => {
                                 <img src={`data:image/png;base64,${result.imageBase64}`} alt="Edited" className="rounded-lg w-full" />
                                 <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
-                                      onClick={() => downloadImage(result.imageBase64!, `1za7-edited-image-${Date.now()}.png`)}
+                                      onClick={() => downloadImage(result.imageBase64!, `monoklix-edited-image-${Date.now()}.png`)}
                                       className="flex items-center gap-2 bg-black/60 text-white text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-black/80 transition-colors"
                                     >
                                         <DownloadIcon className="w-3 h-3"/> Download

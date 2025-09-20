@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ImageEnhancerView from './ImageEnhancerView';
 import ImageGenerationView from './ImageGenerationView';
 import BackgroundRemoverView from './BackgroundRemoverView';
@@ -14,10 +14,10 @@ interface Tab {
 
 const tabs: Tab[] = [
     { id: 'generation', label: 'Image Generation' },
+    { id: 'product', label: 'Product Photos' },
+    { id: 'model', label: 'Model Photos' },
     { id: 'enhancer', label: 'Enhancer' },
     { id: 'remover', label: 'BG Remover' },
-    { id: 'product', label: 'Product Photos' },
-    { id: 'model', label: 'Model Photos' }
 ];
 
 interface VideoGenPreset {
@@ -25,28 +25,43 @@ interface VideoGenPreset {
   image: { base64: string; mimeType: string; };
 }
 
+interface ImageEditPreset {
+  base64: string;
+  mimeType: string;
+}
+
 interface AiImageSuiteViewProps {
   onCreateVideo: (preset: VideoGenPreset) => void;
+  onReEdit: (preset: ImageEditPreset) => void;
+  imageToReEdit: ImageEditPreset | null;
+  clearReEdit: () => void;
 }
 
 
-const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo }) => {
+const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit }) => {
     const [activeTab, setActiveTab] = useState<TabId>('generation');
 
+    useEffect(() => {
+        if (imageToReEdit) {
+            setActiveTab('generation');
+        }
+    }, [imageToReEdit]);
+
     const renderActiveTabContent = () => {
+        const commonProps = { onReEdit, onCreateVideo };
         switch (activeTab) {
             case 'generation':
-                return <ImageGenerationView onCreateVideo={onCreateVideo} />;
+                return <ImageGenerationView {...commonProps} imageToReEdit={imageToReEdit} clearReEdit={clearReEdit} />;
             case 'enhancer':
-                return <ImageEnhancerView />;
+                return <ImageEnhancerView {...commonProps} />;
             case 'remover':
-                return <BackgroundRemoverView />;
+                return <BackgroundRemoverView {...commonProps} />;
             case 'product':
-                return <ProductPhotoView />;
+                return <ProductPhotoView {...commonProps} />;
             case 'model':
-                return <TiktokAffiliateView />;
+                return <TiktokAffiliateView {...commonProps} />;
             default:
-                return <ImageGenerationView onCreateVideo={onCreateVideo} />;
+                return <ImageGenerationView {...commonProps} imageToReEdit={imageToReEdit} clearReEdit={clearReEdit} />;
         }
     };
 
@@ -58,7 +73,7 @@ const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo }) =>
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-6 py-2.5 text-base font-semibold rounded-full transition-colors duration-300 whitespace-nowrap ${
+                            className={`px-4 py-2 text-sm sm:px-6 sm:py-2.5 sm:text-base font-semibold rounded-full transition-colors duration-300 whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-md'
                                     : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'

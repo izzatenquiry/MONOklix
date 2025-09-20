@@ -22,7 +22,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         setError(null);
         setIsLoading(true);
         const result = await loginUser(loginIdentifier);
-        // FIX: Use an explicit check for `success === false` to ensure proper type narrowing for the LoginResult discriminated union.
         if (result.success === false) {
             setError(result.message);
         } else {
@@ -36,7 +35,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         setError(null);
         setIsLoading(true);
         const result = await registerUser(username, email, phone);
-        // FIX: Use an explicit check for `success === false` to ensure proper type narrowing for the LoginResult discriminated union.
         if (result.success === false) {
             setError(result.message);
         } else {

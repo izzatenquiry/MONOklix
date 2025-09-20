@@ -3,7 +3,7 @@ import { type View, type NavItem, type User } from '../types';
 import {
   ChatIcon, ImageIcon, VideoIcon, StoreIcon, StarIcon,
   TikTokIcon, CameraIcon, SettingsIcon, BookOpenIcon, LogoutIcon, GalleryIcon, LogoIcon, XIcon, FilmIcon, MicIcon, MegaphoneIcon,
-  ScissorsIcon, WandIcon, TrendingUpIcon, UserIcon, UsersIcon, WebhookIcon, LibraryIcon
+  ScissorsIcon, WandIcon, TrendingUpIcon, UserIcon, UsersIcon, WebhookIcon, LibraryIcon, ClipboardListIcon, FileTextIcon
 } from './Icons';
 
 interface SidebarProps {
@@ -16,19 +16,22 @@ interface SidebarProps {
 }
 
 const navItems: NavItem[] = [
-  { id: 'ai-text-suite', label: 'Chat-GPT', section: 'free', icon: ChatIcon },
-  { id: 'ai-image-suite', label: 'Image AI', section: 'free', icon: ImageIcon },
-  { id: 'ai-video-suite', label: 'Video & Voice AI', section: 'free', icon: VideoIcon },
+  { id: 'ai-text-suite', label: 'AI Content Idea', section: 'free', icon: FileTextIcon },
+  { id: 'ai-image-suite', label: 'AI Image', section: 'free', icon: ImageIcon },
+  { id: 'ai-video-suite', label: 'AI Video & Voice', section: 'free', icon: VideoIcon },
+  { id: 'ai-support', label: 'AI Support', section: 'free', icon: ChatIcon },
   { id: 'library', label: 'Prompt Library', section: 'free', icon: LibraryIcon },
   { id: 'gallery', label: 'Image Gallery', section: 'free', icon: GalleryIcon },
+
   
   // Admin Section
   { id: 'user-database', label: 'User Database', section: 'admin', icon: UsersIcon, roles: ['admin'] },
-  { id: 'e-tutorial-admin', label: 'e-Tutorial Settings', section: 'admin', icon: BookOpenIcon, roles: ['admin'] },
+  { id: 'e-tutorial-admin', label: 'e-Tutorials', section: 'admin', icon: BookOpenIcon, roles: ['admin'] },
   
   // Bottom Section
+  
   { id: 'settings', label: 'Settings', section: 'bottom', icon: SettingsIcon, roles: ['admin', 'user'] },
-  { id: 'logout', label: 'Log Out', section: 'bottom', icon: LogoutIcon }
+  { id: 'logout', label: 'Log Out', section: 'bottom', icon: LogoutIcon, roles: ['admin', 'user'] }
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, currentUser, isOpen, onClose }) => {
@@ -96,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
         <div className="mb-8 flex items-center justify-between">
            <div className="flex items-center gap-2">
             <LogoIcon className="w-28 text-neutral-800 dark:text-neutral-200" />
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">AI</h1>
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">.com</h1>
           </div>
           <button onClick={onClose} className="lg:hidden p-2" aria-label="Close menu">
             <XIcon className="w-6 h-6" />
@@ -116,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
               <BookOpenIcon className="w-5 h-5 mr-3" />
               <div>
                 <p className="font-bold">e-Tutorial</p>
-                <p className={`text-xs ${activeView === 'e-course' ? 'text-white/80' : 'text-primary-600 dark:text-primary-400'}`}>How to use 1za7.my</p>
+                <p className={`text-xs ${activeView === 'e-course' ? 'text-white/80' : 'text-primary-600 dark:text-primary-400'}`}>How to use MONOklix.com</p>
               </div>
             </div>
           </button>
@@ -128,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
         
         <div className="mt-auto pt-4 border-t border-neutral-200 dark:border-neutral-800">
           {renderSection('bottom')}
-          <p className="mt-4 text-center text-neutral-500 dark:text-neutral-600 text-xs">© 2025 1za7.my AI</p>
+          <p className="mt-4 text-center text-neutral-500 dark:text-neutral-600 text-xs">© 2025 MONOklix.com</p>
         </div>
       </nav>
     </>

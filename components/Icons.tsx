@@ -170,7 +170,7 @@ export const XIcon: React.FC<{ className?: string }> = (props) => (
 );
 
 export const LogoIcon: React.FC<{ className?: string }> = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" aria-label="1za7.my AI Logo">
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 60" aria-label="MONOklix.com Logo">
     <defs>
       <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" style={{ stopColor: '#38bdf8' }} />
@@ -179,32 +179,17 @@ export const LogoIcon: React.FC<{ className?: string }> = (props) => (
       </linearGradient>
     </defs>
     <style>
-      {`.heavy { font-family: "Arial Black", Gadget, sans-serif; font-weight: 900; font-size: 58px; letter-spacing: -3px; }`}
-      {`.light { font-family: "Arial", sans-serif; font-weight: 600; font-size: 30px; }`}
+      {`.heavy { font-family: "Arial Black", Gadget, sans-serif; font-weight: 900; font-size: 48px; letter-spacing: -2px; }`}
+      {`.light { font-family: "Arial", sans-serif; font-weight: 400; font-size: 48px; letter-spacing: -1px; }`}
+      {`.domain { font-family: "Arial", sans-serif; font-weight: 600; font-size: 24px; }`}
     </style>
     
-    {/* 1ZA7 text with gradient */}
-    <text x="0" y="48" className="heavy" fill="url(#grad1)">1ZA7</text>
+    <text x="0" y="48" fill="url(#grad1)">
+        <tspan className="heavy">MONO</tspan>
+        <tspan className="light" dx="-5">klix</tspan>
+    </text>
     
-    {/* Circuit overlay for Z */}
-    <g fill="#fff" opacity="0.8">
-        <circle cx="62" cy="15" r="2.5" />
-        <circle cx="82" cy="22" r="2" />
-        <circle cx="65" cy="30" r="2" />
-        <circle cx="85" cy="38" r="2.5" />
-        <path d="M62 15 L 82 22 L 65 30 L 85 38" stroke="#fff" strokeWidth="1.2" fill="none" />
-    </g>
-
-    {/* Pixelation effect for 7 */}
-    <g fill="url(#grad1)" opacity="0.9">
-        <rect x="165" y="8" width="7" height="7" />
-        <rect x="174" y="2" width="9" height="9" />
-        <rect x="170" y="18" width="6" height="6" />
-        <rect x="180" y="15" width="8" height="8" />
-    </g>
-    
-    {/* .my text */}
-    <text x="160" y="52" className="light" fill="currentColor" >.my</text>
+    <text x="220" y="48" className="domain" fill="currentColor">.com</text>
   </svg>
 );
 
@@ -260,6 +245,12 @@ export const CheckCircleIcon: React.FC<{ className?: string }> = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
     <polyline points="22 4 12 14.01 9 11.01"></polyline>
+  </svg>
+);
+
+export const ChevronDownIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"></polyline>
   </svg>
 );
 
@@ -422,5 +413,37 @@ export const EyeOffIcon: React.FC<{ className?: string }> = (props) => (
     <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
     <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
     <line x1="2" x2="22" y1="2" y2="22" />
+  </svg>
+);
+
+export const AudioIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+  </svg>
+);
+
+export const ClipboardListIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+    <line x1="12" y1="11" x2="12" y2="17"></line>
+    <line x1="9" y1="14" x2="15" y2="14"></line>
+  </svg>
+);
+
+export const ClipboardIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+);
+
+export const AlertTriangleIcon: React.FC<{ className?: string }> = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+    <line x1="12" y1="9" x2="12" y2="13"></line>
+    <line x1="12" y1="17" x2="12.01" y2="17"></line>
   </svg>
 );

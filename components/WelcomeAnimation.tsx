@@ -15,10 +15,10 @@ const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onAnimationEnd }) =
   }, [onAnimationEnd]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-100 dark:bg-neutral-900">
       <div className="text-center animate-zoomIn">
-        <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-4">Welcome Back!</h1>
-        <LogoIcon className="w-64 mx-auto text-gray-800 dark:text-gray-200" />
+        <h1 className="text-3xl font-bold text-neutral-800 dark:text-neutral-200 mb-4 sm:text-4xl">Welcome Back!</h1>
+        <LogoIcon className="w-64 mx-auto text-neutral-800 dark:text-neutral-200" />
       </div>
     </div>
   );

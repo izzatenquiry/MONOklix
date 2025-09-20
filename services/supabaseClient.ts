@@ -14,37 +14,44 @@ export interface Database {
           full_name: string | null
           email: string
           phone: string
-          role: string
-          status: string
+          role: Database['public']['Enums']['user_role']
+          status: Database['public']['Enums']['user_status']
           api_key: string | null
           avatar_url: string | null
           subscription_expiry: string | null
+          webhook_url: string | null
         }
         Insert: { // The data you can insert
           id: string
           full_name?: string | null
           email: string
           phone: string
-          role?: string
-          status?: string
+          role?: Database['public']['Enums']['user_role']
+          status?: Database['public']['Enums']['user_status']
           api_key?: string | null
           avatar_url?: string | null
           subscription_expiry?: string | null
+          webhook_url?: string | null
         }
         Update: { // The data you can update
           full_name?: string | null
           email?: string
           phone?: string
-          role?: string
-          status?: string
+          role?: Database['public']['Enums']['user_role']
+          status?: Database['public']['Enums']['user_status']
           api_key?: string | null
           avatar_url?: string | null
           subscription_expiry?: string | null
+          webhook_url?: string | null
         }
       }
     }
     Functions: {}
-    Enums: {}
+    // FIX: Define enums to match the database schema and fix type inference issues.
+    Enums: {
+      user_role: 'admin' | 'user'
+      user_status: 'trial' | 'inactive' | 'lifetime' | 'admin'
+    }
   }
 }
 

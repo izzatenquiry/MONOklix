@@ -4,6 +4,7 @@ import { type HistoryItem } from '../../types';
 import Spinner from '../common/Spinner';
 import { FilmIcon, DownloadIcon, CheckCircleIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
+import TwoColumnLayout from '../common/TwoColumnLayout';
 
 // FFmpeg is loaded via a script tag, so we can declare it on the window
 declare global {
@@ -21,18 +22,41 @@ const VideoCombinerView: React.FC = () => {
     const [outputUrl, setOutputUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const ffmpegRef = useRef<any>(null);
+    const [blobUrls, setBlobUrls] = useState<Map<string, string>>(new Map());
 
     useEffect(() => {
-        // FIX: The `getHistory` function is async, so we must await its result
-        // before we can call array methods like `filter` on it.
         const fetchVideos = async () => {
             const history = await getHistory();
             const videoItems = history.filter(item => item.type === 'Video');
             setAllVideos(videoItems);
+
+            // Create blob URLs for display
+            const newUrls = new Map<string, string>();
+            videoItems.forEach(item => {
+                if (item.result instanceof Blob) {
+                    const url = URL.createObjectURL(item.result);
+                    newUrls.set(item.id, url);
+                }
+            });
+            setBlobUrls(newUrls);
         };
         fetchVideos();
+
+        // Cleanup blob URLs on component unmount
+        return () => {
+            blobUrls.forEach(url => URL.revokeObjectURL(url));
+        };
     }, []);
     
+    // Cleanup for the final output URL
+    useEffect(() => {
+        return () => {
+            if (outputUrl) {
+                URL.revokeObjectURL(outputUrl);
+            }
+        };
+    }, [outputUrl]);
+
     const loadFfmpeg = async () => {
         if (ffmpegRef.current) return;
         
@@ -59,155 +83,152 @@ const VideoCombinerView: React.FC = () => {
         ffmpegRef.current = ffmpeg;
     };
 
-    const handleToggleSelect = (videoId: string) => {
-        setSelectedVideos(prev =>
-            prev.includes(videoId)
-                ? prev.filter(id => id !== videoId)
-                : [...prev, videoId]
-        );
-        setError(null);
+    const toggleVideoSelection = (id: string) => {
+        setSelectedVideos(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(vidId => vidId !== id);
+            } else {
+                return [...prev, id];
+            }
+        });
     };
 
     const handleCombine = async () => {
         if (selectedVideos.length < 2) {
-            setError("Please select at least 2 videos to combine.");
+            setError("Please select at least two videos to combine.");
             return;
         }
 
         setIsLoading(true);
         setError(null);
+        setProgressMessage('Loading FFmpeg...');
+        if (outputUrl) URL.revokeObjectURL(outputUrl);
         setOutputUrl(null);
 
         try {
-            setProgressMessage("Loading FFmpeg engine...");
             await loadFfmpeg();
             const ffmpeg = ffmpegRef.current;
-            
-            setProgressMessage("Downloading and writing video files...");
-            const fileListContent: string[] = [];
-            // Ensure videos are added in the order they were selected
-            const orderedVideos = selectedVideos.map(id => allVideos.find(v => v.id === id)).filter(Boolean) as HistoryItem[];
-
-            for (let i = 0; i < orderedVideos.length; i++) {
-                const videoItem = orderedVideos[i];
-                const fileName = `input${i}.mp4`;
-                const videoData = await window.FFmpegUtil.fetchFile(videoItem.result);
-                ffmpeg.FS('writeFile', fileName, videoData);
-                fileListContent.push(`file '${fileName}'`);
+            if (!ffmpeg) {
+                throw new Error("FFmpeg instance is not available.");
             }
 
-            ffmpeg.FS('writeFile', 'filelist.txt', fileListContent.join('\n'));
+            const selectedVideoItems = allVideos.filter(v => selectedVideos.includes(v.id));
+            let fileListContent = '';
 
-            setProgressMessage("Combining videos... this may take a moment.");
+            for (let i = 0; i < selectedVideoItems.length; i++) {
+                const videoItem = selectedVideoItems[i];
+                if (videoItem.result instanceof Blob) {
+                    const fileName = `input${i}.mp4`;
+                    setProgressMessage(`Loading video ${i + 1}/${selectedVideos.length} into memory...`);
+                    // @ts-ignore FFmpegUtil is loaded on window
+                    await ffmpeg.FS('writeFile', fileName, await window.FFmpegUtil.fetchFile(videoItem.result));
+                    fileListContent += `file '${fileName}'\n`;
+                }
+            }
+            
+            setProgressMessage('Creating file list for FFmpeg...');
+            await ffmpeg.FS('writeFile', 'filelist.txt', fileListContent);
+
+            setProgressMessage('Combining videos... This may take a while.');
             await ffmpeg.run('-f', 'concat', '-safe', '0', '-i', 'filelist.txt', '-c', 'copy', 'output.mp4');
 
-            setProgressMessage("Processing output...");
+            setProgressMessage('Finishing up...');
             const data = ffmpeg.FS('readFile', 'output.mp4');
-
             const blob = new Blob([data.buffer], { type: 'video/mp4' });
             const url = URL.createObjectURL(blob);
             setOutputUrl(url);
-            sendToTelegram(url, 'video', `Combined video from ${selectedVideos.length} clips.`);
 
-            setProgressMessage("Done!");
-
+            sendToTelegram(url, 'video', `Combined ${selectedVideos.length} videos.`);
         } catch (err) {
             console.error(err);
-            setError("Failed to combine videos. Please try again or check the console for details.");
+            const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred during video processing.";
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
+            setProgressMessage('');
         }
     };
     
-     const handleDownload = () => {
-        if (!outputUrl) return;
-        const link = document.createElement('a');
-        link.href = outputUrl;
-        link.download = `1za7-ai-combined-video-${Date.now()}.mp4`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-            {/* Left Panel: Controls */}
-            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm flex flex-col gap-5">
-                <h1 className="text-3xl font-bold">Combine Videos</h1>
-                <p className="text-gray-500 dark:text-gray-400 -mt-3">Select videos from your gallery to merge them into one longer file.</p>
-                
-                <div className="flex-1 min-h-0">
-                    <h2 className="text-xl font-semibold mb-4">1. Select Your Videos (in order)</h2>
-                    {allVideos.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
-                            {allVideos.map(video => {
-                                const selectionIndex = selectedVideos.indexOf(video.id);
-                                const isSelected = selectionIndex !== -1;
-                                return (
-                                    <button key={video.id} onClick={() => handleToggleSelect(video.id)} className={`relative group aspect-square rounded-lg overflow-hidden transition-all duration-200 ${isSelected ? 'ring-4 ring-primary-500 scale-95' : 'ring-2 ring-transparent hover:ring-primary-300'}`}>
-                                        <video src={video.result} className="w-full h-full object-cover" muted loop playsInline title={video.prompt}/>
-                                        {isSelected && (
-                                            <div className="absolute inset-0 bg-primary-500/50 flex items-center justify-center">
-                                                <span className="text-white text-4xl font-bold drop-shadow-lg">{selectionIndex + 1}</span>
-                                            </div>
-                                        )}
-                                        <div className="absolute top-0 left-0 right-0 p-1 bg-gradient-to-b from-black/60 to-transparent">
-                                            <p className="text-white text-xs line-clamp-2 drop-shadow-sm">{video.prompt}</p>
-                                        </div>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    ) : (
-                        <p className="text-center text-gray-500 dark:text-gray-400 py-8">No videos found in your gallery. Generate some videos first!</p>
-                    )}
-                </div>
-
-                <div className="pt-4">
-                    <button
-                        onClick={handleCombine}
-                        disabled={isLoading || selectedVideos.length < 2}
-                        className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isLoading ? <Spinner /> : <FilmIcon className="w-5 h-5"/>}
-                        Combine {selectedVideos.length > 0 ? selectedVideos.length : ''} Videos
-                    </button>
-                    {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center text-sm">{error}</p>}
-                </div>
+    const leftPanel = (
+        <>
+            <div>
+                <h1 className="text-2xl font-bold sm:text-3xl">Video Combiner</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">Select multiple videos from your history to combine them into one.</p>
             </div>
 
-            {/* Right Panel: Output */}
-            <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm">
-                <h2 className="text-xl font-bold mb-4">Output</h2>
-                <div className="flex-1 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800/50 rounded-md p-4">
-                    {isLoading ? (
-                        <div className="text-center space-y-3">
-                            <Spinner />
-                            <p className="font-semibold text-primary-500 dark:text-primary-400">Processing...</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto truncate" title={progressMessage}>{progressMessage}</p>
-                        </div>
-                    ) : outputUrl ? (
-                         <div className="w-full space-y-4">
-                            <video src={outputUrl} controls autoPlay className="w-full max-w-2xl mx-auto rounded-lg bg-black" />
-                            <div className="text-center">
-                                 <button onClick={handleDownload} className="flex items-center justify-center gap-2 bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors mx-auto">
-                                    <DownloadIcon className="w-5 h-5" />
-                                    Download Combined Video
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                         <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600">
-                            <div>
-                                <FilmIcon className="w-16 h-16 mx-auto" />
-                                <p>Your combined video will appear here.</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                <h2 className="text-lg font-semibold">Select Videos ({selectedVideos.length} selected)</h2>
+                {allVideos.length === 0 ? (
+                    <p className="text-neutral-500 dark:text-neutral-400 text-sm">No videos found in your generation history.</p>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {allVideos.map(video => (
+                            <button
+                                key={video.id}
+                                onClick={() => toggleVideoSelection(video.id)}
+                                className={`relative aspect-video rounded-md overflow-hidden transition-all duration-200 ${selectedVideos.includes(video.id) ? 'ring-4 ring-primary-500' : 'ring-2 ring-transparent hover:ring-primary-300'}`}
+                            >
+                                <video src={blobUrls.get(video.id)} className="w-full h-full object-cover" muted loop playsInline />
+                                {selectedVideos.includes(video.id) && (
+                                    <div className="absolute inset-0 bg-primary-500/50 flex items-center justify-center">
+                                        <CheckCircleIcon className="w-8 h-8 text-white" />
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
-        </div>
+
+            <div className="pt-4 mt-auto">
+                <button
+                    onClick={handleCombine}
+                    disabled={isLoading || selectedVideos.length < 2}
+                    className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isLoading ? <Spinner /> : `Combine ${selectedVideos.length} Videos`}
+                </button>
+            </div>
+        </>
     );
-};
 
+    const rightPanel = (
+        <>
+            {isLoading && (
+                <div className="text-center">
+                    <Spinner />
+                    <p className="mt-4 text-neutral-500 dark:text-neutral-400 font-semibold">Processing...</p>
+                    <p className="mt-2 text-xs text-neutral-400 dark:text-neutral-500 whitespace-pre-wrap">{progressMessage}</p>
+                </div>
+            )}
+            {error && (
+                <div className="text-center text-red-500 dark:text-red-400">
+                    <p className="font-semibold">An Error Occurred</p>
+                    <p className="text-sm mt-2">{error}</p>
+                </div>
+            )}
+            {!isLoading && outputUrl && (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                    <video src={outputUrl} controls autoPlay className="max-h-full max-w-full rounded-md" />
+                    <a
+                        href={outputUrl}
+                        download={`monoklix-combined-video-${Date.now()}.mp4`}
+                        className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 font-semibold py-2 px-4 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                    >
+                        <DownloadIcon className="w-4 h-4" /> Download Combined Video
+                    </a>
+                </div>
+            )}
+            {!isLoading && !outputUrl && !error && (
+                <div className="text-center text-neutral-500 dark:text-neutral-600">
+                    <FilmIcon className="w-16 h-16 mx-auto" />
+                    <p>Your combined video will appear here.</p>
+                </div>
+            )}
+        </>
+    );
+
+    return <TwoColumnLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
+};
+// FIX: Added default export to resolve module loading issue.
 export default VideoCombinerView;

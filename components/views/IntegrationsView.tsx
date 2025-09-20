@@ -125,7 +125,7 @@ const TelegramSettings: React.FC = () => {
 
     const handleTest = async () => {
         setStatus({ type: 'loading', message: 'Sending test message...' });
-        const result = await sendToTelegram('Hello from 1za7.my AI! Your Telegram integration is working.', 'text');
+        const result = await sendToTelegram('Hello from MONOklix.com! Your Telegram integration is working.', 'text');
 
         if (result.success) {
             setStatus({ type: 'success', message: 'Test message sent! Check your Telegram.' });

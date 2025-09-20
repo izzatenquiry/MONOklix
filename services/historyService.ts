@@ -1,33 +1,16 @@
-
-
 import { type HistoryItem, type HistoryItemType } from '../types';
 import { supabase } from './supabaseClient';
-import { saveData, loadData, removeData } from './indexedDBService';
+import { dbGetHistory, dbAddHistoryItem, dbDeleteHistoryItem, dbClearHistory, dbPruneHistory } from './indexedDBService';
 
-const HISTORY_KEY_PREFIX = '1za7-ai-generation-history-';
-const MAX_HISTORY_ITEMS = 15; // Set a reasonable limit to prevent storage quota errors
+const MAX_HISTORY_ITEMS = 15;
 
-/**
- * Gets the IndexedDB key specific to the current user.
- * It now relies solely on the secure Supabase session.
- * @returns {Promise<string | null>} The user-specific key or null if not authenticated.
- */
-const getUserHistoryKey = async (): Promise<string | null> => {
-    // The single source of truth for the user's session is Supabase auth.
-    const { data: { session }, error } = await (supabase.auth as any).getSession();
-
-    if (error) {
-        console.error("Error getting session for history:", error.message);
+const getCurrentUserId = async (): Promise<string | null> => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session?.user?.id) {
+        console.error("User not authenticated, cannot access history.");
         return null;
     }
-
-    if (session?.user?.id) {
-        return `${HISTORY_KEY_PREFIX}${session.user.id}`;
-    }
-
-    // This message will now only appear if there is genuinely no active session.
-    console.error("User not authenticated, cannot access history.");
-    return null;
+    return session.user.id;
 };
 
 /**
@@ -35,41 +18,31 @@ const getUserHistoryKey = async (): Promise<string | null> => {
  * @returns {Promise<HistoryItem[]>} A promise that resolves to an array of history items.
  */
 export const getHistory = async (): Promise<HistoryItem[]> => {
-    const userHistoryKey = await getUserHistoryKey();
-    if (!userHistoryKey) return [];
-
-    try {
-        const history = await loadData<HistoryItem[]>(userHistoryKey);
-        return history || [];
-    } catch (error) {
-        console.error("Failed to load history from IndexedDB:", error);
-        return [];
-    }
+    const userId = await getCurrentUserId();
+    if (!userId) return [];
+    // FIX: The type error here is resolved by strongly typing the dbGetHistory function in indexedDBService.ts
+    return dbGetHistory(userId);
 };
 
 /**
  * Adds a new item to the current user's generation history in IndexedDB.
  * @param {object} newItemData - The data for the new history item.
  */
-export const addHistoryItem = async (newItemData: { type: HistoryItemType; prompt: string; result: string; }) => {
-    const userHistoryKey = await getUserHistoryKey();
-    if (!userHistoryKey) return;
+export const addHistoryItem = async (newItemData: { type: HistoryItemType; prompt: string; result: string | Blob; }) => {
+    const userId = await getCurrentUserId();
+    if (!userId) return;
 
-    const history = await getHistory();
     const newItem: HistoryItem = {
         id: `hist-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         timestamp: Date.now(),
+        userId, // Add userId for indexing
         ...newItemData,
     };
   
-    let updatedHistory = [newItem, ...history];
-
-    if (updatedHistory.length > MAX_HISTORY_ITEMS) {
-        updatedHistory = updatedHistory.slice(0, MAX_HISTORY_ITEMS);
-    }
-
     try {
-        await saveData(userHistoryKey, updatedHistory);
+        await dbAddHistoryItem(newItem);
+        // Pruning keeps the database size in check.
+        await dbPruneHistory(userId, MAX_HISTORY_ITEMS);
     } catch (error) {
         console.error("Failed to save history to IndexedDB:", error);
     }
@@ -80,28 +53,16 @@ export const addHistoryItem = async (newItemData: { type: HistoryItemType; promp
  * @param {string} id - The ID of the history item to delete.
  */
 export const deleteHistoryItem = async (id: string) => {
-    const userHistoryKey = await getUserHistoryKey();
-    if (!userHistoryKey) return;
-
-    const history = await getHistory();
-    const updatedHistory = history.filter(item => item.id !== id);
-    try {
-        await saveData(userHistoryKey, updatedHistory);
-    } catch (error) {
-        console.error("Failed to update history in IndexedDB after deletion:", error);
-    }
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+    await dbDeleteHistoryItem(id);
 };
 
 /**
  * Clears the entire generation history for the current user from IndexedDB.
  */
 export const clearHistory = async () => {
-    const userHistoryKey = await getUserHistoryKey();
-    if (!userHistoryKey) return;
-
-    try {
-        await removeData(userHistoryKey);
-    } catch (error) {
-        console.error("Failed to clear history from IndexedDB:", error);
-    }
+    const userId = await getCurrentUserId();
+    if (!userId) return;
+    await dbClearHistory(userId);
 };

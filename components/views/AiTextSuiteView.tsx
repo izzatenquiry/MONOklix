@@ -3,9 +3,8 @@ import ChatView from './ChatView';
 import ContentIdeasView from './ContentIdeasView';
 import MarketingCopyView from './MarketingCopyView';
 import ProductAdView from './ProductAdView';
-import ProductReviewView from './ProductReviewView';
 
-type TabId = 'chat' | 'content-ideas' | 'marketing-copy' | 'storyline' | 'storyboard';
+type TabId = 'content-ideas' | 'marketing-copy' | 'storyline';
 
 interface Tab {
     id: TabId;
@@ -13,30 +12,24 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-    { id: 'chat', label: 'Chat' },
     { id: 'content-ideas', label: 'Content Ideas' },
     { id: 'marketing-copy', label: 'Marketing Copy' },
-    { id: 'storyline', label: 'Video Storyline' },
-    { id: 'storyboard', label: 'Video Storyboard' }
+    { id: 'storyline', label: 'Storyline' },
 ];
 
 const AiTextSuiteView: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<TabId>('chat');
+    const [activeTab, setActiveTab] = useState<TabId>('content-ideas');
 
     const renderActiveTabContent = () => {
         switch (activeTab) {
-            case 'chat':
-                return <ChatView />;
             case 'content-ideas':
                 return <ContentIdeasView />;
             case 'marketing-copy':
                 return <MarketingCopyView />;
             case 'storyline':
                 return <ProductAdView />;
-            case 'storyboard':
-                return <ProductReviewView />;
             default:
-                return <ChatView />;
+                return <ContentIdeasView />;
         }
     };
 
@@ -48,7 +41,7 @@ const AiTextSuiteView: React.FC = () => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-6 py-2.5 text-base font-semibold rounded-full transition-colors duration-300 whitespace-nowrap ${
+                            className={`px-4 py-2 text-sm sm:px-6 sm:py-2.5 sm:text-base font-semibold rounded-full transition-colors duration-300 whitespace-nowrap ${
                                 activeTab === tab.id
                                     ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-md'
                                     : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
