@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
     preview: {
       host: '0.0.0.0',
       port: 5259,
-      allowedHosts: ['app.1za7.com'], // domain yang dibenarkan
+      allowedHosts: ['app.monoklix.com'], // domain yang dibenarkan
     },
   };
 });
