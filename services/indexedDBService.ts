@@ -89,17 +89,6 @@ export const removeData = async (key: string): Promise<void> => {
 
 // --- User-Specific, Itemized Store Functions ---
 
-const addItem = async (storeName: string, item: object): Promise<void> => {
-    const dbInstance = await openDB();
-    const transaction = dbInstance.transaction(storeName, 'readwrite');
-    const store = transaction.objectStore(storeName);
-    store.add(item);
-    return new Promise((resolve, reject) => {
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = (event) => reject((event.target as IDBTransaction).error);
-    });
-};
-
 const getAllItemsForUser = async <T>(storeName: string, userId: string): Promise<T[]> => {
     const dbInstance = await openDB();
     const transaction = dbInstance.transaction(storeName, 'readonly');
@@ -146,42 +135,55 @@ const clearItemsForUser = async (storeName: string, userId: string): Promise<voi
     });
 };
 
-const pruneStoreForUser = async (storeName: string, userId: string, maxItems: number): Promise<void> => {
+/**
+ * FIX: Combines adding and pruning into a single transaction to prevent deadlocks.
+ * This is the core fix for the hanging log page and items not saving to the gallery.
+ */
+const addAndPrune = async (storeName: string, item: any, userId: string, maxItems: number) => {
     const dbInstance = await openDB();
     const transaction = dbInstance.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
-    const index = store.index('userId');
-    const cursorRequest = index.openCursor(IDBKeyRange.only(userId), 'prev'); // 'prev' to start from newest
-    let count = 0;
+    const userIndex = store.index('userId');
 
-    cursorRequest.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-            count++;
-            if (count > maxItems) {
-                store.delete(cursor.primaryKey);
-            }
-            cursor.continue();
+    // Add the new item first.
+    store.add(item);
+
+    // Now, find all items for the user and delete the oldest if over the limit.
+    const getRequest = userIndex.getAll(userId);
+    
+    getRequest.onsuccess = () => {
+        const items = getRequest.result;
+        if (items.length > maxItems) {
+            // Sort by timestamp ascending (oldest first)
+            items.sort((a, b) => a.timestamp - b.timestamp);
+            const itemsToDelete = items.slice(0, items.length - maxItems);
+            itemsToDelete.forEach(oldItem => {
+                store.delete(oldItem.id);
+            });
         }
     };
-     return new Promise((resolve, reject) => {
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = (event) => reject((event.target as IDBTransaction).error);
+    
+    return new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => {
+            resolve();
+        };
+        transaction.onerror = (event) => {
+            reject((event.target as IDBTransaction).error);
+        };
+        transaction.onabort = (event) => {
+             reject((event.target as IDBTransaction).error);
+        };
     });
 };
 
 
 // --- Exported History Functions ---
-// FIX: Explicitly type the generic function to ensure type safety for callers.
 export const dbGetHistory = (userId: string) => getAllItemsForUser<HistoryItem>(STORES.HISTORY, userId);
-export const dbAddHistoryItem = (item: any) => addItem(STORES.HISTORY, item);
 export const dbDeleteHistoryItem = (id: string) => deleteItem(STORES.HISTORY, id);
 export const dbClearHistory = (userId: string) => clearItemsForUser(STORES.HISTORY, userId);
-export const dbPruneHistory = (userId: string, max: number) => pruneStoreForUser(STORES.HISTORY, userId, max);
+export const dbAddAndPruneHistory = (item: HistoryItem, userId: string, max: number) => addAndPrune(STORES.HISTORY, item, userId, max);
 
 // --- Exported Log Functions ---
-// FIX: Explicitly type the generic function to ensure type safety for callers.
 export const dbGetLogs = (userId: string) => getAllItemsForUser<AiLogItem>(STORES.LOGS, userId);
-export const dbAddLogEntry = (item: any) => addItem(STORES.LOGS, item);
 export const dbClearLogs = (userId: string) => clearItemsForUser(STORES.LOGS, userId);
-export const dbPruneLogs = (userId: string, max: number) => pruneStoreForUser(STORES.LOGS, userId, max);
+export const dbAddAndPruneLogEntry = (item: AiLogItem, userId: string, max: number) => addAndPrune(STORES.LOGS, item, userId, max);

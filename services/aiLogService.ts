@@ -1,6 +1,6 @@
 import { type AiLogItem } from '../types';
 import { supabase } from './supabaseClient';
-import { dbGetLogs, dbAddLogEntry, dbClearLogs, dbPruneLogs } from './indexedDBService';
+import { dbGetLogs, dbClearLogs, dbAddAndPruneLogEntry } from './indexedDBService';
 
 const MAX_LOG_ITEMS = 50;
 
@@ -24,7 +24,6 @@ const getCurrentUserId = async (): Promise<string | null> => {
 export const getLogs = async (): Promise<AiLogItem[]> => {
     const userId = await getCurrentUserId();
     if (!userId) return [];
-    // FIX: The type error here is resolved by strongly typing the dbGetLogs function in indexedDBService.ts
     return dbGetLogs(userId);
 };
 
@@ -44,9 +43,9 @@ export const addLogEntry = async (newLogData: Omit<AiLogItem, 'id' | 'timestamp'
     };
   
     try {
-        await dbAddLogEntry(newLogItem);
-        // Pruning keeps the log size manageable.
-        await dbPruneLogs(userId, MAX_LOG_ITEMS);
+        // FIX: Replaced separate add and prune operations with a single atomic transaction
+        // to prevent database deadlocks which caused saving to fail and log viewing to hang.
+        await dbAddAndPruneLogEntry(newLogItem, userId, MAX_LOG_ITEMS);
     } catch (error) {
         console.error("Failed to save AI log to IndexedDB:", error);
     }

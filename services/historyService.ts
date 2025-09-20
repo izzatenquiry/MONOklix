@@ -1,6 +1,6 @@
 import { type HistoryItem, type HistoryItemType } from '../types';
 import { supabase } from './supabaseClient';
-import { dbGetHistory, dbAddHistoryItem, dbDeleteHistoryItem, dbClearHistory, dbPruneHistory } from './indexedDBService';
+import { dbGetHistory, dbDeleteHistoryItem, dbClearHistory, dbAddAndPruneHistory } from './indexedDBService';
 
 const MAX_HISTORY_ITEMS = 15;
 
@@ -20,7 +20,6 @@ const getCurrentUserId = async (): Promise<string | null> => {
 export const getHistory = async (): Promise<HistoryItem[]> => {
     const userId = await getCurrentUserId();
     if (!userId) return [];
-    // FIX: The type error here is resolved by strongly typing the dbGetHistory function in indexedDBService.ts
     return dbGetHistory(userId);
 };
 
@@ -40,9 +39,9 @@ export const addHistoryItem = async (newItemData: { type: HistoryItemType; promp
     };
   
     try {
-        await dbAddHistoryItem(newItem);
-        // Pruning keeps the database size in check.
-        await dbPruneHistory(userId, MAX_HISTORY_ITEMS);
+        // FIX: Replaced separate add and prune operations with a single atomic transaction
+        // to prevent database deadlocks which caused gallery items not to be saved correctly.
+        await dbAddAndPruneHistory(newItem, userId, MAX_HISTORY_ITEMS);
     } catch (error) {
         console.error("Failed to save history to IndexedDB:", error);
     }
