@@ -10,8 +10,10 @@ const formatStatus = (user: User): { text: string; color: 'green' | 'yellow' | '
             return { text: 'Admin', color: 'blue' };
         case 'lifetime':
             return { text: 'Lifetime', color: 'green' };
+// FIX: Corrected comparison, which now works because the 'trial' type is part of the expanded UserStatus type.
         case 'trial':
             return { text: 'Trial', color: 'yellow' };
+// FIX: Corrected comparison, which now works because the 'inactive' type is part of the expanded UserStatus type.
         case 'inactive':
             return { text: 'Inactive', color: 'red' };
         default:
@@ -64,6 +66,7 @@ const AdminDashboardView: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+// FIX: Corrected type error. 'trial' is now a valid UserStatus.
     const [newStatus, setNewStatus] = useState<UserStatus>('trial');
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -193,7 +196,7 @@ const AdminDashboardView: React.FC = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
+        <>
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
                 <h2 className="text-xl font-semibold mb-2">User Database</h2>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">Manage users, subscriptions, and database backups.</p>
@@ -263,6 +266,7 @@ const AdminDashboardView: React.FC = () => {
                                                     {user.phone || '-'}
                                                 </td>
                                                 <td className="px-6 py-4">
+{/* FIX: This comparison now works because 'trial' is a valid UserStatus. */}
                                                     {user.status === 'trial' && user.subscriptionExpiry ? (
                                                         <TrialCountdown expiry={user.subscriptionExpiry} />
                                                     ) : (
@@ -350,7 +354,7 @@ const AdminDashboardView: React.FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 

@@ -307,8 +307,7 @@ const PlatformUpdatesPanel: React.FC = () => {
 
 const ETutorialAdminView: React.FC = () => {
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            <h1 className="text-2xl font-bold sm:text-3xl">Admin Content Settings</h1>
+        <div className="space-y-8">
             <PlatformUpdatesPanel />
             <TutorialManagementPanel />
         </div>

@@ -6,15 +6,22 @@ const MAX_LOG_ITEMS = 50;
 
 /**
  * Gets the current user's ID from the active session.
- * @returns {Promise<string | null>} The user's ID or null if not authenticated.
+ * @returns {string | null} The user's ID or null if not authenticated.
  */
-const getCurrentUserId = async (): Promise<string | null> => {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session?.user?.id) {
-        console.error("User not authenticated, cannot access AI log.");
-        return null;
+const getCurrentUserId = (): string | null => {
+    try {
+        const savedUserJson = localStorage.getItem('currentUser');
+        if (savedUserJson) {
+            const user = JSON.parse(savedUserJson);
+            if (user && user.id) {
+                return user.id;
+            }
+        }
+    } catch (error) {
+        console.error("Failed to parse user from localStorage for AI log.", error);
     }
-    return session.user.id;
+    console.error("User not authenticated, cannot access AI log.");
+    return null;
 };
 
 /**
@@ -22,7 +29,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
  * @returns {Promise<AiLogItem[]>} A promise that resolves to an array of log items.
  */
 export const getLogs = async (): Promise<AiLogItem[]> => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return [];
     return dbGetLogs(userId);
 };
@@ -32,7 +39,7 @@ export const getLogs = async (): Promise<AiLogItem[]> => {
  * @param {Omit<AiLogItem, 'id' | 'timestamp' | 'userId'>} newLogData - The data for the new log item.
  */
 export const addLogEntry = async (newLogData: Omit<AiLogItem, 'id' | 'timestamp' | 'userId'>) => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return;
 
     const newLogItem: AiLogItem = {
@@ -55,7 +62,7 @@ export const addLogEntry = async (newLogData: Omit<AiLogItem, 'id' | 'timestamp'
  * Clears the entire AI log for the current user from IndexedDB.
  */
 export const clearLogs = async () => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return;
     await dbClearLogs(userId);
 };

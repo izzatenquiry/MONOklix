@@ -112,8 +112,10 @@ const ProfileAndAppearancePanel: React.FC<UserProfileViewProps> = ({ theme, setT
                 return { text: 'Admin (Lifetime)', colorClass: 'text-green-500' };
             case 'lifetime':
                 return { text: 'Active (Lifetime)', colorClass: 'text-green-500' };
+// FIX: Corrected comparison, which now works because the 'trial' type is part of the expanded UserStatus type.
             case 'trial':
                 return { text: 'Active (Trial)', colorClass: 'text-yellow-500 dark:text-yellow-400' };
+// FIX: Corrected comparison, which now works because the 'inactive' type is part of the expanded UserStatus type.
             case 'inactive':
                 return { text: 'Inactive (Trial Expired)', colorClass: 'text-red-500' };
             default:
@@ -155,6 +157,7 @@ const ProfileAndAppearancePanel: React.FC<UserProfileViewProps> = ({ theme, setT
             <div className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-800/50 rounded-lg">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     Account Status: <span className={`font-bold ${accountStatus.colorClass}`}>{accountStatus.text}</span>
+{/* FIX: This comparison now works because 'trial' is a valid UserStatus. */}
                     {currentUser.status === 'trial' && currentUser.subscriptionExpiry && (
                         <TrialCountdownDisplay expiry={currentUser.subscriptionExpiry} />
                     )}

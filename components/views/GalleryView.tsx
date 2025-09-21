@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getHistory, deleteHistoryItem, clearHistory } from '../../services/historyService';
 import { type HistoryItem } from '../../types';
 import { ImageIcon, VideoIcon, DownloadIcon, TrashIcon, PlayIcon, FileTextIcon, AudioIcon, WandIcon } from '../Icons';
+import Tabs, { type Tab } from '../common/Tabs';
 
 interface VideoGenPreset {
   prompt: string;
@@ -18,9 +19,11 @@ interface GalleryViewProps {
   onReEdit: (preset: ImageEditPreset) => void;
 }
 
+type GalleryTabId = 'images' | 'videos' | 'history';
+
 const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) => {
     const [allItems, setAllItems] = useState<HistoryItem[]>([]);
-    const [activeTab, setActiveTab] = useState<'images' | 'videos' | 'history'>('images');
+    const [activeTab, setActiveTab] = useState<GalleryTabId>('images');
     const [blobUrls, setBlobUrls] = useState<Map<string, string>>(new Map());
 
     const refreshHistory = useCallback(async () => {
@@ -140,8 +143,14 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
     
     const imageItems = allItems.filter(item => item.type === 'Image' || item.type === 'Canvas');
     const videoItems = allItems.filter(item => item.type === 'Video');
-
     const itemsToDisplay = activeTab === 'images' ? imageItems : videoItems;
+
+    const tabs: Tab<GalleryTabId>[] = [
+        { id: 'images', label: 'Images', count: imageItems.length },
+        { id: 'videos', label: 'Videos', count: videoItems.length },
+        { id: 'history', label: 'History', count: allItems.length },
+    ];
+
 
     const renderGridItem = (item: HistoryItem) => {
         const isImage = item.type === 'Image' || item.type === 'Canvas';
@@ -282,30 +291,17 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
     }
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
             <div>
                 <h1 className="text-2xl font-bold sm:text-3xl">Gallery & History</h1>
                 <p className="text-neutral-500 dark:text-neutral-400 mt-1">Browse, download, or reuse all the content you've generated.</p>
             </div>
             
-            <div className="flex border-b border-neutral-200 dark:border-neutral-700">
-                <TabButton 
-                    label="Images" 
-                    count={imageItems.length} 
-                    isActive={activeTab === 'images'} 
-                    onClick={() => setActiveTab('images')}
-                />
-                <TabButton 
-                    label="Videos" 
-                    count={videoItems.length} 
-                    isActive={activeTab === 'videos'} 
-                    onClick={() => setActiveTab('videos')}
-                />
-                 <TabButton 
-                    label="History" 
-                    count={allItems.length} 
-                    isActive={activeTab === 'history'} 
-                    onClick={() => setActiveTab('history')}
+            <div className="flex justify-center">
+                <Tabs 
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                 />
             </div>
 
@@ -315,19 +311,5 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
         </div>
     );
 };
-
-const TabButton: React.FC<{ label: string; count: number; isActive: boolean; onClick: () => void }> = ({ label, count, isActive, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`px-4 py-2 text-sm font-semibold transition-colors relative ${
-            isActive ? 'text-primary-600 dark:text-primary-400' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-white'
-        }`}
-    >
-        {label}
-        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${isActive ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400' : 'bg-neutral-200 dark:bg-neutral-700'}`}>{count}</span>
-        {isActive && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500" />}
-    </button>
-);
-
 
 export default GalleryView;

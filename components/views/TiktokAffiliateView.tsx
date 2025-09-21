@@ -7,6 +7,7 @@ import { TikTokIcon, DownloadIcon, UserIcon, WandIcon, VideoIcon } from '../Icon
 import { type User } from '../../types';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getTiktokAffiliatePrompt } from '../../services/promptManager';
 
 const CreativeButton: React.FC<{
   label: string;
@@ -100,25 +101,6 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
     const [creativityLevel, setCreativityLevel] = useState(5);
     const [customPrompt, setCustomPrompt] = useState('');
     const [numberOfImages, setNumberOfImages] = useState(1);
-
-    const buildPrompt = useCallback(() => {
-        if (customPrompt.trim()) {
-            return customPrompt.trim();
-        }
-       return `
-            Create a photorealistic User-Generated Content (UGC) image for a platform like TikTok.
-            The image must naturally feature the uploaded product image.
-            Here are the details for the image:
-            - Model: A ${gender} from ${modelFace === 'Random' ? 'Southeast Asia' : modelFace}. Ensure the face looks realistic and appealing.
-            - Product: Include the product from the uploaded image.
-            - Lighting: ${lighting === 'Random' ? 'flattering and natural-looking lighting' : lighting}.
-            - Camera & Lens: ${camera === 'Random' ? 'a dynamic angle' : camera}.
-            - Body Movement / Pose: ${pose === 'Random' ? 'a natural and relaxed pose' : pose}. The model should be interacting with the product if appropriate.
-            - Content Vibe / Background: ${vibe}.
-            - AI Creativity Level: ${creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.
-            The result should be a high-quality, authentic-looking, and engaging image that could be used for affiliate marketing. Do not include any text or logos.
-        `;
-    }, [gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt]);
     
     const handleGenerate = async () => {
         if (!productImage) {
@@ -129,7 +111,9 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
         setError(null);
         setResultImages([]);
 
-        const prompt = buildPrompt();
+        const prompt = getTiktokAffiliatePrompt({
+            gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt
+        });
         
         try {
             const generatedImages: string[] = [];
@@ -253,7 +237,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                       <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
                           <WandIcon className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onCreateVideo({ prompt: buildPrompt(), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
+                      <button onClick={() => onCreateVideo({ prompt: getTiktokAffiliatePrompt({ gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
                           <VideoIcon className="w-4 h-4" />
                       </button>
                       <button onClick={() => triggerDownload(resultImages[selectedImageIndex], '1za7-model-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">

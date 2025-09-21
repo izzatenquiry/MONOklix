@@ -7,6 +7,7 @@ import { type GenerateContentResponse } from '@google/genai';
 import { TrendingUpIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getContentIdeasPrompt } from '../../services/promptManager';
 
 const downloadText = (text: string, fileName: string) => {
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -38,10 +39,7 @@ const ContentIdeasView: React.FC = () => {
         setResponse(null);
         setCopied(false);
 
-        const prompt = `
-            Generate a list of 5 engaging content ideas (e.g., blog posts, social media updates, video scripts) for the following topic: "${topic}".
-            The ideas should be trendy, relevant, and aimed at capturing audience attention. For each idea, provide a catchy title and a brief description of the concept.
-        `;
+        const prompt = getContentIdeasPrompt(topic);
 
         try {
             const result = await generateContentWithGoogleSearch(prompt);

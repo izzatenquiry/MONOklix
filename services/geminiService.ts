@@ -1,6 +1,8 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, Modality, PersonGeneration } from "@google/genai";
 import { addLogEntry } from './aiLogService';
 import { triggerUserWebhook } from './webhookService';
+import { MODELS } from './aiConfig';
+import { handleApiError } from "./errorHandler";
 
 // This will hold the key for the current user session. It is set by App.tsx.
 let activeApiKey: string | null = null;
@@ -21,55 +23,6 @@ const getAiInstance = () => {
     return new GoogleGenAI({ apiKey: activeApiKey });
 };
 
-/**
- * Handles API errors, re-throwing them with user-friendly messages for the UI to catch.
- * @param {unknown} error - The error caught from the API call.
- */
-const handleApiError = (error: unknown): void => {
-    console.error("Original API Error:", error);
-    let userFriendlyMessage = 'An unexpected error occurred. Please check the console for details and try again.';
-
-    if (error instanceof Error) {
-        const message = error.message.toLowerCase();
-
-        // Network Errors
-        if (message.includes('failed to fetch')) {
-            userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
-        } 
-        // Quota/Billing Errors
-        else if (message.includes('429') || message.includes('resource_exhausted') || message.includes('quota')) {
-            userFriendlyMessage = 'API quota exceeded. Please check your Google AI Studio billing and usage details, or try again later.';
-        } 
-        // API Key and Permission Errors
-        else if (message.includes('api key not valid') || message.includes('api_key_invalid')) {
-            userFriendlyMessage = 'Your API key is not valid. Please verify it in the Settings page and try again.';
-        } else if (message.includes('permission_denied')) {
-            userFriendlyMessage = 'Permission denied. Ensure your API key has the correct permissions and is not restricted (e.g., by IP address).';
-        }
-        // Input/Request Errors
-        else if (message.includes('400 bad request') || message.includes('invalid argument')) {
-            userFriendlyMessage = `Invalid request. The prompt or parameters might be malformed. Details: ${error.message}`;
-        }
-        // Safety Policy Errors
-        else if (message.includes('safety policies') || message.includes('safety settings')) {
-             // The safety message from Google is already user-friendly.
-            userFriendlyMessage = error.message;
-        }
-        // Server-side errors
-        else if (message.includes('500') || message.includes('internal')) {
-            userFriendlyMessage = "An internal error occurred on the server. Please wait a few moments and try again.";
-        }
-        // Fallback to the original error message if it seems descriptive
-        else {
-             userFriendlyMessage = error.message;
-        }
-    }
-    
-    // Re-throw a new error with a message that's safe to display to the user.
-    throw new Error(userFriendlyMessage);
-};
-
-
 export interface MultimodalContent {
     base64: string;
     mimeType: string;
@@ -83,7 +36,7 @@ export interface MultimodalContent {
 export const createChatSession = (systemInstruction: string): Chat => {
   const ai = getAiInstance();
   return ai.chats.create({
-    model: 'gemini-2.5-flash',
+    model: MODELS.text,
     config: {
       systemInstruction: systemInstruction,
       thinkingConfig: { thinkingBudget: 0 },
@@ -103,7 +56,7 @@ export const streamChatResponse = async (chat: Chat, prompt: string) => {
         // Note: Logging for streaming is complex. We'll log the initial prompt.
         // A more advanced implementation could aggregate chunks, but for now this is sufficient.
         addLogEntry({
-            model: 'gemini-2.5-flash (stream)',
+            model: `${MODELS.text} (stream)`,
             prompt,
             output: 'Streaming response started...',
             tokenCount: 0, // Token count is not available until the end of the stream
@@ -113,7 +66,7 @@ export const streamChatResponse = async (chat: Chat, prompt: string) => {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         addLogEntry({
-            model: 'gemini-2.5-flash (stream)',
+            model: `${MODELS.text} (stream)`,
             prompt,
             output: `Error: ${errorMessage}`,
             tokenCount: 0,
@@ -145,7 +98,7 @@ export const generateImages = async (
     highDynamicRange?: boolean,
     personGeneration?: "DONT_GENERATE" | "GENERATE_DEFAULT" | "GENERATE_PHOTOREALISTIC_FACES"
 ): Promise<string[]> => {
-    const model = 'imagen-4.0-generate-001';
+    const model = MODELS.imageGeneration;
     try {
         const ai = getAiInstance();
         const response = await ai.models.generateImages({
@@ -274,7 +227,7 @@ export const generateVideo = async (
         }
 
         try {
-            const response = await fetch(downloadLink);
+            const response = await fetch(`${downloadLink}&key=${activeApiKey}`);
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("Video download failed:", response.status, errorText);
@@ -317,7 +270,7 @@ export const generateVideo = async (
  * @returns {Promise<string>} The text response from the model.
  */
 export const generateMultimodalContent = async (prompt: string, images: MultimodalContent[]): Promise<string> => {
-    const model = 'gemini-2.5-flash';
+    const model = MODELS.text;
     try {
         const ai = getAiInstance();
         const textPart = { text: prompt };
@@ -360,7 +313,7 @@ export const generateMultimodalContent = async (prompt: string, images: Multimod
  * @returns {Promise<{text?: string, imageBase64?: string}>} An object containing the text response and/or the edited image.
  */
 export const composeImage = async (prompt: string, images: MultimodalContent[]): Promise<{text?: string, imageBase64?: string}> => {
-    const model = 'gemini-2.5-flash-image-preview';
+    const model = MODELS.imageEdit;
     const webhookPrompt = `${prompt} [${images.length} image(s)]`;
     try {
         const ai = getAiInstance();
@@ -424,7 +377,7 @@ export const composeImage = async (prompt: string, images: MultimodalContent[]):
  * @returns {Promise<string>} The text response from the model.
  */
 export const generateText = async (prompt: string): Promise<string> => {
-    const model = 'gemini-2.5-flash';
+    const model = MODELS.text;
     try {
         const ai = getAiInstance();
         const response = await ai.models.generateContent({
@@ -457,7 +410,7 @@ export const generateText = async (prompt: string): Promise<string> => {
  * @returns {Promise<GenerateContentResponse>} The full response object from the model, including grounding metadata.
  */
 export const generateContentWithGoogleSearch = async (prompt: string): Promise<GenerateContentResponse> => {
-    const model = 'gemini-2.5-flash';
+    const model = MODELS.text;
     try {
         const ai = getAiInstance();
         const response = await ai.models.generateContent({
@@ -555,7 +508,7 @@ export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
     // The SDK's generateContent might not throw an error for certain auth failures in a way
     // that's easy to catch, whereas a direct status check is unambiguous.
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.text}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

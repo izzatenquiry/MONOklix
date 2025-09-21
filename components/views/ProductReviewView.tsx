@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import ImageUpload from '../common/ImageUpload';
-import { generateMultimodalContent, type MultimodalContent, composeImage, generateVideo } from '../../services/geminiService';
+import { composeImage, type MultimodalContent, generateMultimodalContent } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { StarIcon, DownloadIcon, ImageIcon, VideoIcon, WandIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
+import { getProductReviewImagePrompt, getProductReviewStoryboardPrompt } from '../../services/promptManager';
 
 const vibeOptions = ["Random", "Energetic & Fun", "Cinematic & Epic", "Modern & Clean", "Natural & Organic", "Tech & Futuristic"];
 const backgroundVibes = [
@@ -99,33 +100,16 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
     setParsedScenes([]);
     setGeneratedImages(Array(4).fill(null));
 
-    let finalInstructions = 'Combine these elements to create a scene description for each of the 4 scenes, including camera shots.';
-    if (includeCaptions === 'Yes') {
-        finalInstructions += ' Include on-screen text/captions.';
-    }
-    if (includeVoiceover === 'Yes') {
-        finalInstructions += ' Include a voiceover script where the person (from the face image) is reviewing the product.';
-    }
-
-    const prompt = `
-      You are an expert AI assistant specialising in creating storyboards for product review videos for social media.
-      Based on the user's product image, face image, product description, and chosen creative direction, generate a short and engaging 4-scene storyboard for a review video.
-      The output language must be strictly in ${selectedLanguage}.
-
-      **Product Description:**
-      ${productDesc}
-
-      **Creative Direction:**
-      - Vibe: ${selectedVibe}
-      - Background Vibe: ${selectedBackgroundVibe}
-      - Lighting: ${selectedLighting}
-      - Content Type: ${selectedContentType}
-      - On-Screen Text/Captions: ${includeCaptions}
-      - Voiceover Script (Reviewer): ${includeVoiceover}
-
-      ${finalInstructions}
-      The output must be structured with clear headings for each scene, like "**Scene 1:**", "**Scene 2:**", etc.
-    `;
+    const prompt = getProductReviewStoryboardPrompt({
+      productDesc,
+      selectedLanguage,
+      selectedVibe,
+      selectedBackgroundVibe,
+      selectedLighting,
+      selectedContentType,
+      includeCaptions,
+      includeVoiceover
+    });
 
     try {
       const imagesPayload: MultimodalContent[] = [productImage, faceImage];
@@ -169,18 +153,12 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
         setImageLoadingStatus([...loadingStates]);
         
         try {
-            const scenePrompt = `
-                This is an image editing task. Your goal is to create a new, photorealistic image by combining the provided product photo and face photo according to the scene description.
-
-                **Scene Description:** 
-                ${parsedScenes[i]}
-
-                **Instructions:**
-                - The image must feature a person whose appearance is inspired by the provided face image.
-                - The person must be using or showcasing the product from the provided product image.
-                - The overall creative direction is: Vibe "${selectedVibe}", Background "${selectedBackgroundVibe}", Lighting "${selectedLighting}".
-                - CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.
-            `;
+            const scenePrompt = getProductReviewImagePrompt({
+                sceneDescription: parsedScenes[i],
+                selectedVibe,
+                selectedBackgroundVibe,
+                selectedLighting,
+            });
             
             const result = await composeImage(
                 scenePrompt,
@@ -356,7 +334,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
         {/* Box 1: Text Output */}
         <div className="bg-white dark:bg-neutral-900 rounded-lg flex flex-col p-4 shadow-sm min-h-[300px] flex-shrink-0">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Storyboard Output</h2>
+                <h2 className="text-xl font-bold">Output</h2>
                 {storyboard && !isLoading && (
                     <button 
                         onClick={() => downloadText(storyboard, `monoklix-review-storyboard-${Date.now()}.txt`)} 

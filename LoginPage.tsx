@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogoIcon } from './components/Icons';
-import { loginUser, registerUser } from './services/userService';
+import { loginUser } from './services/userService';
 import Spinner from './components/common/Spinner';
 import { type User } from './types';
 
@@ -9,47 +9,23 @@ interface LoginPageProps {
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-    const [isRegistering, setIsRegistering] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [loginIdentifier, setLoginIdentifier] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [username, setUsername] = useState('');
     const [error, setError] = useState<string | null>(null);
-
+    
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setIsLoading(true);
-        const result = await loginUser(loginIdentifier);
-        if (result.success === false) {
-            setError(result.message);
-        } else {
+        
+        const result = await loginUser(email);
+        
+        if (result.success === true) {
             onLoginSuccess(result.user);
+        } else {
+            setError(result.message);
         }
         setIsLoading(false);
-    };
-
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        setIsLoading(true);
-        const result = await registerUser(username, email, phone);
-        if (result.success === false) {
-            setError(result.message);
-        } else {
-            onLoginSuccess(result.user);
-        }
-        setIsLoading(false);
-    };
-
-    const toggleMode = () => {
-        setIsRegistering(!isRegistering);
-        setError(null);
-        setLoginIdentifier('');
-        setEmail('');
-        setPhone('');
-        setUsername('');
     };
 
     return (
@@ -58,73 +34,30 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="text-center">
                     <LogoIcon className="w-48 mx-auto mb-4 text-neutral-800 dark:text-neutral-200" />
                     <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-                        {isRegistering ? 'Create Account' : 'Log In'}
+                        Welcome Back
                     </h1>
                      <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-                        {isRegistering 
-                            ? 'Fill in the details below to register.' 
-                            : 'Enter your email to log in.'
-                        }
+                        Enter your email to log in.
                     </p>
                 </div>
 
                 <>
-                    {error && <p className="text-center text-sm text-red-500 dark:text-red-400">{error}</p>}
-
-                    <form className="mt-6 space-y-4" onSubmit={isRegistering ? handleRegister : handleLogin}>
-                        {isRegistering ? (
-                            <>
-                                 <div>
-                                    <label htmlFor="username-input" className="sr-only">Full Name</label>
-                                    <input
-                                        id="username-input"
-                                        type="text"
-                                        required
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 placeholder-neutral-500 text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                                        placeholder="Full Name"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="email-input" className="sr-only">Email Address</label>
-                                    <input
-                                        id="email-input"
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 placeholder-neutral-500 text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                                        placeholder="Email Address"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="phone-input" className="sr-only">Phone Number</label>
-                                    <input
-                                        id="phone-input"
-                                        type="tel"
-                                        required
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="appearance-none rounded-md relative block w-full px-3 py-3 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 placeholder-neutral-500 text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                                        placeholder="Phone Number"
-                                    />
-                                </div>
-                            </>
-                        ) : (
-                             <div>
-                                <label htmlFor="email-input" className="sr-only">Email Address</label>
-                                <input
-                                    id="email-input"
-                                    type="email"
-                                    required
-                                    value={loginIdentifier}
-                                    onChange={(e) => setLoginIdentifier(e.target.value)}
-                                    className="appearance-none rounded-md relative block w-full px-3 py-3 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 placeholder-neutral-500 text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                                    placeholder="Email Address"
-                                 />
-                            </div>
-                        )}
+                    {error && <p className="text-center text-sm text-red-500 dark:text-red-400 p-3 bg-red-500/10 rounded-md">{error}</p>}
+                    
+                    <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+                         <div>
+                            <label htmlFor="email-input" className="sr-only">Email Address</label>
+                            <input
+                                id="email-input"
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="appearance-none rounded-md relative block w-full px-3 py-3 border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 placeholder-neutral-500 text-neutral-900 dark:text-neutral-200 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                                placeholder="Email Address"
+                                disabled={isLoading}
+                             />
+                        </div>
                        
                         <div className="pt-2">
                             <button
@@ -132,15 +65,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                                 disabled={isLoading}
                                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
                             >
-                                {isLoading ? <Spinner /> : (isRegistering ? 'Register' : 'Log In')}
+                                {isLoading ? <Spinner /> : 'Log In'}
                             </button>
                         </div>
                     </form>
 
-                    <div className="text-center">
-                        <button onClick={toggleMode} className="text-sm text-primary-600 dark:text-primary-400 hover:underline">
-                            {isRegistering ? 'Already have an account? Log In' : 'No account? Register here'}
-                        </button>
+                    <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800 text-center">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">No account?</p>
+                        <a
+                            href="https://monoklix.com/step/monoklix-checkout/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-block py-3 px-4 border border-primary-500 text-sm font-medium rounded-md text-primary-600 dark:text-primary-400 hover:bg-primary-500/10 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:ring-offset-neutral-950 focus:ring-primary-500 transition-colors"
+                        >
+                            Register & Pay to Get Access
+                        </a>
                     </div>
                 </>
             </div>

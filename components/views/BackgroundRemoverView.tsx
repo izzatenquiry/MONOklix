@@ -7,6 +7,7 @@ import { type MultimodalContent } from '../../services/geminiService';
 import { DownloadIcon, ScissorsIcon, WandIcon, VideoIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getBackgroundRemovalPrompt } from '../../services/promptManager';
 
 interface ImageData extends MultimodalContent {
   file: File;
@@ -60,7 +61,7 @@ const BackgroundRemoverView: React.FC<BackgroundRemoverViewProps> = ({ onReEdit,
     setResultImage(null);
     
     try {
-      const prompt = "Remove the background from this image, leaving only the main subject. The background should be transparent.";
+      const prompt = getBackgroundRemovalPrompt();
       const result = await composeImage(prompt, [imageData]);
       if (result.imageBase64) {
         setResultImage(result.imageBase64);

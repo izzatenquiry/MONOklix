@@ -6,17 +6,14 @@ import AiImageSuiteView from './components/views/AiImageSuiteView';
 import AiVideoSuiteView from './components/views/AiVideoSuiteView';
 import ECourseView from './components/views/ECourseView';
 import SettingsView from './components/views/SettingsView';
-import AdminDashboardView from './components/views/AdminDashboardView';
-import ETutorialAdminView from './components/views/ETutorialAdminView';
-import LoginPage from './components/LoginPage';
+import LoginPage from './LoginPage';
 import GalleryView from './components/views/GalleryView';
 import WelcomeAnimation from './components/WelcomeAnimation';
 import LibraryView from './components/views/LibraryView';
 import AiSupportView from './components/views/AiSupportView';
-import { MenuIcon, LogoIcon, XIcon } from './components/Icons';
-import { getUserProfile, signOutUser, checkAndDeactivateTrialUser, getTrialApiKey } from './services/userService';
+import { MenuIcon, LogoIcon, XIcon, CreditCardIcon } from './components/Icons';
+import { signOutUser } from './services/userService';
 import { setActiveApiKey } from './services/geminiService';
-import { supabase } from './services/supabaseClient';
 import Spinner from './components/common/Spinner';
 import { loadData, saveData } from './services/indexedDBService';
 
@@ -40,6 +37,7 @@ const App: React.FC = () => {
   const [imageToReEdit, setImageToReEdit] = useState<ImageEditPreset | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isShowingWelcome, setIsShowingWelcome] = useState(false);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -65,16 +63,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const configureApiKey = async () => {
         if (currentUser) {
-            if (currentUser.status === 'trial') {
-                // Trial users use the admin's API key.
-                const trialKey = await getTrialApiKey();
-                setActiveApiKey(trialKey);
-            } else {
-                // Lifetime, Admin, and Inactive users use their own saved API key.
-                // If they don't have one, AI features will be blocked by other logic,
-                // or API calls will fail gracefully.
-                setActiveApiKey(currentUser.apiKey || null);
-            }
+            // All users (lifetime, admin) use their own saved API key.
+            // If they don't have one, AI features will be blocked by other logic.
+            setActiveApiKey(currentUser.apiKey || null);
         } else {
             // No user, no key.
             setActiveApiKey(null);
@@ -83,53 +74,45 @@ const App: React.FC = () => {
     
     configureApiKey();
   }, [currentUser]);
-
-  useEffect(() => {
-    // This listener handles session logic on initial load and auth state changes (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session) {
-          let profile = await getUserProfile(session.user.id);
-          if (profile) {
-            profile = await checkAndDeactivateTrialUser(profile);
-            setCurrentUser(profile);
-          } else {
-            // This case might happen if a user exists in auth but not in the public.users table.
-            console.error("User profile not found for active session.");
-            setCurrentUser(null);
-          }
-        } else {
-          setCurrentUser(null);
-        }
-        setSessionChecked(true);
-      }
-    );
   
-    // Cleanup the subscription when the component unmounts
-    return () => {
-      subscription?.unsubscribe();
-    };
+  // Effect to check for an active session in localStorage on initial load.
+  useEffect(() => {
+    try {
+        const savedUserJson = localStorage.getItem('currentUser');
+        if (savedUserJson) {
+            const user = JSON.parse(savedUserJson);
+            setCurrentUser(user);
+        }
+    } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        localStorage.removeItem('currentUser');
+    }
+    setSessionChecked(true);
   }, []);
 
+  useEffect(() => {
+    if (justLoggedIn) {
+        setIsShowingWelcome(true);
+        setJustLoggedIn(false); // Reset the flag
+    }
+  }, [justLoggedIn]);
 
   const handleLoginSuccess = (user: User) => {
-    // The onAuthStateChange listener will also set the user, but we do it here
-    // for an immediate UI update and to trigger the welcome animation.
     setCurrentUser(user);
-    setIsShowingWelcome(true);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    setJustLoggedIn(true);
   };
 
   const handleLogout = async () => {
     await signOutUser();
-    // Set the user to null immediately to force a re-render to the login page.
-    // The onAuthStateChange listener will also fire, but this provides a faster UI update.
+    localStorage.removeItem('currentUser');
     setCurrentUser(null);
     setActiveView('e-course');
   };
 
   const handleUserUpdate = (updatedUser: User) => {
     setCurrentUser(updatedUser);
-    // No need for setLocalUser, Supabase session is the source of truth
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
   };
 
   const handleCreateVideoFromImage = (preset: VideoGenPreset) => {
@@ -168,10 +151,6 @@ const App: React.FC = () => {
         return <LibraryView />;
       case 'settings':
           return <SettingsView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
-      case 'user-database':
-          return <AdminDashboardView />;
-      case 'e-tutorial-admin':
-          return <ETutorialAdminView />;
       case 'ai-support':
           return <AiSupportView />;
       default:
@@ -191,7 +170,7 @@ const App: React.FC = () => {
   if (isShowingWelcome) {
     return <WelcomeAnimation onAnimationEnd={() => {
         setIsShowingWelcome(false);
-        setActiveView('e-course'); // Go to e-tutorial page
+        setActiveView('e-course'); // Go to default page
     }} />;
   }
   
@@ -207,25 +186,14 @@ const App: React.FC = () => {
   const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite', 'ai-support'];
 
   if (aiPoweredViews.includes(activeView)) {
-      const isTrial = currentUser.status === 'trial';
       const hasPersonalKey = !!currentUser.apiKey;
 
-      // Block access if the user is NOT on a trial AND does not have their own API key.
-      if (!isTrial && !hasPersonalKey) {
+      if (!hasPersonalKey) {
           isBlocked = true;
-          if (currentUser.status === 'inactive') {
-              // Specific message for expired trials
-              blockMessage = {
-                  title: 'Account Inactive',
-                  body: 'Your trial period has expired. Please update your Gemini API Key in the Settings page to unlock lifetime access to all AI features.',
-              };
-          } else {
-              // Generic message for anyone without a key (admin, lifetime user, etc.)
-              blockMessage = {
-                  title: 'API Key Required',
-                  body: 'To use this AI feature, you must provide your own Gemini API Key on the Settings page.',
-              };
-          }
+          blockMessage = {
+              title: 'API Key Required',
+              body: 'To use AI features, please provide your own Gemini API Key on the Settings page.',
+          };
       }
   }
 

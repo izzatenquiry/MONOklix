@@ -7,6 +7,7 @@ import { CameraIcon, DownloadIcon, SunIcon, SparklesIcon, LeafIcon, WandIcon, Vi
 import { type User } from '../../types';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getProductPhotoPrompt } from '../../services/promptManager';
 
 const triggerDownload = (data: string, fileNameBase: string) => {
     const link = document.createElement('a');
@@ -67,22 +68,6 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
   const [numberOfImages, setNumberOfImages] = useState(1);
 
 
-  const buildPrompt = useCallback(() => {
-    if (customPrompt.trim()) {
-        return customPrompt.trim();
-    }
-    return `
-      Create a professional product photo for the uploaded image. Do not include any people or models.
-      Focus only on the product.
-      Place the product in the following setting:
-      - Vibe / Background: ${vibe}
-      - Lighting: ${lighting === 'Random' ? 'interesting, cinematic lighting' : lighting}
-      - Camera Angle & Lens: ${camera === 'Random' ? 'a dynamic angle' : camera}
-      - AI Creativity Level: ${creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.
-      The result should be a photorealistic, clean, and aesthetic image suitable for social media or an e-commerce listing.
-    `;
-  }, [vibe, lighting, camera, creativityLevel, customPrompt]);
-
   const handleGenerate = async () => {
     if (!productImage) {
       setError("Please upload a product image first.");
@@ -92,7 +77,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
     setError(null);
     setResultImages([]);
 
-    const prompt = buildPrompt();
+    const prompt = getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt });
 
     try {
       const generatedImages: string[] = [];
@@ -215,7 +200,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
                 <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
                   <WandIcon className="w-4 h-4" />
                 </button>
-                <button onClick={() => onCreateVideo({ prompt: buildPrompt(), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
+                <button onClick={() => onCreateVideo({ prompt: getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
                   <VideoIcon className="w-4 h-4" />
                 </button>
                 <button onClick={() => triggerDownload(resultImages[selectedImageIndex], 'monoklix-product-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">

@@ -5,6 +5,7 @@ import Spinner from '../common/Spinner';
 import { MegaphoneIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getMarketingCopyPrompt } from '../../services/promptManager';
 
 const tones = ["Professional", "Casual", "Witty", "Persuasive", "Empathetic", "Bold"];
 const languages = ["English", "Bahasa Malaysia", "Chinese"];
@@ -42,24 +43,13 @@ const MarketingCopyView: React.FC = () => {
         setGeneratedCopy('');
         setCopied(false);
 
-        const prompt = `
-            You are an expert marketing copywriter. Generate compelling marketing copy based on the following details.
-            The final output language must be strictly in ${selectedLanguage}.
-
-            **Product/Service Details:**
-            ${productDetails}
-
-            **Target Audience:**
-            ${targetAudience || 'General Audience'}
-
-            **Tone of Voice:**
-            ${selectedTone}
-
-            **Keywords to include:**
-            ${keywords || 'None'}
-
-            The copy should be engaging, persuasive, and ready for use in social media posts, advertisements, or website content. Structure the output clearly, perhaps with a headline and body.
-        `;
+        const prompt = getMarketingCopyPrompt({
+            productDetails,
+            targetAudience,
+            keywords,
+            selectedTone,
+            selectedLanguage
+        });
 
         try {
             const result = await generateText(prompt);

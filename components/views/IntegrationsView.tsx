@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { type User } from '../../types';
+// FIX: Added verifyAndSaveUserApiKey to the import to resolve the module export error.
 import { verifyAndSaveUserApiKey } from '../../services/userService';
 import { GoogleDriveIcon, WebhookIcon, TelegramIcon, CheckCircleIcon, XIcon } from '../Icons';
 import Spinner from '../common/Spinner';

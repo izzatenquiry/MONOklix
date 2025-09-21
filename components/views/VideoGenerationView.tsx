@@ -6,6 +6,7 @@ import { VideoIcon, DownloadIcon, TrashIcon, UploadIcon, StarIcon } from '../Ico
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import ImageUpload from '../common/ImageUpload';
+import { MODELS } from '../../services/aiConfig';
 
 interface ImageData {
   base64: string;
@@ -32,7 +33,7 @@ const loadingMessages = [
 ];
 
 const videoModels = [
-    { id: 'veo-2.0-generate-001', name: 'VEO 2.0 (with Dialogue)' },
+    { id: MODELS.videoGeneration, name: 'VEO 2.0 (with Dialogue)' },
     // VEO 3.0 is not an available model in the guidelines, but keeping it as it was in the user's code.
     // In a real scenario, this would be removed if not supported.
     { id: 'veo-3.0-generate-001', name: 'VEO 3 (with Audio Prompt)' }, 
@@ -260,7 +261,7 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       </Section>
       
       <Section title="5. Dialogue / Audio (Optional)">
-          <textarea value={dialogue} onChange={(e) => setDialogue(e.target.value)} placeholder="Dialogue for the character to speak..." rows={2} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none" disabled={selectedModel !== 'veo-2.0-generate-001'}/>
+          <textarea value={dialogue} onChange={(e) => setDialogue(e.target.value)} placeholder="Dialogue for the character to speak..." rows={2} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none" disabled={selectedModel !== MODELS.videoGeneration}/>
           <input type="text" value={audioPrompt} onChange={(e) => setAudioPrompt(e.target.value)} placeholder="Audio prompt (e.g., upbeat synth music)" className="w-full mt-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none" disabled={selectedModel !== 'veo-3.0-generate-001'}/>
       </Section>
 

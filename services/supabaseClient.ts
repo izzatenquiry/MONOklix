@@ -14,20 +14,24 @@ export interface Database {
           full_name: string | null
           email: string
           phone: string
-          role: Database['public']['Enums']['user_role']
-          status: Database['public']['Enums']['user_status']
+          // FIX: Use string literals instead of circular enum reference for correct type inference
+          role: 'admin' | 'user'
+          // FIX: Use string literals instead of circular enum reference for correct type inference
+          status: 'pending_payment' | 'trial' | 'inactive' | 'lifetime' | 'admin'
           api_key: string | null
           avatar_url: string | null
           subscription_expiry: string | null
           webhook_url: string | null
         }
         Insert: { // The data you can insert
-          id: string
+          id?: string // id is auto-generated
           full_name?: string | null
           email: string
           phone: string
-          role?: Database['public']['Enums']['user_role']
-          status?: Database['public']['Enums']['user_status']
+          // FIX: Use string literals instead of circular enum reference for correct type inference
+          role?: 'admin' | 'user'
+          // FIX: Use string literals instead of circular enum reference for correct type inference
+          status?: 'pending_payment' | 'trial' | 'inactive' | 'lifetime' | 'admin'
           api_key?: string | null
           avatar_url?: string | null
           subscription_expiry?: string | null
@@ -37,20 +41,23 @@ export interface Database {
           full_name?: string | null
           email?: string
           phone?: string
-          role?: Database['public']['Enums']['user_role']
-          status?: Database['public']['Enums']['user_status']
+          // FIX: Use string literals instead of circular enum reference for correct type inference
+          role?: 'admin' | 'user'
+          // FIX: Use string literals instead of circular enum reference for correct type inference
+          status?: 'pending_payment' | 'trial' | 'inactive' | 'lifetime' | 'admin'
           api_key?: string | null
           avatar_url?: string | null
           subscription_expiry?: string | null
           webhook_url?: string | null
         }
+        // FIX: Added Relationships array to fix Supabase type inference issues, resolving 'never' types.
+        Relationships: []
       }
     }
     Functions: {}
-    // FIX: Define enums to match the database schema and fix type inference issues.
     Enums: {
       user_role: 'admin' | 'user'
-      user_status: 'trial' | 'inactive' | 'lifetime' | 'admin'
+      user_status: 'pending_payment' | 'trial' | 'inactive' | 'lifetime' | 'admin'
     }
   }
 }

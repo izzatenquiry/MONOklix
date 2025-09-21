@@ -16,6 +16,7 @@ interface SidebarProps {
 }
 
 const navItems: NavItem[] = [
+  { id: 'e-course', label: 'e-Tutorial', section: 'main', icon: BookOpenIcon, isSpecial: true },
   { id: 'ai-text-suite', label: 'AI Content Idea', section: 'free', icon: FileTextIcon },
   { id: 'ai-image-suite', label: 'AI Image', section: 'free', icon: ImageIcon },
   { id: 'ai-video-suite', label: 'AI Video & Voice', section: 'free', icon: VideoIcon },
@@ -23,11 +24,6 @@ const navItems: NavItem[] = [
   { id: 'library', label: 'Prompt Library', section: 'free', icon: LibraryIcon },
   { id: 'gallery', label: 'Image Gallery', section: 'free', icon: GalleryIcon },
 
-  
-  // Admin Section
-  { id: 'user-database', label: 'User Database', section: 'admin', icon: UsersIcon, roles: ['admin'] },
-  { id: 'e-tutorial-admin', label: 'e-Tutorials', section: 'admin', icon: BookOpenIcon, roles: ['admin'] },
-  
   // Bottom Section
   
   { id: 'settings', label: 'Settings', section: 'bottom', icon: SettingsIcon, roles: ['admin', 'user'] },
@@ -48,22 +44,31 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
     }
   };
 
-  const renderSection = (section: NavItem['section'], title?: string) => {
-    const filteredItems = navItems.filter(item => {
-        if (item.section !== section) return false;
-        if (item.roles && !item.roles.includes(currentUser.role)) return false;
-        
-        return true;
-    });
-
-    if (filteredItems.length === 0) return null;
+  const renderNavItem = (item: NavItem) => {
+    if (item.isSpecial) {
+        return (
+            <button 
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className={`w-full p-4 rounded-lg text-left mb-6 transition-all duration-300 transform hover:scale-[1.02] ${
+                activeView === 'e-course' 
+                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg' 
+                    : 'bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-sky-900/40 dark:to-indigo-900/40 border border-transparent text-neutral-700 dark:text-neutral-200 hover:shadow-md'
+                }`}
+            >
+                <div className="flex items-center">
+                <item.icon className="w-5 h-5 mr-3" />
+                <div>
+                    <p className="font-bold">{item.label}</p>
+                    <p className={`text-xs ${activeView === 'e-course' ? 'text-white/80' : 'text-primary-600 dark:text-primary-400'}`}>How to use MONOklix.com</p>
+                </div>
+                </div>
+            </button>
+        );
+    }
 
     return (
-    <div>
-      {title && <h3 className="px-4 pt-6 pb-2 text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">{title}</h3>}
-      <ul className="space-y-2">
-        {filteredItems.map((item) => (
-          <li key={item.id}>
+        <li key={item.id}>
             <button
               onClick={() => handleItemClick(item.id)}
               className={`w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200 text-left text-sm font-medium hover:translate-x-1 ${
@@ -76,8 +81,24 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
               <span className="flex-1">{item.label}</span>
               {item.isNew && <span className="text-xs bg-primary-500/20 text-primary-500 dark:text-primary-400 font-bold px-2 py-0.5 rounded-full">New!</span>}
             </button>
-          </li>
-        ))}
+        </li>
+    );
+  };
+
+  const renderSection = (section: NavItem['section'], title?: string) => {
+    const filteredItems = navItems.filter(item => {
+        if (item.section !== section) return false;
+        if (item.roles && !item.roles.includes(currentUser.role)) return false;
+        return true;
+    });
+
+    if (filteredItems.length === 0) return null;
+
+    return (
+    <div>
+      {title && <h3 className="px-4 pt-6 pb-2 text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">{title}</h3>}
+      <ul className="space-y-2">
+        {filteredItems.map(item => renderNavItem(item))}
       </ul>
     </div>
     );
@@ -107,23 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2">
-          <button 
-            onClick={() => handleItemClick('e-course')}
-            className={`w-full p-4 rounded-lg text-left mb-6 transition-all duration-300 transform hover:scale-[1.02] ${
-              activeView === 'e-course' 
-                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg' 
-                : 'bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-sky-900/40 dark:to-indigo-900/40 border border-transparent text-neutral-700 dark:text-neutral-200 hover:shadow-md'
-            }`}
-          >
-            <div className="flex items-center">
-              <BookOpenIcon className="w-5 h-5 mr-3" />
-              <div>
-                <p className="font-bold">e-Tutorial</p>
-                <p className={`text-xs ${activeView === 'e-course' ? 'text-white/80' : 'text-primary-600 dark:text-primary-400'}`}>How to use MONOklix.com</p>
-              </div>
-            </div>
-          </button>
-          
+          {renderSection('main')}
           {renderSection('free', 'AI Agent')}
           {renderSection('ugc', 'UGC Content')}
           {renderSection('admin', 'Admin')}

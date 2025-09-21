@@ -4,13 +4,20 @@ import { dbGetHistory, dbDeleteHistoryItem, dbClearHistory, dbAddAndPruneHistory
 
 const MAX_HISTORY_ITEMS = 15;
 
-const getCurrentUserId = async (): Promise<string | null> => {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session?.user?.id) {
-        console.error("User not authenticated, cannot access history.");
-        return null;
+const getCurrentUserId = (): string | null => {
+    try {
+        const savedUserJson = localStorage.getItem('currentUser');
+        if (savedUserJson) {
+            const user = JSON.parse(savedUserJson);
+            if (user && user.id) {
+                return user.id;
+            }
+        }
+    } catch (error) {
+        console.error("Failed to parse user from localStorage for history.", error);
     }
-    return session.user.id;
+    console.error("User not authenticated, cannot access history.");
+    return null;
 };
 
 /**
@@ -18,7 +25,7 @@ const getCurrentUserId = async (): Promise<string | null> => {
  * @returns {Promise<HistoryItem[]>} A promise that resolves to an array of history items.
  */
 export const getHistory = async (): Promise<HistoryItem[]> => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return [];
     return dbGetHistory(userId);
 };
@@ -28,7 +35,7 @@ export const getHistory = async (): Promise<HistoryItem[]> => {
  * @param {object} newItemData - The data for the new history item.
  */
 export const addHistoryItem = async (newItemData: { type: HistoryItemType; prompt: string; result: string | Blob; }) => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return;
 
     const newItem: HistoryItem = {
@@ -52,7 +59,7 @@ export const addHistoryItem = async (newItemData: { type: HistoryItemType; promp
  * @param {string} id - The ID of the history item to delete.
  */
 export const deleteHistoryItem = async (id: string) => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return;
     await dbDeleteHistoryItem(id);
 };
@@ -61,7 +68,7 @@ export const deleteHistoryItem = async (id: string) => {
  * Clears the entire generation history for the current user from IndexedDB.
  */
 export const clearHistory = async () => {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return;
     await dbClearHistory(userId);
 };

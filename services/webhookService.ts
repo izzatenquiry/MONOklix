@@ -22,16 +22,34 @@ export type WebhookPayload = {
     userId: string;
 };
 
+const getCurrentUserFromSession = (): { id: string } | null => {
+    try {
+        const savedUserJson = localStorage.getItem('currentUser');
+        if (savedUserJson) {
+            const user = JSON.parse(savedUserJson);
+            if (user && user.id) {
+                return user;
+            }
+        }
+    } catch (error) {
+        console.error("Failed to parse user from localStorage for webhook.", error);
+    }
+    return null;
+}
+
 export const triggerUserWebhook = async (
     data: Omit<WebhookPayload, 'timestamp' | 'userId' | 'result' | 'mimeType'> & { result: string | Blob, mimeType?: string }
 ) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
+    const user = getCurrentUserFromSession();
+    if (!user?.id) {
+        console.error("User not authenticated, cannot trigger webhook.");
+        return;
+    }
     
     const { data: profile, error } = await supabase
         .from('users')
         .select('webhook_url')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
     
     if (error || !profile || !profile.webhook_url) {
@@ -57,7 +75,7 @@ export const triggerUserWebhook = async (
         result: resultData,
         mimeType: finalMimeType,
         timestamp: Date.now(),
-        userId: session.user.id,
+        userId: user.id,
     };
 
     try {
@@ -72,15 +90,15 @@ export const triggerUserWebhook = async (
 };
 
 export const sendTestUserWebhook = async (): Promise<{ success: boolean; message: string }> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) {
+    const user = getCurrentUserFromSession();
+    if (!user?.id) {
         return { success: false, message: "You are not logged in." };
     }
 
     const { data: profile, error } = await supabase
         .from('users')
         .select('webhook_url')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
     
     if (error || !profile || !profile.webhook_url) {
@@ -92,7 +110,7 @@ export const sendTestUserWebhook = async (): Promise<{ success: boolean; message
         type: 'test',
         message: 'This is a test message from MONOKlix.com',
         timestamp: Date.now(),
-        userId: session.user.id,
+        userId: user.id,
     };
 
     try {

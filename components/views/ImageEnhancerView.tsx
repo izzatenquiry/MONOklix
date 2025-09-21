@@ -7,6 +7,7 @@ import { type MultimodalContent } from '../../services/geminiService';
 import { DownloadIcon, WandIcon, VideoIcon } from '../Icons';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getImageEnhancementPrompt } from '../../services/promptManager';
 
 interface ImageData extends MultimodalContent {
   file: File;
@@ -62,15 +63,8 @@ const ImageEnhancerView: React.FC<ImageEnhancerViewProps> = ({ onReEdit, onCreat
     setError(null);
     setResultImage(null);
     
-    let prompt = '';
-    let historyPrompt = '';
-    if (enhancementType === 'upscale') {
-        prompt = "Upscale this image, making it sharper, clearer, and higher resolution. Preserve all original details.";
-        historyPrompt = "Image Upscaled";
-    } else {
-        prompt = "Enhance the colors and lighting of this image to make it more vibrant and visually appealing. Adjust contrast and brightness for a professional look.";
-        historyPrompt = "Image Colors Enhanced";
-    }
+    const prompt = getImageEnhancementPrompt(enhancementType);
+    const historyPrompt = enhancementType === 'upscale' ? "Image Upscaled" : "Image Colors Enhanced";
 
     try {
       const result = await composeImage(prompt, [imageData]);

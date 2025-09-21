@@ -7,6 +7,7 @@ import { StoreIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icon
 import { type MultimodalContent } from '../../services/geminiService';
 import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
+import { getProductAdPrompt } from '../../services/promptManager';
 
 const vibeOptions = ["Random", "Energetic & Fun", "Cinematic & Epic", "Modern & Clean", "Natural & Organic", "Tech & Futuristic"];
 const lightingOptions = ["Random","Studio Light", "Dramatic", "Natural Light", "Neon", "Golden Hour", "Soft Daylight"];
@@ -77,22 +78,13 @@ const ProductAdView: React.FC = () => {
     setStoryboard(null);
     setCopied(false);
 
-    const prompt = `
-      You are an expert advertising copywriter and storyboard artist for social media video ads.
-      Create a compelling 1-scene storyboard for a video ad based on the provided product image and details.
-      The output language for the storyboard must be in ${selections.language}.
-
-      **Product Description:**
-      ${productDesc}
-
-      **Creative Direction:**
-      - Vibe: ${selections.vibe}
-      - Lighting: ${selections.lighting}
-      - Content Type: ${selections.contentType}
-
-      Based on all this information, describe one effective scene. What does the viewer see? What is the voiceover or on-screen text?
-      Keep it short, engaging, and optimised for platforms like TikTok or Instagram Reels.
-    `;
+    const prompt = getProductAdPrompt({
+        productDesc,
+        language: selections.language,
+        vibe: selections.vibe,
+        lighting: selections.lighting,
+        contentType: selections.contentType,
+    });
 
     try {
       const result = await generateMultimodalContent(prompt, [productImage]);

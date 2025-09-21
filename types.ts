@@ -10,8 +10,6 @@ export type View =
   | 'library'
   // Settings & Admin
   | 'settings'
-  | 'user-database'
-  | 'e-tutorial-admin'
   | 'ai-support';
 
 export interface NavItem {
@@ -22,6 +20,7 @@ export interface NavItem {
   isNew?: boolean;
   isExternal?: boolean;
   roles?: ('admin' | 'user')[];
+  isSpecial?: boolean; // Added for unique styling like the e-course button
 }
 
 // FIX: Added 'Audio' to the HistoryItemType to support it as a valid type for history items.
@@ -64,7 +63,8 @@ export interface TutorialContent {
 }
 
 export type UserRole = 'admin' | 'user';
-export type UserStatus = 'trial' | 'inactive' | 'lifetime' | 'admin';
+// FIX: Expanded UserStatus to include all possible statuses from the database enum. This fixes multiple type errors.
+export type UserStatus = 'lifetime' | 'admin' | 'trial' | 'inactive' | 'pending_payment';
 
 export interface User {
   id: string; // from Supabase auth
@@ -77,18 +77,11 @@ export interface User {
   apiKey?: string | null;
   avatarUrl?: string;
   username: string; // Keeping this for consistency in UI
-  subscriptionExpiry?: number; // Added back for trial management
+  subscriptionExpiry?: number; // Kept for legacy trial users, but new registrations won't use it.
   webhookUrl?: string | null;
 }
 
-export type LoginResult = 
-  | { success: true; user: User; }
-  | { success: false; message: string; };
-
-// The RegisterResult type is no longer needed as registration now logs the user in directly.
-// export type RegisterResult = 
-//   | { success: true; message: string; } // User object is not returned as confirmation is required
-//   | { success: false; message: string; };
+export type LoginResult = { success: true; user: User } | { success: false; message: string };
 
 export interface Announcement {
   id: string;
