@@ -3,7 +3,6 @@ import { generateVideo } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { VideoIcon, DownloadIcon, TrashIcon, UploadIcon, StarIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import ImageUpload from '../common/ImageUpload';
 import { MODELS } from '../../services/aiConfig';
@@ -110,7 +109,6 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
                 prompt: `Video: ${prompt}`,
                 result: resultBlob,
             });
-            await sendToTelegram(`Video generated for prompt: ${prompt}`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             setError(errorMessage);
