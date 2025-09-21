@@ -1,7 +1,7 @@
 // supabase/functions/verify-and-save-key/index.ts
 
 // FIX: Replaced invalid type reference URL with a valid one to provide correct Deno types for the TypeScript compiler.
-/// <reference types="https://esm.sh/@supabase/functions-js@2.4.1/dist/edge-runtime.d.ts" />
+/// <reference types="https://esm.sh/@supabase/functions-js@2.4.1/deno/edge-runtime.d.ts" />
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
