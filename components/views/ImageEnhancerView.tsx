@@ -5,7 +5,6 @@ import ImageUpload from '../common/ImageUpload';
 import Spinner from '../common/Spinner';
 import { type MultimodalContent } from '../../services/geminiService';
 import { DownloadIcon, WandIcon, VideoIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getImageEnhancementPrompt } from '../../services/promptManager';
 
@@ -75,7 +74,6 @@ const ImageEnhancerView: React.FC<ImageEnhancerViewProps> = ({ onReEdit, onCreat
             prompt: historyPrompt,
             result: result.imageBase64,
         });
-        sendToTelegram(result.imageBase64, 'image', historyPrompt);
         triggerDownload(result.imageBase64, `1za7-ai-${enhancementType}`);
       } else {
         setError("The AI could not enhance the image. Please try a different image.");

@@ -5,7 +5,6 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { TikTokIcon, DownloadIcon, UserIcon, WandIcon, VideoIcon } from '../Icons';
 import { type User } from '../../types';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getTiktokAffiliatePrompt } from '../../services/promptManager';
 
@@ -135,7 +134,6 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                     result: generatedImages[0],
                 });
                 generatedImages.forEach((imgBase64, index) => {
-                    sendToTelegram(imgBase64, 'image', `TikTok Affiliate: Vibe - ${vibe}, Model - ${gender}`);
                     triggerDownload(imgBase64, `1za7-ai-model-photo-${index + 1}`);
                 });
             }

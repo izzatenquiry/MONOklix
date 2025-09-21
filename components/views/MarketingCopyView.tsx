@@ -3,7 +3,6 @@ import { generateText } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { MegaphoneIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getMarketingCopyPrompt } from '../../services/promptManager';
 
@@ -60,7 +59,6 @@ const MarketingCopyView: React.FC = () => {
                 prompt: `Marketing Copy for: ${productDetails.substring(0, 50)}... (Lang: ${selectedLanguage})`,
                 result: result,
             });
-            sendToTelegram(`*Marketing Copy for "${productDetails.substring(0, 50)}..."*:\n\n${result}`, 'text');
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);

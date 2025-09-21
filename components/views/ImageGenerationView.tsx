@@ -5,7 +5,6 @@ import Spinner from '../common/Spinner';
 import { ImageIcon, UploadIcon, TrashIcon, DownloadIcon, VideoIcon, StarIcon, WandIcon } from '../Icons';
 import { type MultimodalContent } from '../../services/geminiService';
 import { type User } from '../../types';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 
 interface ImageData extends MultimodalContent {
@@ -148,7 +147,6 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
             prompt: `Image Edit: ${prompt}`,
             result: result.imageBase64,
           });
-          sendToTelegram(result.imageBase64, 'image', `Image Edit: ${prompt}`);
           triggerDownload(result.imageBase64, 'monoklix-edited-image');
         }
       } else {
@@ -172,7 +170,6 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
             result: result[0],
           });
           result.forEach((imgBase64, index) => {
-            sendToTelegram(imgBase64, 'image', `Generate Image: ${prompt} (Ratio: ${aspectRatio})`);
             triggerDownload(imgBase64, `monoklix-generated-image-${index+1}`);
           });
         }

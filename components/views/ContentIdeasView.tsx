@@ -5,7 +5,6 @@ import Spinner from '../common/Spinner';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import { type GenerateContentResponse } from '@google/genai';
 import { TrendingUpIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getContentIdeasPrompt } from '../../services/promptManager';
 
@@ -49,7 +48,6 @@ const ContentIdeasView: React.FC = () => {
                 prompt: `Content Ideas for: ${topic}`,
                 result: result.text,
             });
-            sendToTelegram(`*Content Ideas for "${topic}"*:\n\n${result.text}`, 'text');
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);

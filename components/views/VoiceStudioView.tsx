@@ -3,7 +3,6 @@ import { MicIcon, DownloadIcon } from '../Icons';
 import { generateVoiceOver } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 
 const voiceActors = [
@@ -111,7 +110,6 @@ const VoiceStudioView: React.FC = () => {
                 prompt: `Voice Studio (${selectedActor}): ${script.substring(0, 50)}...`,
                 result: resultBlob // Save the Blob itself for persistence
             });
-            sendToTelegram(resultUrl, 'audio', `Voice Studio (${selectedActor}):\n\n${script.substring(0, 900)}...`);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);

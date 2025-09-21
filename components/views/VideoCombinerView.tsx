@@ -3,7 +3,6 @@ import { getHistory } from '../../services/historyService';
 import { type HistoryItem } from '../../types';
 import Spinner from '../common/Spinner';
 import { FilmIcon, DownloadIcon, CheckCircleIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 
 // FFmpeg is loaded via a script tag, so we can declare it on the window
@@ -138,7 +137,6 @@ const VideoCombinerView: React.FC = () => {
             const url = URL.createObjectURL(blob);
             setOutputUrl(url);
 
-            sendToTelegram(url, 'video', `Combined ${selectedVideos.length} videos.`);
         } catch (err) {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred during video processing.";

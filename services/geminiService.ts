@@ -493,36 +493,3 @@ export const generateVoiceOver = async (
         throw error;
     }
 };
-
-/**
- * Verifies if a given Gemini API key is valid by making a simple test call.
- * @param {string} apiKey - The API key to verify.
- * @returns {Promise<boolean>} A promise that resolves to true if the key is valid, false otherwise.
- */
-export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
-  if (!apiKey) {
-    return false;
-  }
-  try {
-    // Use a direct fetch call for verification to reliably check the HTTP status code.
-    // The SDK's generateContent might not throw an error for certain auth failures in a way
-    // that's easy to catch, whereas a direct status check is unambiguous.
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.text}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "hi" }] }]
-        })
-      }
-    );
-    // A successful response (200 OK) means the key is valid.
-    // Any other status (like 400 for bad key, 403 for permission denied) is a failure.
-    return response.status === 200;
-  } catch (error) {
-    // Network errors etc.
-    console.error("API Key verification fetch failed:", error);
-    return false;
-  }
-};

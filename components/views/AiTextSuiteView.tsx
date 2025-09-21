@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ChatView from './ChatView';
 import ContentIdeasView from './ContentIdeasView';
 import MarketingCopyView from './MarketingCopyView';
 import ProductAdView from './ProductAdView';

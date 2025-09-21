@@ -60,47 +60,6 @@ export const saveUserApiKey = async (
 };
 
 /**
- * Verifies a Gemini API key using a Supabase Edge Function and saves it if valid.
- * @param userId The ID of the user.
- * @param key The API key to verify and save.
- * @returns A promise that resolves to the updated user object or an error message.
- */
-export const verifyAndSaveUserApiKey = async (
-    userId: string, // userId is not really used here, as auth context is from JWT
-    key: string
-): Promise<{ success: true; user: User } | { success: false; message: string }> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        return { success: false, message: 'Not authenticated. Please log in again.' };
-    }
-
-    const { data, error } = await supabase.functions.invoke('verify-and-save-key', {
-        body: { apiKey: key }
-    });
-
-    if (error) {
-        // Edge functions can return structured JSON errors in the body
-        const errorBody = error.context?.body;
-        if (errorBody && typeof errorBody === 'string') {
-             try {
-                const parsed = JSON.parse(errorBody);
-                if (parsed.error) return { success: false, message: parsed.error };
-             } catch(_) { /* ignore parsing errors and fall through */ }
-        }
-        return { success: false, message: error.message };
-    }
-    
-    if (!data) {
-        return { success: false, message: 'No data returned from the server.' };
-    }
-
-    const typedData = data as UserProfileData;
-    const updatedUser = mapProfileToUser(typedData);
-    return { success: true, user: updatedUser };
-};
-
-
-/**
  * Helper to extract a readable error message from various error types.
  * @param error The error object.
  * @returns A readable string message.

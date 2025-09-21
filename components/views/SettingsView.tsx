@@ -3,7 +3,6 @@ import { type User, type AiLogItem } from '../../types';
 import { updateUserProfile, saveUserApiKey, updateUserWebhookUrl } from '../../services/userService';
 import { CreditCardIcon, CheckCircleIcon, XIcon, WebhookIcon, EyeIcon, EyeOffIcon, TrashIcon, ClipboardListIcon, AudioIcon, AlertTriangleIcon } from '../Icons';
 import Spinner from '../common/Spinner';
-import { sendToTelegram } from '../../services/telegramService';
 import { getLogs, clearLogs } from '../../services/aiLogService';
 import { sendTestUserWebhook } from '../../services/webhookService';
 import AdminDashboardView from './AdminDashboardView';

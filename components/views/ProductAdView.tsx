@@ -5,7 +5,6 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { StoreIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import { type MultimodalContent } from '../../services/geminiService';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getProductAdPrompt } from '../../services/promptManager';
 
@@ -94,7 +93,6 @@ const ProductAdView: React.FC = () => {
         prompt: `Product Ad: ${productDesc.substring(0, 50)}... (Lang: ${selections.language})`,
         result: result,
       });
-      sendToTelegram(`*Video Storyline for "${productDesc.substring(0, 50)}..."*:\n\n${result}`, 'text');
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
       console.error("Generation failed:", e);

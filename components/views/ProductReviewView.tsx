@@ -4,7 +4,6 @@ import { composeImage, type MultimodalContent, generateMultimodalContent } from 
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { StarIcon, DownloadIcon, ImageIcon, VideoIcon, WandIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import { getProductReviewImagePrompt, getProductReviewStoryboardPrompt } from '../../services/promptManager';
 
 const vibeOptions = ["Random", "Energetic & Fun", "Cinematic & Epic", "Modern & Clean", "Natural & Organic", "Tech & Futuristic"];
@@ -125,7 +124,6 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
         prompt: `Product Review: ${productDesc.substring(0, 50)}... (Lang: ${selectedLanguage})`,
         result: result,
       });
-      sendToTelegram(`*Product Review Storyboard for "${productDesc.substring(0, 50)}..."*:\n\n${result}`, 'text');
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
       console.error("Generation failed:", e);
@@ -179,7 +177,6 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                     prompt: `Product Review Scene Image ${i + 1}: ${parsedScenes[i].substring(0, 50)}...`,
                     result: result.imageBase64
                 });
-                sendToTelegram(result.imageBase64, 'image', `Product Review Scene Image ${i + 1}: ${productDesc}`);
             } else {
                  throw new Error("The AI did not return an image for this scene. Try rephrasing your inputs.");
             }

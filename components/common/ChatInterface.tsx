@@ -4,7 +4,6 @@ import { createChatSession, streamChatResponse } from '../../services/geminiServ
 import MarkdownRenderer from './MarkdownRenderer';
 import { SendIcon } from '../Icons';
 import Spinner from './Spinner';
-import { sendToTelegram } from '../../services/telegramService';
 import { triggerUserWebhook } from '../../services/webhookService';
 
 interface Message {
@@ -58,8 +57,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeh
           return newMessages;
         });
       }
-      // Send the final result to Telegram
-      sendToTelegram(`*User Prompt:*\n${currentInput}\n\n*AI Response:*\n${modelResponse}`, 'text');
       // Send the final result to the user's personal webhook
       triggerUserWebhook({ type: 'text', prompt: currentInput, result: modelResponse });
 

@@ -5,7 +5,6 @@ import ImageUpload from '../common/ImageUpload';
 import Spinner from '../common/Spinner';
 import { type MultimodalContent } from '../../services/geminiService';
 import { DownloadIcon, ScissorsIcon, WandIcon, VideoIcon } from '../Icons';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getBackgroundRemovalPrompt } from '../../services/promptManager';
 
@@ -70,7 +69,6 @@ const BackgroundRemoverView: React.FC<BackgroundRemoverViewProps> = ({ onReEdit,
             prompt: 'Background Removed',
             result: result.imageBase64,
         });
-        sendToTelegram(result.imageBase64, 'image', 'Background Removed');
         triggerDownload(result.imageBase64, '1za7-ai-bg-removed');
       } else {
         setError("The AI could not remove the background. Please try a different image.");

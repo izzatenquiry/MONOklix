@@ -5,7 +5,6 @@ import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import { CameraIcon, DownloadIcon, SunIcon, SparklesIcon, LeafIcon, WandIcon, VideoIcon } from '../Icons';
 import { type User } from '../../types';
-import { sendToTelegram } from '../../services/telegramService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getProductPhotoPrompt } from '../../services/promptManager';
 
@@ -99,7 +98,6 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
           result: generatedImages[0],
         });
         generatedImages.forEach((imgBase64, index) => {
-          sendToTelegram(imgBase64, 'image', `Product Photo Generation: ${prompt}`);
           triggerDownload(imgBase64, `monoklix-product-photo-${index + 1}`);
         });
       }
