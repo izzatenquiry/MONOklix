@@ -19,6 +19,7 @@ export const saveUserApiKey = async (
         // Allow deleting the key by saving an empty string
         const { data: updatedData, error: updateError } = await supabase
             .from('users')
+            // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
             .update({ api_key: null })
             .eq('id', userId)
             .select()
@@ -35,6 +36,7 @@ export const saveUserApiKey = async (
     try {
         const { data: updatedData, error: updateError } = await supabase
             .from('users')
+            // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
             .update({ 
                 api_key: trimmedKey, 
                 status: 'lifetime', // Always ensure user is lifetime when they provide a key
@@ -149,6 +151,7 @@ export const getAllUsers = async (): Promise<User[] | null> => {
 export const updateUserStatus = async (userId: string, status: UserStatus): Promise<boolean> => {
     const { error } = await supabase
         .from('users')
+        // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
         .update({ status: status })
         .eq('id', userId);
 
@@ -171,6 +174,7 @@ export const updateUserProfile = async (
 
     const { data: updatedData, error } = await supabase
         .from('users')
+        // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
         .update(profileUpdates)
         .eq('id', userId)
         .select()
@@ -212,6 +216,7 @@ export const replaceUsers = async (importedUsers: User[]): Promise<{ success: bo
         const { error: deleteError } = await supabase.from('users').delete().neq('role', 'admin');
         if (deleteError) throw deleteError;
 
+        // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
         const { error: insertError } = await supabase.from('users').insert(profilesToInsert);
         if (insertError) throw insertError;
 
@@ -253,6 +258,7 @@ export const initializeAdminAccount = async () => {
         return;
     }
     
+    // FIX: The type of `adminUser` is now correctly inferred, so `adminUser.id` is accessible.
     const adminUserId = adminUser.id;
 
     const profileData: Database['public']['Tables']['users']['Insert'] = {
@@ -264,6 +270,7 @@ export const initializeAdminAccount = async () => {
         status: 'admin',
     };
     
+    // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
     const { error: upsertError } = await supabase.from('users').upsert(profileData, { onConflict: 'id' });
 
     if (upsertError) {
@@ -280,6 +287,7 @@ export const updateUserWebhookUrl = async (
 ): Promise<{ success: true; user: User } | { success: false; message: string }> => {
     const { data: updatedData, error } = await supabase
         .from('users')
+        // FIX: This operation is now correctly typed after fixing supabaseClient.ts types.
         .update({ webhook_url: webhookUrl })
         .eq('id', userId)
         .select()

@@ -52,11 +52,13 @@ export const triggerUserWebhook = async (
         .eq('id', user.id)
         .single();
     
+    // FIX: `profile` is now correctly typed, so `profile.webhook_url` is accessible.
     if (error || !profile || !profile.webhook_url) {
         // No webhook configured, fail silently
         return;
     }
 
+    // FIX: `profile.webhook_url` is accessible due to correct typing.
     const webhookUrl = profile.webhook_url;
     let resultData: string;
     let finalMimeType: string | undefined = data.mimeType;
@@ -101,10 +103,12 @@ export const sendTestUserWebhook = async (): Promise<{ success: boolean; message
         .eq('id', user.id)
         .single();
     
+    // FIX: `profile` is now correctly typed, so `profile.webhook_url` is accessible.
     if (error || !profile || !profile.webhook_url) {
         return { success: false, message: "No webhook URL is saved for your account." };
     }
 
+    // FIX: `profile.webhook_url` is accessible due to correct typing.
     const webhookUrl = profile.webhook_url;
     const testPayload = {
         type: 'test',
