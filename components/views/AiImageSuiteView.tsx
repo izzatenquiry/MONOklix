@@ -31,10 +31,12 @@ interface AiImageSuiteViewProps {
   onReEdit: (preset: ImageEditPreset) => void;
   imageToReEdit: ImageEditPreset | null;
   clearReEdit: () => void;
+  presetPrompt: string | null;
+  clearPresetPrompt: () => void;
 }
 
 
-const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit }) => {
+const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit, presetPrompt, clearPresetPrompt }) => {
     const [activeTab, setActiveTab] = useState<TabId>('generation');
 
     useEffect(() => {
@@ -43,11 +45,23 @@ const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onRe
         }
     }, [imageToReEdit]);
 
+    useEffect(() => {
+        if (presetPrompt) {
+            setActiveTab('generation');
+        }
+    }, [presetPrompt]);
+
     const renderActiveTabContent = () => {
         const commonProps = { onReEdit, onCreateVideo };
         switch (activeTab) {
             case 'generation':
-                return <ImageGenerationView {...commonProps} imageToReEdit={imageToReEdit} clearReEdit={clearReEdit} />;
+                return <ImageGenerationView 
+                          {...commonProps} 
+                          imageToReEdit={imageToReEdit} 
+                          clearReEdit={clearReEdit}
+                          presetPrompt={presetPrompt}
+                          clearPresetPrompt={clearPresetPrompt} 
+                        />;
             case 'enhancer':
                 return <ImageEnhancerView {...commonProps} />;
             case 'remover':
@@ -57,7 +71,13 @@ const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onRe
             case 'model':
                 return <TiktokAffiliateView {...commonProps} />;
             default:
-                return <ImageGenerationView {...commonProps} imageToReEdit={imageToReEdit} clearReEdit={clearReEdit} />;
+                return <ImageGenerationView 
+                          {...commonProps} 
+                          imageToReEdit={imageToReEdit} 
+                          clearReEdit={clearReEdit}
+                          presetPrompt={presetPrompt}
+                          clearPresetPrompt={clearPresetPrompt} 
+                        />;
         }
     };
 

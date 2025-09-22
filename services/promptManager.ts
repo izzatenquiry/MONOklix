@@ -28,9 +28,10 @@ Example replies:
 - "Baik, saya escalate isu ni kepada team teknikal kami."`;
 
 // --- Content Ideas ---
-export const getContentIdeasPrompt = (topic: string): string => `
+export const getContentIdeasPrompt = (topic: string, language: string): string => `
     Generate a list of 5 engaging content ideas (e.g., blog posts, social media updates, video scripts) for the following topic: "${topic}".
     The ideas should be trendy, relevant, and aimed at capturing audience attention. For each idea, provide a catchy title and a brief description of the concept.
+    The final output language must be strictly in ${language}.
 `;
 
 // --- Marketing Copy ---
@@ -175,22 +176,33 @@ export const getTiktokAffiliatePrompt = (details: {
     vibe: string;
     creativityLevel: number;
     customPrompt: string;
+    hasFaceImage?: boolean;
 }): string => {
     if (details.customPrompt.trim()) {
         return details.customPrompt.trim();
     }
+    
+    const modelInstruction = details.hasFaceImage
+        ? `A ${details.gender} model whose face is inspired by the second image provided (the face photo).`
+        : `A ${details.gender} from ${details.modelFace === 'Random' ? 'Southeast Asia' : details.modelFace}. Ensure the face looks realistic and appealing.`;
+    
+    const productInstruction = details.hasFaceImage
+        ? "Include the product from the first uploaded image."
+        : "Include the product from the uploaded image.";
+
    return `
         Create a photorealistic User-Generated Content (UGC) image for a platform like TikTok.
         The image must naturally feature the uploaded product image.
         Here are the details for the image:
-        - Model: A ${details.gender} from ${details.modelFace === 'Random' ? 'Southeast Asia' : details.modelFace}. Ensure the face looks realistic and appealing.
-        - Product: Include the product from the uploaded image.
+        - Model: ${modelInstruction}
+        - Product: ${productInstruction}
         - Lighting: ${details.lighting === 'Random' ? 'flattering and natural-looking lighting' : details.lighting}.
         - Camera & Lens: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}.
         - Body Movement / Pose: ${details.pose === 'Random' ? 'a natural and relaxed pose' : details.pose}. The model should be interacting with the product if appropriate.
         - Content Vibe / Background: ${details.vibe}.
         - AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.
-        The result should be a high-quality, authentic-looking, and engaging image that could be used for affiliate marketing. Do not include any text or logos.
+        The result should be a high-quality, authentic-looking, and engaging image that could be used for affiliate marketing.
+        - CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.
     `;
 };
 

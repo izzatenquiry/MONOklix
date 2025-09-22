@@ -20,6 +20,8 @@ const downloadText = (text: string, fileName: string) => {
     URL.revokeObjectURL(url);
 };
 
+const languages = ["English", "Bahasa Malaysia", "Chinese"];
+
 
 const ContentIdeasView: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -27,6 +29,7 @@ const ContentIdeasView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
 
     const handleGenerate = useCallback(async () => {
         if (!topic.trim()) {
@@ -38,14 +41,14 @@ const ContentIdeasView: React.FC = () => {
         setResponse(null);
         setCopied(false);
 
-        const prompt = getContentIdeasPrompt(topic);
+        const prompt = getContentIdeasPrompt(topic, selectedLanguage);
 
         try {
             const result = await generateContentWithGoogleSearch(prompt);
             setResponse(result);
             await addHistoryItem({
                 type: 'Copy',
-                prompt: `Content Ideas for: ${topic}`,
+                prompt: `Content Ideas for: ${topic} (Lang: ${selectedLanguage})`,
                 result: result.text,
             });
         } catch (e) {
@@ -55,7 +58,7 @@ const ContentIdeasView: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [topic]);
+    }, [topic, selectedLanguage]);
 
     const handleCopy = () => {
         if (!response?.text) return;
@@ -71,16 +74,29 @@ const ContentIdeasView: React.FC = () => {
                 <p className="text-neutral-500 dark:text-neutral-400 mt-1">Discover trending content ideas for any topic or niche.</p>
             </div>
             
-            <div className="flex-1 flex flex-col justify-center">
-                <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Topic or Niche</label>
-                <textarea
-                    id="topic-input"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    placeholder="e.g., sustainable fashion, home gardening for beginners, AI in marketing"
-                    rows={4}
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
-                />
+            <div className="flex-1 flex flex-col justify-center gap-4">
+                <div>
+                    <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Topic or Niche</label>
+                    <textarea
+                        id="topic-input"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        placeholder="e.g., sustainable fashion, home gardening for beginners, AI in marketing"
+                        rows={4}
+                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="language-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Output Language</label>
+                    <select
+                        id="language-select"
+                        value={selectedLanguage}
+                        onChange={(e) => setSelectedLanguage(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
+                    >
+                        {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                    </select>
+                </div>
             </div>
             
             <div className="pt-4 mt-auto">

@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState('light'); // Default to light, load async
   const [videoGenPreset, setVideoGenPreset] = useState<VideoGenPreset | null>(null);
   const [imageToReEdit, setImageToReEdit] = useState<ImageEditPreset | null>(null);
+  const [imageGenPresetPrompt, setImageGenPresetPrompt] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isShowingWelcome, setIsShowingWelcome] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
@@ -125,6 +126,11 @@ const App: React.FC = () => {
     setActiveView('ai-image-suite');
   };
 
+  const handleUsePromptInGenerator = (prompt: string) => {
+    setImageGenPresetPrompt(prompt);
+    setActiveView('ai-image-suite');
+  };
+
   const renderView = () => {
     switch (activeView) {
       case 'e-course':
@@ -137,6 +143,8 @@ const App: React.FC = () => {
                   onReEdit={handleReEditImage}
                   imageToReEdit={imageToReEdit}
                   clearReEdit={() => setImageToReEdit(null)}
+                  presetPrompt={imageGenPresetPrompt}
+                  clearPresetPrompt={() => setImageGenPresetPrompt(null)}
                 />;
       case 'ai-video-suite':
         return <AiVideoSuiteView 
@@ -148,7 +156,7 @@ const App: React.FC = () => {
       case 'gallery':
         return <GalleryView onCreateVideo={handleCreateVideoFromImage} onReEdit={handleReEditImage} />;
       case 'library':
-        return <LibraryView />;
+        return <LibraryView onUsePrompt={handleUsePromptInGenerator} />;
       case 'settings':
           return <SettingsView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
       case 'ai-support':

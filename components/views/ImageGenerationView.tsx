@@ -48,9 +48,11 @@ interface ImageGenerationViewProps {
   onReEdit: (preset: ImageEditPreset) => void;
   imageToReEdit: ImageEditPreset | null;
   clearReEdit: () => void;
+  presetPrompt: string | null;
+  clearPresetPrompt: () => void;
 }
 
-const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit }) => {
+const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit, presetPrompt, clearPresetPrompt }) => {
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState("9:16");
   const [images, setImages] = useState<string[]>([]);
@@ -85,6 +87,14 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
       clearReEdit();
     }
   }, [imageToReEdit, clearReEdit]);
+
+  useEffect(() => {
+    if (presetPrompt) {
+      setPrompt(presetPrompt);
+      window.scrollTo(0, 0); // Scroll to top for better UX
+      clearPresetPrompt();
+    }
+  }, [presetPrompt, clearPresetPrompt]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

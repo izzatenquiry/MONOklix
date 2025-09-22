@@ -86,6 +86,7 @@ const SelectControl: React.FC<{
 
 const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onCreateVideo }) => {
     const [productImage, setProductImage] = useState<MultimodalContent | null>(null);
+    const [faceImage, setFaceImage] = useState<MultimodalContent | null>(null);
     const [resultImages, setResultImages] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -111,13 +112,19 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
         setResultImages([]);
 
         const prompt = getTiktokAffiliatePrompt({
-            gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt
+            gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt,
+            hasFaceImage: !!faceImage
         });
         
         try {
+            const imagesToCompose: MultimodalContent[] = [productImage];
+            if (faceImage) {
+                imagesToCompose.push(faceImage);
+            }
+
             const generatedImages: string[] = [];
             for (let i = 0; i < numberOfImages; i++) {
-                const result = await composeImage(prompt, [productImage]);
+                const result = await composeImage(prompt, imagesToCompose);
                 if (result.imageBase64) {
                     generatedImages.push(result.imageBase64);
                     setResultImages([...generatedImages]);
@@ -154,7 +161,10 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
           </div>
           
           <Section title="1. Asset & Model">
-              <ImageUpload id="tiktok-affiliate-upload" onImageUpload={(base64, mimeType) => setProductImage({base64, mimeType})} title="Upload Product"/>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ImageUpload id="tiktok-product-upload" onImageUpload={(base64, mimeType) => setProductImage({base64, mimeType})} title="Product Photo" description="Required."/>
+                  <ImageUpload id="tiktok-face-upload" onImageUpload={(base64, mimeType) => setFaceImage({base64, mimeType})} title="Face Photo" description="Optional inspiration."/>
+              </div>
               <div className="grid grid-cols-2 gap-3 mt-4">
                   <CreativeButton label="Female" isSelected={gender === 'Female'} onClick={() => setGender('Female')} icon={UserIcon}/>
                   <CreativeButton label="Male" isSelected={gender === 'Male'} onClick={() => setGender('Male')} icon={UserIcon}/>
@@ -189,7 +199,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
             <SelectControl id="vibe-select" value={vibe} onChange={setVibe} options={vibeOptions} />
           </Section>
           
-          <Section title="7. AI Creativity Level ({creativityLevel})">
+          <Section title={`7. AI Creativity Level (${creativityLevel})`}>
               <input
                   id="creativity-slider"
                   type="range"

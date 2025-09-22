@@ -57,7 +57,12 @@ const parseMarkdown = (markdown: string): Case[] => {
     return cases;
 };
 
-const CaseCard: React.FC<{ caseItem: Case }> = ({ caseItem }) => {
+interface CaseCardProps {
+    caseItem: Case;
+    onUsePrompt: (prompt: string) => void;
+}
+
+const CaseCard: React.FC<CaseCardProps> = ({ caseItem, onUsePrompt }) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
@@ -111,12 +116,22 @@ const CaseCard: React.FC<{ caseItem: Case }> = ({ caseItem }) => {
                     </button>
                 </div>
             </div>
+
+            <button
+                onClick={() => onUsePrompt(caseItem.prompt)}
+                className="w-full mt-auto bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+                Use this Prompt
+            </button>
         </div>
     );
 };
 
+interface LibraryViewProps {
+    onUsePrompt: (prompt: string) => void;
+}
 
-const LibraryView: React.FC = () => {
+const LibraryView: React.FC<LibraryViewProps> = ({ onUsePrompt }) => {
     const [cases, setCases] = useState<Case[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -189,7 +204,7 @@ const LibraryView: React.FC = () => {
                 filteredCases.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                         {filteredCases.map((caseItem) => (
-                            <CaseCard key={caseItem.title} caseItem={caseItem} />
+                            <CaseCard key={caseItem.title} caseItem={caseItem} onUsePrompt={onUsePrompt} />
                         ))}
                     </div>
                 ) : (
