@@ -1,11 +1,15 @@
 {
-  "name": "monoklix-v2",
+  "name": "monoklix.com",
   "version": "1.0.0",
-  "description": "An all-in-one AI platform powered by Google's Gemini API.",
+  "description": "An all-in-one AI platform.",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "type-check": "tsc --noEmit"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite preview --host 0.0.0.0 --port 5259"    
   },
   "dependencies": {
     "@google/genai": "^1.19.0",
@@ -16,6 +20,9 @@
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "typescript": "^5.5.4"
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }
