@@ -52,8 +52,8 @@ interface TiktokAffiliateViewProps {
 }
 
 const modelFaceOptions = ["Random", "Malaysia", "Vietnam", "England", "USA", "Arab", "Russia", "Japan", "Korea", "Thailand"];
-const lightingOptions = ["Random", "Soft Daylight", "Golden Hour", "Hard Light", "Window Backlight", "Warm Lamp Glow", "Mixed Light", "Studio Light", "Dramatic", "Natural Light", "Neon"];
-const cameraOptions = ["Random", "Detail / Macro", "Close-Up", "Medium Close-Up", "Medium / Half-Body", "Three-Quarter", "Full Body", "Flatlay"];
+const lightingOptions = ["Random", "Soft Daylight", "Golden Hour", "Hard Light", "Window Backlight", "Warm Lamp Glow", "Mixed Light", "Studio Light", "Dramatic", "Natural Light", "Neon", "Backlight", "Rim Lighting"];
+const cameraOptions = ["Random", "Detail / Macro", "Close-Up", "Medium Close-Up", "Medium / Half-Body", "Three-Quarter", "Full Body", "Flatlay", "Wide Shot", "Medium Shot", "Long Shot", "Dutch Angle", "Low Angle", "High Angle", "Overhead Shot"];
 const poseOptions = ["Random", "Professional Model Pose", "Standing Relaxed", "Sitting on Chair Edge", "Walking Slowly", "Leaning on Wall", "Half-Body Rotation"];
 const vibeOptions = [
     "Random", "Studio", "Bedroom", "Bathroom / Vanity", "Living Room", "Kitchen / Dining", "Workspace / Study", "Entryway / Laundry", "Urban Clean", 
@@ -67,6 +67,11 @@ const vibeOptions = [
     "Beach Party Night", "Ancient Library", "Mountain Observation Deck", "Modern Dance Studio", "Speakeasy Bar", 
     "Rainforest Trail", "Rice Terrace Field"
 ];
+const styleOptions = ["Random", "Realism", "Photorealistic", "Cinematic", "Anime", "Vintage", "3D Animation", "Watercolor", "Claymation"];
+const compositionOptions = ["Random", "Rule of Thirds", "Leading Lines", "Symmetry", "Golden Ratio", "Centered", "Asymmetrical"];
+const lensTypeOptions = ["Random", "Wide Angle Lens", "Telephoto Lens", "Fisheye Lens", "Macro Lens", "50mm lens", "85mm lens"];
+const filmSimOptions = ["Random", "Fujifilm Velvia", "Kodak Portra 400", "Cinematic Kodachrome", "Vintage Polaroid", "Ilford HP5 (B&W)"];
+
 
 const SelectControl: React.FC<{
   id: string;
@@ -98,6 +103,10 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
     const [camera, setCamera] = useState('Random');
     const [pose, setPose] = useState('Random');
     const [vibe, setVibe] = useState('Random');
+    const [style, setStyle] = useState('Random');
+    const [composition, setComposition] = useState('Random');
+    const [lensType, setLensType] = useState('Random');
+    const [filmSim, setFilmSim] = useState('Random');
     const [creativityLevel, setCreativityLevel] = useState(5);
     const [customPrompt, setCustomPrompt] = useState('');
     const [numberOfImages, setNumberOfImages] = useState(1);
@@ -113,7 +122,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
 
         const prompt = getTiktokAffiliatePrompt({
             gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt,
-            hasFaceImage: !!faceImage
+            hasFaceImage: !!faceImage, style, composition, lensType, filmSim
         });
         
         try {
@@ -135,11 +144,13 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
             }
 
             if (generatedImages.length > 0) {
-                await addHistoryItem({
-                    type: 'Image',
-                    prompt: `TikTok Affiliate: Vibe - ${vibe}, Model - ${gender}`,
-                    result: generatedImages[0],
-                });
+                for (const imgBase64 of generatedImages) {
+                    await addHistoryItem({
+                        type: 'Image',
+                        prompt: `TikTok Affiliate: Vibe - ${vibe}, Model - ${gender}`,
+                        result: imgBase64,
+                    });
+                }
                 generatedImages.forEach((imgBase64, index) => {
                     triggerDownload(imgBase64, `1za7-ai-model-photo-${index + 1}`);
                 });
@@ -171,7 +182,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
               </div>
           </Section>
 
-          <Section title="Custom Prompt (Optional)">
+          <Section title="2. Custom Prompt (Optional)">
               <textarea
                 id="custom-prompt-model"
                 value={customPrompt}
@@ -183,23 +194,35 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
               <p className="text-xs text-neutral-500 dark:text-neutral-400">If filled, this prompt will override the dropdown selections below.</p>
           </Section>
           
-          <Section title="2. Model's Face">
+          <Section title="3. Model's Face">
             <SelectControl id="model-face-select" value={modelFace} onChange={setModelFace} options={modelFaceOptions} />
           </Section>
-          <Section title="3. Lighting">
+          <Section title="4. Artistic Style">
+            <SelectControl id="style-select" value={style} onChange={setStyle} options={styleOptions} />
+          </Section>
+          <Section title="5. Lighting">
             <SelectControl id="lighting-select" value={lighting} onChange={setLighting} options={lightingOptions} />
           </Section>
-          <Section title="4. Camera & Lens">
+          <Section title="6. Camera Shot">
             <SelectControl id="camera-select" value={camera} onChange={setCamera} options={cameraOptions} />
           </Section>
-          <Section title="5. Body Pose">
+          <Section title="7. Body Pose">
             <SelectControl id="pose-select" value={pose} onChange={setPose} options={poseOptions} />
           </Section>
-          <Section title="6. Content Vibe">
+          <Section title="8. Content Vibe / Background">
             <SelectControl id="vibe-select" value={vibe} onChange={setVibe} options={vibeOptions} />
           </Section>
+          <Section title="9. Composition">
+            <SelectControl id="composition-select" value={composition} onChange={setComposition} options={compositionOptions} />
+          </Section>
+          <Section title="10. Lens Type">
+            <SelectControl id="lens-select" value={lensType} onChange={setLensType} options={lensTypeOptions} />
+          </Section>
+          <Section title="11. Film Simulation">
+            <SelectControl id="film-select" value={filmSim} onChange={setFilmSim} options={filmSimOptions} />
+          </Section>
           
-          <Section title={`7. AI Creativity Level (${creativityLevel})`}>
+          <Section title={`12. AI Creativity Level (${creativityLevel})`}>
               <input
                   id="creativity-slider"
                   type="range"
@@ -212,7 +235,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
               />
           </Section>
           
-          <Section title="8. Number of Images">
+          <Section title="13. Number of Images">
             <SelectControl id="num-images-select" value={String(numberOfImages)} onChange={(val) => setNumberOfImages(Number(val))} options={[1, 2, 3, 4, 5]} />
           </Section>
 
@@ -245,7 +268,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                       <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
                           <WandIcon className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onCreateVideo({ prompt: getTiktokAffiliatePrompt({ gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
+                      <button onClick={() => onCreateVideo({ prompt: getTiktokAffiliatePrompt({ gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt, style, composition, lensType, filmSim }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
                           <VideoIcon className="w-4 h-4" />
                       </button>
                       <button onClick={() => triggerDownload(resultImages[selectedImageIndex], '1za7-model-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">

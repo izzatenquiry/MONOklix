@@ -14,6 +14,15 @@ interface ImageData extends MultimodalContent {
 
 const aspectRatios = ["9:16", "1:1", "16:9", "4:3", "3:4"];
 
+// --- Prompt Builder Options ---
+const styleOptions = ["Select Style...", "Realism", "Photorealistic", "Cinematic", "Anime", "Vintage", "3D Animation", "Watercolor", "Claymation"];
+const lightingOptions = ["Select Lighting...", "Golden Hour", "Studio Lighting", "Natural Light", "Dramatic Lighting", "Backlight", "Rim Lighting", "Neon Glow"];
+const cameraAngleOptions = ["Select Angle...", "Wide Shot", "Close-Up", "Medium Shot", "Long Shot", "Dutch Angle", "Low Angle", "High Angle", "Overhead Shot"];
+const compositionOptions = ["Select Composition...", "Rule of Thirds", "Leading Lines", "Symmetry", "Golden Ratio", "Centered", "Asymmetrical"];
+const lensTypeOptions = ["Select Lens...", "Wide Angle Lens", "Telephoto Lens", "Fisheye Lens", "Macro Lens", "50mm lens", "85mm lens"];
+const filmSimOptions = ["Select Film...", "Fujifilm Velvia", "Kodak Portra 400", "Cinematic Kodachrome", "Vintage Polaroid", "Ilford HP5 (B&W)"];
+
+
 const triggerDownload = (data: string, fileNameBase: string) => {
     const link = document.createElement('a');
     link.href = `data:image/png;base64,${data}`;
@@ -54,7 +63,7 @@ interface ImageGenerationViewProps {
 
 const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit, presetPrompt, clearPresetPrompt }) => {
   const [prompt, setPrompt] = useState('');
-  const [aspectRatio, setAspectRatio] = useState("9:16");
+  const [aspectRatio, setAspectRatio] = useState("3:4");
   const [images, setImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,11 +183,15 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         setImages(result);
         setSelectedImageIndex(0);
         if (result.length > 0) {
-          await addHistoryItem({
-            type: 'Image',
-            prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`,
-            result: result[0],
-          });
+          // Save each generated image to history
+          for (const imgBase64 of result) {
+            await addHistoryItem({
+              type: 'Image',
+              prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`,
+              result: imgBase64,
+            });
+          }
+          // Also download each image
           result.forEach((imgBase64, index) => {
             triggerDownload(imgBase64, `monoklix-generated-image-${index+1}`);
           });
@@ -206,11 +219,32 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
       setPrompt('');
   };
 
+  const handleAppendToPrompt = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    const selectElement = e.target;
+
+    if (selectElement.selectedIndex === 0) return;
+
+    setPrompt(prev => {
+        const trimmedPrev = prev.trim();
+        if (!trimmedPrev) return value;
+        if (trimmedPrev.endsWith(',')) return `${trimmedPrev} ${value}`;
+        return `${trimmedPrev}, ${value}`;
+    });
+    
+    selectElement.selectedIndex = 0;
+  }, [setPrompt]);
+
   const leftPanel = (
     <>
       <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">Generate & Edit Images</h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Create original images from text or modify existing ones with AI.</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">{isEditing ? 'Edit Image' : 'Generate & Edit Images'}</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+          {isEditing 
+            ? 'Modify the uploaded image using a text prompt.'
+            : 'Create original images from text or modify existing ones with AI.'
+          }
+        </p>
       </div>
       
       <div>
@@ -240,7 +274,13 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
                       className="hidden"
                   />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Upload up to 5 images to edit or combine. Leave blank to create a new image from text.</p>
+               {isEditing ? (
+                  <p className="text-xs text-primary-600 dark:text-primary-400 mt-2 p-2 bg-primary-500/10 rounded-md">
+                    You are in **Editing Mode**. Advanced options like Aspect Ratio and Negative Prompts are disabled as they are not supported for image editing.
+                  </p>
+              ) : (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Upload up to 5 images to edit or combine. Leave blank to create a new image from text.</p>
+              )}
           </div>
       </div>
 
@@ -250,11 +290,56 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           id="prompt"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="A lone astronaut on the moon, cinematic"
+          placeholder={isEditing ? "e.g., add a hat to the person" : "A lone astronaut on the moon, cinematic"}
           rows={4}
           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
         />
       </div>
+
+      <details className={`pt-4 border-t border-gray-200 dark:border-gray-700 ${isEditing ? 'opacity-50' : ''}`} open={!isEditing}>
+          <summary className={`font-semibold cursor-pointer ${isEditing ? 'cursor-not-allowed' : ''}`}>Advanced Editor (Prompt Builder)</summary>
+          <fieldset disabled={isEditing} className="mt-4 space-y-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Select an option to add it to your prompt.</p>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                      <label htmlFor="builder-style" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Style</label>
+                      <select id="builder-style" onChange={handleAppendToPrompt} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                          {styleOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="builder-lighting" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lighting</label>
+                      <select id="builder-lighting" onChange={handleAppendToPrompt} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                          {lightingOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="builder-cameraAngle" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Camera Angle</label>
+                      <select id="builder-cameraAngle" onChange={handleAppendToPrompt} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                          {cameraAngleOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="builder-composition" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Composition</label>
+                      <select id="builder-composition" onChange={handleAppendToPrompt} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                          {compositionOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="builder-lensType" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lens Type</label>
+                      <select id="builder-lensType" onChange={handleAppendToPrompt} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                          {lensTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="builder-filmSim" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Film Simulation</label>
+                      <select id="builder-filmSim" onChange={handleAppendToPrompt} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                          {filmSimOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                  </div>
+              </div>
+          </fieldset>
+      </details>
       
       <div title={isEditing ? "Aspect Ratio cannot be changed in edit mode" : ""}>
         <label htmlFor="aspect-ratio" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>Aspect Ratio</label>

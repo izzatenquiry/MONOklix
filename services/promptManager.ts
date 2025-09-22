@@ -91,21 +91,32 @@ export const getProductPhotoPrompt = (details: {
   camera: string;
   creativityLevel: number;
   customPrompt: string;
+  style: string;
+  composition: string;
+  lensType: string;
+  filmSim: string;
 }): string => {
     if (details.customPrompt.trim()) {
         return details.customPrompt.trim();
     }
-    return `
-      Create a professional product photo for the uploaded image. Do not include any people or models.
-      Focus only on the product.
-      Place the product in the following setting:
-      - Vibe / Background: ${details.vibe}
-      - Lighting: ${details.lighting === 'Random' ? 'interesting, cinematic lighting' : details.lighting}
-      - Camera Angle & Lens: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}
-      - AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.
-      The result should be a photorealistic, clean, and aesthetic image suitable for social media or an e-commerce listing.
-      - CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.
-    `;
+    
+    const promptParts = [
+      `Create a professional product photo for the uploaded image. Do not include any people or models. Focus only on the product.`,
+      `Place the product in the following setting:`,
+      `- Background / Vibe: ${details.vibe}`,
+      `- Artistic Style: ${details.style === 'Random' ? 'photorealistic' : details.style}`,
+      `- Lighting: ${details.lighting === 'Random' ? 'interesting, cinematic lighting' : details.lighting}`,
+      `- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}`,
+      `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
+      `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
+      `- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}`,
+      `- AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.`,
+      `The result should be a photorealistic, clean, and aesthetic image suitable for social media or an e-commerce listing.`,
+      `- The final output image must have a 3:4 aspect ratio.`,
+      `- CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.`,
+    ];
+    
+    return promptParts.join('\n');
 };
 
 // --- Product Review ---
@@ -177,6 +188,10 @@ export const getTiktokAffiliatePrompt = (details: {
     creativityLevel: number;
     customPrompt: string;
     hasFaceImage?: boolean;
+    style: string;
+    composition: string;
+    lensType: string;
+    filmSim: string;
 }): string => {
     if (details.customPrompt.trim()) {
         return details.customPrompt.trim();
@@ -190,20 +205,27 @@ export const getTiktokAffiliatePrompt = (details: {
         ? "Include the product from the first uploaded image."
         : "Include the product from the uploaded image.";
 
-   return `
-        Create a photorealistic User-Generated Content (UGC) image for a platform like TikTok.
-        The image must naturally feature the uploaded product image.
-        Here are the details for the image:
-        - Model: ${modelInstruction}
-        - Product: ${productInstruction}
-        - Lighting: ${details.lighting === 'Random' ? 'flattering and natural-looking lighting' : details.lighting}.
-        - Camera & Lens: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}.
-        - Body Movement / Pose: ${details.pose === 'Random' ? 'a natural and relaxed pose' : details.pose}. The model should be interacting with the product if appropriate.
-        - Content Vibe / Background: ${details.vibe}.
-        - AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.
-        The result should be a high-quality, authentic-looking, and engaging image that could be used for affiliate marketing.
-        - CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.
-    `;
+    const promptParts = [
+       `Create a photorealistic User-Generated Content (UGC) image for a platform like TikTok.`,
+       `The image must naturally feature the uploaded product image.`,
+       `Here are the details for the image:`,
+       `- Model: ${modelInstruction}`,
+       `- Product: ${productInstruction}`,
+       `- Artistic Style: ${details.style === 'Random' ? 'photorealistic' : details.style}`,
+       `- Lighting: ${details.lighting === 'Random' ? 'flattering and natural-looking lighting' : details.lighting}.`,
+       `- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}.`,
+       `- Body Movement / Pose: ${details.pose === 'Random' ? 'a natural and relaxed pose' : details.pose}. The model should be interacting with the product if appropriate.`,
+       `- Content Vibe / Background: ${details.vibe}.`,
+       `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
+       `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
+       `- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}`,
+       `- AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.`,
+       `The result should be a high-quality, authentic-looking, and engaging image that could be used for affiliate marketing.`,
+       `- The final output image must have a 3:4 aspect ratio.`,
+       `- CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.`,
+    ];
+   
+   return promptParts.join('\n');
 };
 
 // --- Image Tools ---
