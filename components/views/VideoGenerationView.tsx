@@ -31,10 +31,6 @@ const loadingMessages = [
   "Finalising the director's cut...",
 ];
 
-const videoModels = [
-    { id: MODELS.videoGeneration, name: 'VEO 2.0 (with Dialogue)' },
-];
-
 const aspectRatios = ["9:16", "1:1", "16:9", "4:3", "3:4"];
 const cameraMotions = ["Random", "Pan", "Zoom In", "Zoom Out", "Tilt", "Crane", "Dolly", "Aerial"];
 const styles = ["Random", "Photorealistic", "Cinematic", "Anime", "Vintage", "Claymation", "Watercolor", "3D Animation", "Soft Daylight Studio", "Pastel Clean", "High-Key White", "Low-Key Moody", "Color Block", "Gradient Backdrop", "Paper Curl Backdrop", "Beige Seamless", "Shadow Play / Hard Light", "Marble Tabletop", "Pastel Soft"];
@@ -85,8 +81,9 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
   const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
   const [referenceImage, setReferenceImage] = useState<ImageData | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState(videoModels[0].id);
+  const [model, setModel] = useState(MODELS.videoGenerationOptions[0].id);
   const [aspectRatio, setAspectRatio] = useState("9:16");
+  const [resolution, setResolution] = useState("720p");
   const [imageUploadKey, setImageUploadKey] = useState(Date.now());
 
   useEffect(() => {
@@ -126,6 +123,18 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       }
     };
   }, [videoUrl]);
+  
+  useEffect(() => {
+    const isVeo3 = model.startsWith('veo-3.0');
+    // Force 720p if not Veo 3
+    if (!isVeo3) {
+        setResolution('720p');
+    } 
+    // Force 720p if Veo 3 is selected but aspect ratio is not 16:9 for 1080p
+    else if (aspectRatio !== '16:9' && resolution === '1080p') {
+        setResolution('720p');
+    }
+  }, [model, aspectRatio, resolution]);
 
   const handleReferenceImageUpload = useCallback((base64: string, mimeType: string) => {
     const imageData = { base64, mimeType };
@@ -147,7 +156,6 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       if (cameraMotion !== 'Random') fullPrompt += `, with ${cameraMotion.toLowerCase()} camera motion`;
       if (ambiance) fullPrompt += `, creating an ambiance of ${ambiance}`;
       if (backgroundVibe !== 'Random') fullPrompt += `, with a ${backgroundVibe.toLowerCase()} background`;
-      if (negativePrompt) fullPrompt += `. Negative prompt: ${negativePrompt}`;
       return fullPrompt.trim();
   };
 
@@ -169,8 +177,10 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       const imageParam = referenceImage ? { imageBytes: referenceImage.base64, mimeType: referenceImage.mimeType } : undefined;
       const resultBlob = await generateVideo(
         fullPrompt,
-        selectedModel,
+        model,
         aspectRatio,
+        resolution,
+        negativePrompt,
         imageParam,
         dialogue
       );
@@ -193,7 +203,7 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       setError(errorMessage);
       setIsLoading(false); // Ensure loading is false on error
     }
-  }, [subjectContext, negativePrompt, ambiance, cameraMotion, style, action, dialogue, backgroundVibe, selectedModel, aspectRatio, referenceImage, videoUrl]);
+  }, [subjectContext, negativePrompt, ambiance, cameraMotion, style, action, dialogue, backgroundVibe, model, aspectRatio, resolution, referenceImage, videoUrl]);
 
   const leftPanel = (
     <>
@@ -203,14 +213,33 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       </div>
               
       <Section title="1. Model & Format">
-          <div className="grid grid-cols-2 gap-4">
-              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
-                  {videoModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-              <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
-                  {aspectRatios.map(ar => <option key={ar} value={ar}>{ar}</option>)}
-              </select>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label htmlFor="model-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">AI Model</label>
+                <select id="model-select" value={model} onChange={(e) => setModel(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                    {MODELS.videoGenerationOptions.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="aspect-ratio-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Aspect Ratio</label>
+                <select id="aspect-ratio-select" value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                    {aspectRatios.map(ar => <option key={ar} value={ar}>{ar}</option>)}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="resolution-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Resolution</label>
+                <select 
+                    id="resolution-select" 
+                    value={resolution} 
+                    onChange={(e) => setResolution(e.target.value)} 
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:bg-gray-200 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                    disabled={!model.startsWith('veo-3.0')}
+                >
+                    <option value="720p">720p</option>
+                    <option value="1080p" disabled={!model.startsWith('veo-3.0') || aspectRatio !== '16:9'}>1080p (Veo 3 & 16:9 only)</option>
+                </select>
+            </div>
+        </div>
       </Section>
       
       <Section title="2. Subject & Context">
@@ -222,20 +251,18 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       </Section>
 
       <Section title="4. Creative Direction (Optional)">
-          <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                  <div>
-                      <label htmlFor="video-style" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Style</label>
-                      <select id="video-style" value={style} onChange={(e) => setStyle(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
-                          {styles.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                  </div>
-                  <div>
-                      <label htmlFor="video-camera" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Camera Motion</label>
-                      <select id="video-camera" value={cameraMotion} onChange={(e) => setCameraMotion(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
-                          {cameraMotions.map(cm => <option key={cm} value={cm}>{cm}</option>)}
-                      </select>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                  <label htmlFor="video-style" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Style</label>
+                  <select id="video-style" value={style} onChange={(e) => setStyle(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                      {styles.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+              </div>
+              <div>
+                  <label htmlFor="video-camera" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Camera Motion</label>
+                  <select id="video-camera" value={cameraMotion} onChange={(e) => setCameraMotion(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                      {cameraMotions.map(cm => <option key={cm} value={cm}>{cm}</option>)}
+                  </select>
               </div>
               <div>
                   <label htmlFor="video-background" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Background Vibe</label>
@@ -247,6 +274,10 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
                   <label htmlFor="video-ambiance" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Ambiance</label>
                   <input id="video-ambiance" type="text" value={ambiance} onChange={(e) => setAmbiance(e.target.value)} placeholder="e.g., joyful, mysterious" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none"/>
               </div>
+          </div>
+           <div className="mt-4">
+              <label htmlFor="video-negative-prompt" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Negative Prompt</label>
+              <input id="video-negative-prompt" type="text" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., cartoon, drawing, low quality" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none"/>
           </div>
       </Section>
       

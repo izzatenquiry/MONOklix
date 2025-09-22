@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        // FIX: Replaced `__dirname` with `process.cwd()` to resolve path correctly in an ES module context.
+        '@': path.resolve(process.cwd(), '.'),
       },
     },
     server: {

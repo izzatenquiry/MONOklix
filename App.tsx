@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { type View, type User } from './types';
 import Sidebar from './components/Sidebar';
 import AiTextSuiteView from './components/views/AiTextSuiteView';
@@ -10,12 +10,14 @@ import LoginPage from './LoginPage';
 import GalleryView from './components/views/GalleryView';
 import WelcomeAnimation from './components/WelcomeAnimation';
 import LibraryView from './components/views/LibraryView';
-import AiSupportView from './components/views/AiSupportView';
 import { MenuIcon, LogoIcon, XIcon, CreditCardIcon } from './components/Icons';
 import { signOutUser } from './services/userService';
-import { setActiveApiKey } from './services/geminiService';
+import { setActiveApiKey, createChatSession, streamChatResponse } from './services/geminiService';
 import Spinner from './components/common/Spinner';
 import { loadData, saveData } from './services/indexedDBService';
+import { type Chat } from '@google/genai';
+import { getSupportPrompt } from './services/promptManager';
+import { triggerUserWebhook } from './services/webhookService';
 
 
 interface VideoGenPreset {
@@ -26,6 +28,11 @@ interface VideoGenPreset {
 interface ImageEditPreset {
   base64: string;
   mimeType: string;
+}
+
+interface Message {
+  role: 'user' | 'model';
+  text: string;
 }
 
 const App: React.FC = () => {
@@ -39,6 +46,11 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isShowingWelcome, setIsShowingWelcome] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+  // --- AI Support Chat State ---
+  const [aiSupportMessages, setAiSupportMessages] = useState<Message[]>([]);
+  const [aiSupportChat, setAiSupportChat] = useState<Chat | null>(null);
+  const [isAiSupportLoading, setIsAiSupportLoading] = useState(false);
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -60,20 +72,29 @@ const App: React.FC = () => {
     saveData('theme', theme);
   }, [theme]);
 
-  // Effect to manage the active API key for the session
+  // Effect to manage the active API key and initialize dependent services like AI chat.
+  // This consolidation prevents a race condition where the chat might initialize before the key is set.
   useEffect(() => {
-    const configureApiKey = async () => {
-        if (currentUser) {
-            // All users (lifetime, admin) use their own saved API key.
-            // If they don't have one, AI features will be blocked by other logic.
-            setActiveApiKey(currentUser.apiKey || null);
+    if (currentUser) {
+        const userApiKey = currentUser.apiKey || null;
+        setActiveApiKey(userApiKey);
+        
+        // Only initialize the chat session if a key is present.
+        if (userApiKey) {
+            const systemInstruction = getSupportPrompt();
+            const session = createChatSession(systemInstruction);
+            setAiSupportChat(session);
         } else {
-            // No user, no key.
-            setActiveApiKey(null);
+            // If the user has no API key (or logs out), clear the chat session.
+            setAiSupportChat(null);
+            setAiSupportMessages([]);
         }
-    };
-    
-    configureApiKey();
+    } else {
+        // No user logged in, clear everything.
+        setActiveApiKey(null);
+        setAiSupportChat(null);
+        setAiSupportMessages([]);
+    }
   }, [currentUser]);
   
   // Effect to check for an active session in localStorage on initial load.
@@ -115,6 +136,48 @@ const App: React.FC = () => {
     setCurrentUser(updatedUser);
     localStorage.setItem('currentUser', JSON.stringify(updatedUser));
   };
+  
+  const handleAiSupportSend = useCallback(async (prompt: string) => {
+    if (!prompt.trim() || !aiSupportChat || isAiSupportLoading) return;
+
+    const userMessage: Message = { role: 'user', text: prompt };
+    setAiSupportMessages((prev) => [...prev, userMessage]);
+    setIsAiSupportLoading(true);
+
+    try {
+        const stream = await streamChatResponse(aiSupportChat, prompt);
+        let modelResponse = '';
+        // Add placeholder for streaming response
+        setAiSupportMessages((prev) => [...prev, { role: 'model', text: '...' }]);
+        
+        for await (const chunk of stream) {
+            modelResponse += chunk.text;
+            setAiSupportMessages((prev) => {
+                const newMessages = [...prev];
+                if(newMessages.length > 0) {
+                    newMessages[newMessages.length - 1].text = modelResponse;
+                }
+                return newMessages;
+            });
+        }
+        triggerUserWebhook({ type: 'text', prompt, result: modelResponse });
+    } catch (error) {
+        console.error('Error sending support message:', error);
+        const errorMessageText = error instanceof Error ? error.message : 'An unknown error occurred.';
+        const errorMessage: Message = { role: 'model', text: `Sorry, an error occurred: ${errorMessageText}` };
+        setAiSupportMessages((prev) => {
+            const newMessages = [...prev];
+            if (newMessages.length > 0 && newMessages[newMessages.length-1].role === 'model') {
+                newMessages[newMessages.length - 1] = errorMessage;
+            } else {
+                newMessages.push(errorMessage);
+            }
+            return newMessages;
+        });
+    } finally {
+        setIsAiSupportLoading(false);
+    }
+  }, [aiSupportChat, isAiSupportLoading]);
 
   const handleCreateVideoFromImage = (preset: VideoGenPreset) => {
     setVideoGenPreset(preset);
@@ -158,9 +221,15 @@ const App: React.FC = () => {
       case 'library':
         return <LibraryView onUsePrompt={handleUsePromptInGenerator} />;
       case 'settings':
-          return <SettingsView theme={theme} setTheme={setTheme} currentUser={currentUser!} onUserUpdate={handleUserUpdate} />;
-      case 'ai-support':
-          return <AiSupportView />;
+          return <SettingsView 
+                    theme={theme} 
+                    setTheme={setTheme} 
+                    currentUser={currentUser!} 
+                    onUserUpdate={handleUserUpdate} 
+                    aiSupportMessages={aiSupportMessages}
+                    isAiSupportLoading={isAiSupportLoading}
+                    onAiSupportSend={handleAiSupportSend}
+                 />;
       default:
         return <ECourseView />;
     }
@@ -191,7 +260,7 @@ const App: React.FC = () => {
   let blockMessage = { title: '', body: '' };
 
   // Define which views are considered AI-powered and require an API key
-  const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite', 'ai-support'];
+  const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite'];
 
   if (aiPoweredViews.includes(activeView)) {
       const hasPersonalKey = !!currentUser.apiKey;
@@ -238,9 +307,8 @@ const App: React.FC = () => {
             </button>
           </div>
           {/* Center Column */}
-          <div className="flex justify-center items-center gap-2">
-            <LogoIcon className="w-20 text-neutral-800 dark:text-neutral-200" />
-            <span className="font-bold text-lg">.com</span>
+          <div className="flex justify-center items-center">
+            <LogoIcon className="w-28 text-neutral-800 dark:text-neutral-200" />
           </div>
           {/* Right Column (empty for balance) */}
           <div />

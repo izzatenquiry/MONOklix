@@ -194,49 +194,67 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
               <p className="text-xs text-neutral-500 dark:text-neutral-400">If filled, this prompt will override the dropdown selections below.</p>
           </Section>
           
-          <Section title="3. Model's Face">
-            <SelectControl id="model-face-select" value={modelFace} onChange={setModelFace} options={modelFaceOptions} />
-          </Section>
-          <Section title="4. Artistic Style">
-            <SelectControl id="style-select" value={style} onChange={setStyle} options={styleOptions} />
-          </Section>
-          <Section title="5. Lighting">
-            <SelectControl id="lighting-select" value={lighting} onChange={setLighting} options={lightingOptions} />
-          </Section>
-          <Section title="6. Camera Shot">
-            <SelectControl id="camera-select" value={camera} onChange={setCamera} options={cameraOptions} />
-          </Section>
-          <Section title="7. Body Pose">
-            <SelectControl id="pose-select" value={pose} onChange={setPose} options={poseOptions} />
-          </Section>
-          <Section title="8. Content Vibe / Background">
-            <SelectControl id="vibe-select" value={vibe} onChange={setVibe} options={vibeOptions} />
-          </Section>
-          <Section title="9. Composition">
-            <SelectControl id="composition-select" value={composition} onChange={setComposition} options={compositionOptions} />
-          </Section>
-          <Section title="10. Lens Type">
-            <SelectControl id="lens-select" value={lensType} onChange={setLensType} options={lensTypeOptions} />
-          </Section>
-          <Section title="11. Film Simulation">
-            <SelectControl id="film-select" value={filmSim} onChange={setFilmSim} options={filmSimOptions} />
+          <Section title="3. Creative Direction">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="model-face-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Model's Face</label>
+                    <SelectControl id="model-face-select" value={modelFace} onChange={setModelFace} options={modelFaceOptions} />
+                </div>
+                <div>
+                    <label htmlFor="style-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Artistic Style</label>
+                    <SelectControl id="style-select" value={style} onChange={setStyle} options={styleOptions} />
+                </div>
+                <div>
+                    <label htmlFor="lighting-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lighting</label>
+                    <SelectControl id="lighting-select" value={lighting} onChange={setLighting} options={lightingOptions} />
+                </div>
+                <div>
+                    <label htmlFor="camera-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Camera Shot</label>
+                    <SelectControl id="camera-select" value={camera} onChange={setCamera} options={cameraOptions} />
+                </div>
+                <div>
+                    <label htmlFor="pose-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Body Pose</label>
+                    <SelectControl id="pose-select" value={pose} onChange={setPose} options={poseOptions} />
+                </div>
+                <div>
+                    <label htmlFor="vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Content Vibe / Background</label>
+                    <SelectControl id="vibe-select" value={vibe} onChange={setVibe} options={vibeOptions} />
+                </div>
+                <div>
+                    <label htmlFor="composition-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Composition</label>
+                    <SelectControl id="composition-select" value={composition} onChange={setComposition} options={compositionOptions} />
+                </div>
+                <div>
+                    <label htmlFor="lens-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lens Type</label>
+                    <SelectControl id="lens-select" value={lensType} onChange={setLensType} options={lensTypeOptions} />
+                </div>
+                <div>
+                    <label htmlFor="film-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Film Simulation</label>
+                    <SelectControl id="film-select" value={filmSim} onChange={setFilmSim} options={filmSimOptions} />
+                </div>
+            </div>
           </Section>
           
-          <Section title={`12. AI Creativity Level (${creativityLevel})`}>
-              <input
-                  id="creativity-slider"
-                  type="range"
-                  min="0"
-                  max="10"
-                  step="1"
-                  value={creativityLevel}
-                  onChange={(e) => setCreativityLevel(Number(e.target.value))}
-                  className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
-              />
-          </Section>
-          
-          <Section title="13. Number of Images">
-            <SelectControl id="num-images-select" value={String(numberOfImages)} onChange={(val) => setNumberOfImages(Number(val))} options={[1, 2, 3, 4, 5]} />
+          <Section title="4. AI & Output Settings">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div>
+                    <label htmlFor="creativity-slider" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{`AI Creativity Level (${creativityLevel})`}</label>
+                    <input
+                        id="creativity-slider"
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="1"
+                        value={creativityLevel}
+                        onChange={(e) => setCreativityLevel(Number(e.target.value))}
+                        className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="num-images-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Number of Images</label>
+                    <SelectControl id="num-images-select" value={String(numberOfImages)} onChange={(val) => setNumberOfImages(Number(val))} options={[1, 2, 3, 4, 5]} />
+                </div>
+            </div>
           </Section>
 
            <div className="pt-4 mt-auto">

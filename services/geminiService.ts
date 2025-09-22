@@ -143,6 +143,8 @@ export const generateImages = async (
  * @param {string} prompt - The text prompt for video generation.
  * @param {string} model - The video generation model to use.
  * @param {string} aspectRatio - The desired aspect ratio for the video.
+ * @param {string} resolution - The desired resolution for the video.
+ * @param {string} negativePrompt - A prompt of what not to include.
  * @param {{ imageBytes: string; mimeType: string }} [image] - Optional image data.
  * @param {any} [_dialogue] - Unused parameter to satisfy call signature from UI.
  * @returns {Promise<Blob>} The blob of the generated video.
@@ -151,6 +153,8 @@ export const generateVideo = async (
     prompt: string,
     model: string,
     aspectRatio: string,
+    resolution: string,
+    negativePrompt: string,
     image?: { imageBytes: string, mimeType: string },
     _dialogue?: any
 ): Promise<Blob> => {
@@ -160,10 +164,18 @@ export const generateVideo = async (
         const videoConfig: {
             numberOfVideos: number;
             aspectRatio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9";
+            resolution?: "720p" | "1080p";
+            negativePrompt?: string;
         } = {
             numberOfVideos: 1,
             aspectRatio: aspectRatio as "1:1" | "3:4" | "4:3" | "9:16" | "16:9",
+            ...(negativePrompt && { negativePrompt }),
         };
+
+        // Conditionally add resolution for Veo 3 models, as Veo 2 does not support this parameter.
+        if (model.startsWith('veo-3.0')) {
+            videoConfig.resolution = resolution as "720p" | "1080p";
+        }
 
         let operation = await ai.models.generateVideos({
             model,
@@ -190,18 +202,6 @@ export const generateVideo = async (
             console.error('Video generation failed with an error:', JSON.stringify(error, null, 2));
             
             const errorMessage = error.message || 'Unknown error';
-
-            // Check for the specific face generation safety error
-            if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('person/face generation')) {
-                throw new Error(
-                    "Video Generation Blocked by Safety Policy\n\n" +
-                    "The provided image was blocked because it contains a person's face. Google's video model has strict safety settings to prevent the generation of videos with specific people.\n\n" +
-                    "**Please try one of the following:**\n" +
-                    "1. **Use an image without a clear face.** A photo showing a person from behind or from a distance might work.\n" +
-                    "2. **Use a product-only image.** The model is excellent at animating objects.\n" +
-                    "3. **Generate a video from text only,** without providing a reference image."
-                );
-            }
 
             throw new Error(`Video generation failed on Google's end: ${errorMessage}`);
         }
@@ -438,15 +438,23 @@ export const generateContentWithGoogleSearch = async (prompt: string): Promise<G
     }
 };
 
+const base64ToBlob = (base64: string, contentType: string = 'audio/mpeg'): Blob => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: contentType });
+};
 
-// FIX: Added missing generateVoiceOver function to resolve import error in VoiceStudioView.
 /**
- * Generates a voice-over from a text script.
+ * Generates a voice-over from a text script using Google Cloud's Text-to-Speech API.
  * @param {string} script - The text to convert to speech.
- * @param {string} actorId - The ID of the voice actor.
- * @param {number} speed - The speaking speed.
- * @param {number} pitch - The speaking pitch.
- * @param {number} volume - The output volume.
+ * @param {string} actorId - The ID of the voice actor (e.g., 'en-US-Standard-A').
+ * @param {number} speed - The speaking speed (0.25 to 4.0).
+ * @param {number} pitch - The speaking pitch (-20.0 to 20.0).
+ * @param {number} volume - The output volume in dB (-96.0 to 16.0).
  * @returns {Promise<Blob>} A blob containing the generated audio file.
  */
 export const generateVoiceOver = async (
@@ -456,17 +464,50 @@ export const generateVoiceOver = async (
     pitch: number,
     volume: number
 ): Promise<Blob> => {
-    const model = 'TTS (simulated)';
+    const model = 'Google Cloud TTS';
     const webhookPrompt = `Voice: ${actorId}, Script: ${script.substring(0, 100)}...`;
+    
+    if (!activeApiKey) {
+        throw new Error("API Key is not set for this session. Please configure your key in Settings.");
+    }
+
     try {
-        // This is a placeholder as the Gemini TTS API is not in the provided guidelines.
-        // It simulates a successful API call and returns a dummy audio URL.
-        console.log('Generating voice over with:', { script, actorId, speed, pitch, volume });
-        
-        // Simulate network delay to mimic a real API call
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        const dummyBlob = new Blob([`Dummy audio for: ${script}`], { type: "audio/mpeg" });
+        const languageCode = actorId.split('-').slice(0, 2).join('-');
+
+        const requestBody = {
+            input: { text: script },
+            voice: { languageCode: languageCode, name: actorId },
+            audioConfig: {
+                audioEncoding: 'MP3',
+                speakingRate: speed,
+                pitch: pitch,
+                volumeGainDb: volume,
+            },
+        };
+
+        const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${activeApiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+            // Add a user-friendly hint about enabling the API
+            const helpfulMessage = `${errorMessage}. Please ensure the "Cloud Text-to-Speech API" is enabled for your API key in your Google Cloud project.`;
+            throw new Error(helpfulMessage);
+        }
+
+        const data = await response.json();
+
+        if (!data.audioContent) {
+            throw new Error("API response did not contain audio content.");
+        }
+
+        const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
         
         addLogEntry({
             model,
@@ -474,11 +515,12 @@ export const generateVoiceOver = async (
             output: '1 audio file generated.',
             tokenCount: 0, // Not applicable
             status: 'Success',
-            mediaOutput: dummyBlob
+            mediaOutput: audioBlob
         });
         
-        triggerUserWebhook({ type: 'audio', prompt: webhookPrompt, result: dummyBlob });
-        return dummyBlob;
+        triggerUserWebhook({ type: 'audio', prompt: webhookPrompt, result: audioBlob });
+        return audioBlob;
+
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         addLogEntry({

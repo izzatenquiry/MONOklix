@@ -133,7 +133,7 @@ const ProductAdView: React.FC = () => {
 
         <div>
           <h2 className="text-lg font-semibold mb-2">3. Creative Direction</h2>
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <SelectControl
               label="Vibe"
               value={selections.vibe}

@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ChatInterface from '../common/ChatInterface';
 import { ChatIcon } from '../Icons';
 import { getSupportPrompt } from '../../services/promptManager';
 
+// FIX: Added dummy state to satisfy ChatInterface requirements as this component is not wired to the main app state.
+interface Message {
+    role: 'user' | 'model';
+    text: string;
+}
+
 const AiSupportView: React.FC = () => {
   const systemInstruction = getSupportPrompt();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const onSendMessage = async (prompt: string) => {
+    // This is a no-op as the component is not wired to any state management.
+    console.log('Dummy onSendMessage called with:', prompt);
+  };
 
   return (
     <div className="max-w-4xl mx-auto h-full flex flex-col">
@@ -20,6 +32,9 @@ const AiSupportView: React.FC = () => {
         <ChatInterface
           systemInstruction={systemInstruction}
           placeholder="Ada apa-apa yang boleh saya bantu? / How can I help you today?"
+          messages={messages}
+          isLoading={isLoading}
+          onSendMessage={onSendMessage}
         />
       </div>
     </div>

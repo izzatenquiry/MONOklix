@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { MicIcon, DownloadIcon } from '../Icons';
+import { MicIcon, DownloadIcon, AlertTriangleIcon } from '../Icons';
 import { generateVoiceOver } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 
 const voiceActors = [
-    { id: 'Puck', name: 'Puck', language: 'English', gender: 'Male' },
-    { id: 'Kore', name: 'Kore', language: 'English', gender: 'Female' },
-    { id: 'Chant', name: 'Chant', language: 'English', gender: 'Male' },
-    { id: 'Chipmunk', name: 'Chipmunk', language: 'English', gender: 'Unisex' },
-    { id: 'Drake', name: 'Drake', language: 'English', gender: 'Male' },
-    { id: 'Duke', name: 'Duke', language: 'English', gender: 'Male' },
-    { id: 'Echo', name: 'Echo', language: 'English', gender: 'Unisex' },
-    { id: 'Luna', name: 'Luna', language: 'English', gender: 'Female' },
-    { id: 'Nova', name: 'Nova', language: 'English', gender: 'Female' },
-    { id: 'Orion', name: 'Orion', language: 'English', gender: 'Male' },
+    { id: 'en-US-Standard-C', name: 'USA-C', language: 'English (US)', gender: 'Female' },
+    { id: 'en-US-Standard-D', name: 'USA-D', language: 'English (US)', gender: 'Male' },
+    { id: 'en-GB-Standard-A', name: 'UK-A', language: 'English (UK)', gender: 'Female' },
+    { id: 'en-GB-Standard-B', name: 'UK-B', language: 'English (UK)', gender: 'Male' },
+    { id: 'ms-MY-Standard-A', name: 'MY-A', language: 'Malay (Malaysia)', gender: 'Female' },
+    { id: 'ms-MY-Standard-B', name: 'MY-B', language: 'Malay (Malaysia)', gender: 'Male' },
+    { id: 'ms-MY-Standard-C', name: 'MY-C', language: 'Malay (Malaysia)', gender: 'Female' },
+    { id: 'ms-MY-Standard-D', name: 'MY-D', language: 'Malay (Malaysia)', gender: 'Male' },
 ];
 
 
@@ -72,7 +70,7 @@ const VoiceStudioView: React.FC = () => {
     const [volume, setVolume] = useState(0.0);
     const [isLoading, setIsLoading] = useState(false);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [apiError, setApiError] = useState<{type: 'permission' | 'generic', message: string} | null>(null);
 
     const groupedActors = voiceActors.reduce((acc, actor) => {
         const groupKey = `${actor.language} - ${actor.gender}`;
@@ -91,11 +89,11 @@ const VoiceStudioView: React.FC = () => {
 
     const handleGenerate = async () => {
         if (!script.trim()) {
-            setError("A script is required to generate a voice-over.");
+            setApiError({type: 'generic', message: "A script is required to generate a voice-over."});
             return;
         }
         setIsLoading(true);
-        setError(null);
+        setApiError(null);
         setAudioUrl(null);
 
         try {
@@ -113,7 +111,11 @@ const VoiceStudioView: React.FC = () => {
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
             console.error("Generation failed:", e);
-            setError(errorMessage);
+            if (errorMessage.includes('Cloud Text-to-Speech API') && (errorMessage.includes('blocked') || errorMessage.includes('enabled'))) {
+                setApiError({type: 'permission', message: "This feature requires special API access."});
+            } else {
+                setApiError({type: 'generic', message: errorMessage});
+            }
         } finally {
             setIsLoading(false);
         }
@@ -203,7 +205,6 @@ const VoiceStudioView: React.FC = () => {
                 >
                     {isLoading ? <Spinner/> : 'Generate Voice Over'}
                 </button>
-                 {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
             </div>
         </>
     );
@@ -214,6 +215,21 @@ const VoiceStudioView: React.FC = () => {
                 <div className="text-center">
                    <Spinner />
                    <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating audio...</p>
+                </div>
+            ) : apiError?.type === 'permission' ? (
+                <div className="text-center text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/30 p-6 rounded-lg border border-yellow-300 dark:border-yellow-700 w-full max-w-md mx-auto">
+                    <AlertTriangleIcon className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
+                    <h3 className="font-bold text-lg">API Not Enabled</h3>
+                    <p className="mt-2 text-sm">To use the Voice Studio, you need to enable the <strong>Cloud Text-to-Speech API</strong> in your Google Cloud project for your API key.</p>
+                    <a href="https://console.cloud.google.com/apis/library/texttospeech.googleapis.com" target="_blank" rel="noopener noreferrer" className="mt-4 inline-block bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors text-sm">
+                        Enable API in Google Cloud
+                    </a>
+                    <p className="mt-3 text-xs text-yellow-600 dark:text-yellow-400">After enabling, please try generating again.</p>
+                </div>
+            ) : apiError?.type === 'generic' ? (
+                <div className="text-center text-red-500 dark:text-red-400">
+                     <p className="font-semibold">Generation Failed</p>
+                     <p className="text-sm mt-2">{apiError.message}</p>
                 </div>
             ) : audioUrl ? (
                 <div className="w-full space-y-4">
@@ -226,11 +242,6 @@ const VoiceStudioView: React.FC = () => {
                     >
                         <DownloadIcon className="w-4 h-4"/> Download Audio
                     </button>
-                </div>
-            ) : error ? (
-                <div className="text-center text-red-500 dark:text-red-400">
-                     <p className="font-semibold">Generation Failed</p>
-                     <p className="text-xs mt-2">{error}</p>
                 </div>
             ) : (
                 <div className="text-center text-neutral-500 dark:text-neutral-600">

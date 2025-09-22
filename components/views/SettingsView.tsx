@@ -1,35 +1,47 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { type User, type AiLogItem } from '../../types';
 import { updateUserProfile, saveUserApiKey, updateUserWebhookUrl } from '../../services/userService';
-import { CreditCardIcon, CheckCircleIcon, XIcon, WebhookIcon, EyeIcon, EyeOffIcon, TrashIcon, ClipboardListIcon, AudioIcon, AlertTriangleIcon } from '../Icons';
+import { CreditCardIcon, CheckCircleIcon, XIcon, WebhookIcon, EyeIcon, EyeOffIcon, TrashIcon, ClipboardListIcon, AudioIcon, AlertTriangleIcon, ChatIcon } from '../Icons';
 import Spinner from '../common/Spinner';
 import { getLogs, clearLogs } from '../../services/aiLogService';
 import { sendTestUserWebhook } from '../../services/webhookService';
 import AdminDashboardView from './AdminDashboardView';
 import ETutorialAdminView from './ETutorialAdminView';
 import Tabs, { type Tab } from '../common/Tabs';
+import ChatInterface from '../common/ChatInterface';
+import { getSupportPrompt } from '../../services/promptManager';
 
 // Define the types for the tabs in the settings view
-type SettingsTabId = 'profile' | 'api' | 'log' | 'content-admin' | 'user-db';
+type SettingsTabId = 'profile' | 'api' | 'log' | 'ai-support' | 'content-admin' | 'user-db';
 
 const TABS: Tab<SettingsTabId>[] = [
     { id: 'profile', label: 'User Profile' },
     { id: 'api', label: 'API & Integrations' },
     { id: 'log', label: 'API Log' },
+    { id: 'ai-support', label: 'AI Support' },
     { id: 'content-admin', label: 'Admin Content', adminOnly: true },
     { id: 'user-db', label: 'User Database', adminOnly: true },
 ];
+
+interface Message {
+  role: 'user' | 'model';
+  text: string;
+}
 
 interface SettingsViewProps {
   theme: string;
   setTheme: (theme: string) => void;
   currentUser: User;
   onUserUpdate: (user: User) => void;
+  // New props for AI support chat state
+  aiSupportMessages: Message[];
+  isAiSupportLoading: boolean;
+  onAiSupportSend: (prompt: string) => Promise<void>;
 }
 
 // --- PANELS ---
 
-const ProfilePanel: React.FC<SettingsViewProps> = ({ theme, setTheme, currentUser, onUserUpdate }) => {
+const ProfilePanel: React.FC<Pick<SettingsViewProps, 'theme' | 'setTheme' | 'currentUser' | 'onUserUpdate'>> = ({ theme, setTheme, currentUser, onUserUpdate }) => {
     const [fullName, setFullName] = useState(currentUser.fullName || currentUser.username);
     const [email, setEmail] = useState(currentUser.email);
     const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error' | 'loading'; message: string }>({ type: 'idle', message: '' });
@@ -262,6 +274,32 @@ const AiLogPanel: React.FC = () => {
     );
 };
 
+const AiSupportPanel: React.FC<{
+    messages: Message[];
+    isLoading: boolean;
+    onSendMessage: (prompt: string) => Promise<void>;
+}> = ({ messages, isLoading, onSendMessage }) => {
+    const systemInstruction = getSupportPrompt();
+  
+    return (
+      <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold mb-2 flex items-center gap-2"><ChatIcon className="w-6 h-6"/>AI Support</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+              Ada soalan atau perlukan bantuan? Tanya di sini. / Have a question or need help? Ask here.
+          </p>
+          <div className="h-[60vh] flex flex-col">
+              <ChatInterface
+                  systemInstruction={systemInstruction}
+                  placeholder="Ada apa-apa yang boleh saya bantu? / How can I help you today?"
+                  messages={messages}
+                  isLoading={isLoading}
+                  onSendMessage={onSendMessage}
+              />
+          </div>
+      </div>
+    );
+};
+
 // --- MAIN VIEW ---
 
 const SettingsView: React.FC<SettingsViewProps> = (props) => {
@@ -273,6 +311,11 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
             case 'profile': return <ProfilePanel {...props} />;
             case 'api': return <ApiIntegrationsPanel currentUser={currentUser} onUserUpdate={props.onUserUpdate} />;
             case 'log': return <AiLogPanel />;
+            case 'ai-support': return <AiSupportPanel 
+                messages={props.aiSupportMessages}
+                isLoading={props.isAiSupportLoading}
+                onSendMessage={props.onAiSupportSend}
+            />;
             case 'content-admin': return <ETutorialAdminView />;
             case 'user-db': return <AdminDashboardView />;
             default: return <ProfilePanel {...props} />;

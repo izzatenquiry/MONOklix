@@ -1,7 +1,7 @@
 import React from 'react';
 import { type View, type NavItem, type User } from '../types';
 import {
-  ChatIcon, ImageIcon, VideoIcon, StoreIcon, StarIcon,
+  ImageIcon, VideoIcon, StoreIcon, StarIcon,
   TikTokIcon, CameraIcon, SettingsIcon, BookOpenIcon, LogoutIcon, GalleryIcon, LogoIcon, XIcon, FilmIcon, MicIcon, MegaphoneIcon,
   ScissorsIcon, WandIcon, TrendingUpIcon, UserIcon, UsersIcon, WebhookIcon, LibraryIcon, ClipboardListIcon, FileTextIcon
 } from './Icons';
@@ -20,7 +20,6 @@ const navItems: NavItem[] = [
   { id: 'ai-text-suite', label: 'AI Content Idea', section: 'free', icon: FileTextIcon },
   { id: 'ai-image-suite', label: 'AI Image', section: 'free', icon: ImageIcon },
   { id: 'ai-video-suite', label: 'AI Video & Voice', section: 'free', icon: VideoIcon },
-  { id: 'ai-support', label: 'AI Support', section: 'free', icon: ChatIcon },
   { id: 'library', label: 'Prompt Library', section: 'free', icon: LibraryIcon },
   { id: 'gallery', label: 'Image Gallery', section: 'free', icon: GalleryIcon },
 
@@ -118,10 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
                    fixed inset-y-0 left-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="mb-8 flex items-center justify-between">
-           <div className="flex items-center gap-2">
-            <LogoIcon className="w-28 text-neutral-800 dark:text-neutral-200" />
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">.com</h1>
-          </div>
+            <LogoIcon className="w-40 text-neutral-800 dark:text-neutral-200" />
           <button onClick={onClose} className="lg:hidden p-2" aria-label="Close menu">
             <XIcon className="w-6 h-6" />
           </button>

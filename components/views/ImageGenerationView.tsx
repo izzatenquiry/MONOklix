@@ -111,7 +111,8 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
 
     const filesToProcess = Array.from(files).slice(0, 5 - referenceImages.length);
     
-    filesToProcess.forEach(file => {
+    // FIX: Explicitly type 'file' as File to resolve errors with accessing its properties.
+    filesToProcess.forEach((file: File) => {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -296,7 +297,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         />
       </div>
 
-      <details className={`pt-4 border-t border-gray-200 dark:border-gray-700 ${isEditing ? 'opacity-50' : ''}`} open={!isEditing}>
+      <details className={`pt-4 border-t border-gray-200 dark:border-gray-700 ${isEditing ? 'opacity-50' : ''}`}>
           <summary className={`font-semibold cursor-pointer ${isEditing ? 'cursor-not-allowed' : ''}`}>Advanced Editor (Prompt Builder)</summary>
           <fieldset disabled={isEditing} className="mt-4 space-y-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">Select an option to add it to your prompt.</p>

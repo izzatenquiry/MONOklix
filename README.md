@@ -33,7 +33,7 @@ The application is structured into intuitive suites, each targeting a specific c
 - **Video Generation:** Create dynamic videos from text prompts and optional reference images.
 - **Video Storyboard:** Generate a complete 4-scene storyboard with text and AI-generated images for product reviews.
 - **Video Combiner:** Merge multiple video clips from your gallery into a single video using client-side FFmpeg.
-- **Voice Studio:** Convert text to speech with a variety of voice actors and settings (currently a simulated feature).
+- **Voice Studio:** Convert text to speech with a variety of voice actors and settings using Google's Text-to-Speech API.
 
 #### 🛠️ **Platform & User Features**
 - **Centralized Settings:** A single, tab-based hub to manage user profiles, API keys, personal webhooks, and view logs.
@@ -54,7 +54,10 @@ The platform leverages a specific set of Google's Gemini models, each chosen for
 | `gemini-2.5-flash`               | All text generation, chat, and multimodal understanding. Optimized for speed with `thinkingConfig` disabled.  |
 | `gemini-2.5-flash-image-preview` | All image editing, composition (e.g., product/model photos), enhancement, and background removal tasks.       |
 | `imagen-4.0-generate-001`        | High-quality text-to-image generation from scratch.                                                         |
+| `veo-3.0-generate-001`           | State-of-the-art video generation for highest quality and audio.                                            |
+| `veo-3.0-fast-generate-001`      | A faster version of Veo 3 for quicker results.                                                              |
 | `veo-2.0-generate-001`           | High-fidelity video generation from text and image prompts.                                                 |
+
 
 ## 💻 Tech Stack
 

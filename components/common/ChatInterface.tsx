@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { type Chat } from '@google/genai';
-import { createChatSession, streamChatResponse } from '../../services/geminiService';
 import MarkdownRenderer from './MarkdownRenderer';
 import { SendIcon } from '../Icons';
 import Spinner from './Spinner';
-import { triggerUserWebhook } from '../../services/webhookService';
 
 interface Message {
   role: 'user' | 'model';
@@ -14,13 +11,13 @@ interface Message {
 interface ChatInterfaceProps {
   systemInstruction: string;
   placeholder: string;
+  messages: Message[];
+  isLoading: boolean;
+  onSendMessage: (prompt: string) => Promise<void>;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeholder }) => {
-  const [chat, setChat] = useState<Chat | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeholder, messages, isLoading, onSendMessage }) => {
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,55 +26,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ systemInstruction, placeh
   
   useEffect(scrollToBottom, [messages]);
 
-  useEffect(() => {
-    const session = createChatSession(systemInstruction);
-    setChat(session);
-    setMessages([]); // Clear messages when system instruction changes
-  }, [systemInstruction]);
-
   const handleSend = useCallback(async () => {
-    if (!input.trim() || !chat || isLoading) return;
-
-    const userMessage: Message = { role: 'user', text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    if (!input.trim() || isLoading) return;
     const currentInput = input;
     setInput('');
-    setIsLoading(true);
-
-    try {
-      const stream = await streamChatResponse(chat, currentInput);
-      let modelResponse = '';
-      setMessages((prev) => [...prev, { role: 'model', text: '...' }]);
-      
-      for await (const chunk of stream) {
-        modelResponse += chunk.text;
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1].text = modelResponse;
-          return newMessages;
-        });
-      }
-      // Send the final result to the user's personal webhook
-      triggerUserWebhook({ type: 'text', prompt: currentInput, result: modelResponse });
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessageText = error instanceof Error ? error.message : 'An unknown error occurred.';
-      const errorMessage: Message = { role: 'model', text: `Sorry, an error occurred: ${errorMessageText}` };
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        // Replace the "..." placeholder with the error, or add if it doesn't exist
-        if (newMessages.length > 0 && newMessages[newMessages.length-1].role === 'model') {
-            newMessages[newMessages.length-1] = errorMessage;
-        } else {
-            newMessages.push(errorMessage);
-        }
-        return newMessages;
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [input, chat, isLoading]);
+    await onSendMessage(currentInput);
+  }, [input, isLoading, onSendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

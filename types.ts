@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+
 export type View =
   | 'e-course'
   // Text suite already exists and handles its own internal views
@@ -9,13 +11,13 @@ export type View =
   | 'gallery'
   | 'library'
   // Settings & Admin
-  | 'settings'
-  | 'ai-support';
+  | 'settings';
 
 export interface NavItem {
   id: View | 'logout';
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  // FIX: Replaced React.ComponentType with ComponentType and added the necessary import.
+  icon: ComponentType<{ className?: string }>;
   section: 'main' | 'free' | 'ugc' | 'bottom' | 'admin';
   isNew?: boolean;
   isExternal?: boolean;

@@ -222,10 +222,10 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-2">3. Creative Direction</h2>
-        <div className="space-y-4">
+        <h2 className="text-lg font-semibold mb-2">3. Creative & Output Options</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label htmlFor="review-vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Vibe</label>
+                <label htmlFor="review-vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Vibe</label>
                 <select
                     id="review-vibe-select"
                     value={selectedVibe}
@@ -236,7 +236,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
             <div>
-                <label htmlFor="review-background-vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Background Vibe</label>
+                <label htmlFor="review-background-vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Background Vibe</label>
                 <select
                     id="review-background-vibe-select"
                     value={selectedBackgroundVibe}
@@ -247,7 +247,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
             <div>
-                <label htmlFor="review-lighting-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Lighting</label>
+                <label htmlFor="review-lighting-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lighting</label>
                 <select
                     id="review-lighting-select"
                     value={selectedLighting}
@@ -258,7 +258,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
             <div>
-                <label htmlFor="review-content-type-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Content Type</label>
+                <label htmlFor="review-content-type-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Content Type</label>
                 <select
                     id="review-content-type-select"
                     value={selectedContentType}
@@ -269,7 +269,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
             <div>
-                <label htmlFor="review-language-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Output Language</label>
+                <label htmlFor="review-language-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Output Language</label>
                 <select
                     id="review-language-select"
                     value={selectedLanguage}
@@ -280,7 +280,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
              <div>
-                <label htmlFor="review-captions-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">4. On-Screen Text/Captions</label>
+                <label htmlFor="review-captions-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">On-Screen Text/Captions</label>
                 <select
                     id="review-captions-select"
                     value={includeCaptions}
@@ -292,7 +292,7 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                 </select>
             </div>
             <div>
-                <label htmlFor="review-voiceover-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">5. Voiceover Script (Reviewer)</label>
+                <label htmlFor="review-voiceover-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Voiceover Script (Reviewer)</label>
                 <select
                     id="review-voiceover-select"
                     value={includeVoiceover}
