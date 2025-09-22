@@ -10,8 +10,8 @@ export interface Tab<T extends string> {
 interface TabsProps<T extends string> {
   tabs: Tab<T>[];
   activeTab: T;
-  // FIX: Changed the type of the `setActiveTab` prop's `tabId` argument from `string` to the generic `T` to ensure type safety.
-  setActiveTab: (tabId: T) => void;
+  // FIX: Correctly typed the `setActiveTab` prop to be compatible with React's `useState` dispatcher (`React.Dispatch<React.SetStateAction<T>>`).
+  setActiveTab: React.Dispatch<React.SetStateAction<T>>;
   isAdmin?: boolean;
 }
 
