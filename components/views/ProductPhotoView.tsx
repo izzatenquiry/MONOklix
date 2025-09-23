@@ -86,7 +86,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
   
   const T = getTranslations(language).productPhotoView;
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     if (!productImage) {
       setError("Please upload a product image first.");
       return;
@@ -100,13 +100,19 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
     try {
       const generatedImages: string[] = [];
       for (let i = 0; i < numberOfImages; i++) {
-        const result = await composeImage(prompt, [productImage]);
-        if (result.imageBase64) {
-          generatedImages.push(result.imageBase64);
-          setResultImages([...generatedImages]);
-          setSelectedImageIndex(i);
-        } else {
-          throw new Error(`The AI failed to generate image #${i + 1}. Please try different settings.`);
+        try {
+          const result = await composeImage(prompt, [productImage]);
+          if (result.imageBase64) {
+            generatedImages.push(result.imageBase64);
+            setResultImages([...generatedImages]);
+            setSelectedImageIndex(i);
+          } else {
+            throw new Error(`The AI did not return an image for this attempt.`);
+          }
+        } catch (e) {
+          const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+          setError(`Failed to generate image ${i + 1} of ${numberOfImages}. Error: ${errorMessage}`);
+          console.error(`Generation failed for image ${i + 1}:`, e);
         }
       }
 
@@ -118,9 +124,13 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
             result: imgBase64,
           });
         }
-        generatedImages.forEach((imgBase64, index) => {
-          triggerDownload(imgBase64, `monoklix-product-photo-${index + 1}`);
-        });
+        // Asynchronously download all images with a delay
+        for (let i = 0; i < generatedImages.length; i++) {
+            triggerDownload(generatedImages[i], `monoklix-product-photo-${i + 1}`);
+            if (i < generatedImages.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -129,7 +139,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [productImage, vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim, numberOfImages]);
 
   const leftPanel = (
     <>

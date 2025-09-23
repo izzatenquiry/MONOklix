@@ -83,7 +83,8 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
   ];
 
   useEffect(() => {
-      let interval: NodeJS.Timeout | null = null;
+// FIX: Replaced `NodeJS.Timeout` with `ReturnType<typeof setInterval>` to resolve a type error in browser environments. `setInterval` returns a `number` in the browser, and this change correctly reflects that without relying on Node.js types.
+      let interval: ReturnType<typeof setInterval> | null = null;
       if (isLoading) {
         interval = setInterval(() => {
           setLoadingMessageIndex(prev => (prev + 1) % loadingMessages.length);

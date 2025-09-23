@@ -171,9 +171,13 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           for (const imgBase64 of result) {
             await addHistoryItem({ type: 'Image', prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`, result: imgBase64 });
           }
-          result.forEach((imgBase64, index) => {
-            triggerDownload(imgBase64, `monoklix-generated-image-${index+1}`);
-          });
+          // Asynchronously download all images with a delay to prevent browser blocking
+          for (let i = 0; i < result.length; i++) {
+            triggerDownload(result[i], `monoklix-generated-image-${i+1}`);
+            if (i < result.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
         }
       }
     } catch (e) {
