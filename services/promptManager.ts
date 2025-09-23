@@ -84,7 +84,7 @@ export const getProductAdPrompt = (details: {
     Keep it short, engaging, and optimised for platforms like TikTok or Instagram Reels.
 `;
 
-// --- Product Photo ---
+// --- Product Photo (Unified Prompt) ---
 export const getProductPhotoPrompt = (details: {
   vibe: string;
   lighting: string;
@@ -96,28 +96,35 @@ export const getProductPhotoPrompt = (details: {
   lensType: string;
   filmSim: string;
 }): string => {
-    if (details.customPrompt.trim()) {
-        return details.customPrompt.trim();
-    }
+  if (details.customPrompt.trim()) {
+    return details.customPrompt.trim();
+  }
+
+  const promptParts = [
+    `Create a professional, photorealistic product photo for the uploaded image.`,
+    `Do not include any people, models, or text. Focus only on the product itself.`,
+
+    `**Creative Direction:**`,
+    `- Background / Vibe: ${details.vibe}`,
+    `- Artistic Style: ${details.style === 'Random' ? 'photorealistic' : details.style}`,
+    `- Lighting: ${details.lighting === 'Random' ? 'interesting, cinematic lighting' : details.lighting}`,
+    `- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}`,
+    `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
+    `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
+    `- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}`,
+    `- AI Creativity Level: ${details.creativityLevel} out of 10 (0 = literal, 10 = full artistic freedom)`,
     
-    const promptParts = [
-      `Create a professional product photo for the uploaded image. Do not include any people or models. Focus only on the product.`,
-      `Place the product in the following setting:`,
-      `- Background / Vibe: ${details.vibe}`,
-      `- Artistic Style: ${details.style === 'Random' ? 'photorealistic' : details.style}`,
-      `- Lighting: ${details.lighting === 'Random' ? 'interesting, cinematic lighting' : details.lighting}`,
-      `- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}`,
-      `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
-      `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
-      `- Film Simulation: ${details.filmSim === 'Random' ? 'none' : details.filmSim}`,
-      `- AI Creativity Level (0-10, where 10 is most creative): ${details.creativityLevel}`,
-      `Ensure the final image is high-resolution, clean, and commercially appealing.`
-    ];
-    
-    return promptParts.join('\n');
+    `**Final Requirements:**`,
+    `- The result must be clean, aesthetic, and suitable for e-commerce listings or social media.`,
+    `- The output image must have a 3:4 aspect ratio.`,
+    `- CRITICAL: The final image must be purely visual. Do NOT add text, watermarks, or logos.`
+  ];
+
+  return promptParts.join('\n');
 };
 
-// --- Product Review ---
+
+// --- Product Review (Unified Prompt) ---
 export const getProductReviewStoryboardPrompt = (details: {
   productDesc: string;
   selectedLanguage: string;
@@ -127,51 +134,71 @@ export const getProductReviewStoryboardPrompt = (details: {
   selectedContentType: string;
   includeCaptions: 'Yes' | 'No';
   includeVoiceover: 'Yes' | 'No';
-}): string => `
-    You are an expert storyboard creator for social media product reviews.
-    The final output language for the storyboard must be strictly in ${details.selectedLanguage}.
+}): string => {
+  let extraInstructions = "Combine these elements to create a scene description for each of the 4 scenes, including camera shots.";
+  if (details.includeCaptions === 'Yes') {
+    extraInstructions += " Also, for each scene, provide short, punchy on-screen captions.";
+  }
+  if (details.includeVoiceover === 'Yes') {
+    extraInstructions += " Also, for each scene, write a natural-sounding voiceover script for the reviewer (based on the provided face).";
+  }
 
-    Based on the provided product image, face image, and details below, create a 4-scene storyboard for a short-form video (e.g., TikTok, Instagram Reels).
-    For each scene, provide a clear visual description.
-    ${details.includeCaptions === 'Yes' ? "Also, for each scene, provide short, punchy on-screen text/captions." : ""}
-    ${details.includeVoiceover === 'Yes' ? "Also, for each scene, write a voiceover script for the reviewer (based on the provided face)." : ""}
-    The storyboard must follow a logical flow: introduction, demonstration/features, benefits/call-to-action.
+  return `
+You are an expert AI assistant specialising in creating storyboards for social media product review videos.
+The output language must be strictly in ${details.selectedLanguage}.
 
-    **Product Description:**
-    ${details.productDesc}
+Create a **4-scene storyboard** for a short-form video (TikTok, Instagram Reels, YouTube Shorts) based on the following:
 
-    **Creative Direction:**
-    - Vibe: ${details.selectedVibe}
-    - Background Vibe: ${details.selectedBackgroundVibe}
-    - Lighting: ${details.selectedLighting}
-    - Content Type: ${details.selectedContentType}
+**Product Description:**
+${details.productDesc}
 
-    Format the output clearly with "**Scene 1:**", "**Scene 2:**", etc.
+**Creative Direction:**
+- Vibe: ${details.selectedVibe}
+- Background Vibe: ${details.selectedBackgroundVibe}
+- Lighting: ${details.selectedLighting}
+- Content Type: ${details.selectedContentType}
+- On-Screen Text/Captions: ${details.includeCaptions}
+- Voiceover Script: ${details.includeVoiceover}
+
+${extraInstructions}
+The storyboard must follow a logical flow:  
+1. Introduction (hook & product reveal)  
+2. Demonstration / Features  
+3. Benefits / User experience  
+4. Call-to-action (why buy / final push)
+
+The output must be structured with clear headings for each scene, like "**Scene 1:**", "**Scene 2:**", etc.
 `;
+};
 
+// --- Product Review Image Prompt (Unified) ---
 export const getProductReviewImagePrompt = (details: {
   sceneDescription: string;
   selectedVibe: string;
   selectedBackgroundVibe: string;
   selectedLighting: string;
 }): string => `
-    You are an AI image generator. Your task is to create a single, realistic image based on a scene from a product review video.
-    You will be given two images: [Image 1] is the product, and [Image 2] is the face of the reviewer.
-    Combine these elements into a single, cohesive scene as described.
+You are an AI image generator. Your task is to create a single, photorealistic image for a product review video scene.
 
-    **Scene Description:**
-    ${details.sceneDescription}
+**Scene Description:**
+${details.sceneDescription}
 
-    **Creative Direction:**
-    - Vibe: ${details.selectedVibe}
-    - Background Vibe: ${details.selectedBackgroundVibe}
-    - Lighting: ${details.selectedLighting}
+**Creative Direction:**
+- Vibe: ${details.selectedVibe}
+- Background Vibe: ${details.selectedBackgroundVibe}
+- Lighting: ${details.selectedLighting}
 
-    Generate only the image that matches this description perfectly. Ensure the final image is photorealistic.
+**Instructions:**
+- The image must feature a person whose appearance is inspired by the provided face image.
+- The person must be using or showcasing the product from the provided product image.
+- The final result must look like a real frame from a short-form video.
+- CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos.
+
+Generate only the image that matches this description perfectly. Ensure the final output is high-quality and photorealistic.
 `;
 
 
-// --- TikTok Affiliate ---
+// --- TikTok Affiliate Unified Prompt ---
 export const getTiktokAffiliatePrompt = (details: {
   gender: string;
   modelFace: string;
@@ -181,43 +208,49 @@ export const getTiktokAffiliatePrompt = (details: {
   vibe: string;
   creativityLevel: number;
   customPrompt: string;
-  hasFaceImage: boolean;
+  hasFaceImage?: boolean;
   style: string;
   composition: string;
   lensType: string;
   filmSim: string;
 }): string => {
-    if (details.customPrompt.trim()) {
-        return details.customPrompt.trim();
-    }
+  if (details.customPrompt.trim()) {
+    return details.customPrompt.trim();
+  }
 
-    const faceInstruction = details.hasFaceImage
-        ? "Use the provided face image as a direct reference for the model's face."
-        : `The model should have facial features typical of someone from ${details.modelFace}.`;
+  const modelInstruction = details.hasFaceImage
+    ? `A ${details.gender} model whose face is inspired by the provided face image.`
+    : `A ${details.gender} model with facial features typical of ${details.modelFace === 'Random' ? 'Southeast Asia' : details.modelFace}. Ensure the face looks realistic and appealing.`;
 
-    return `
-      Create a high-quality, realistic image suitable for TikTok affiliate marketing.
-      The image should feature a ${details.gender} model interacting with or showcasing the provided product.
-      
-      **Core Instructions:**
-      1.  The main subject is the model and the product together. Integrate the product naturally.
-      2.  ${faceInstruction}
-      3.  The overall aesthetic should be eye-catching and feel like authentic user-generated content (UGC).
-      
-      **Creative Direction:**
-      -   **Model's Gender:** ${details.gender}
-      -   **Background/Vibe:** ${details.vibe}
-      -   **Artistic Style:** ${details.style}
-      -   **Lighting:** ${details.lighting}
-      -   **Camera Shot:** ${details.camera}
-      -   **Composition:** ${details.composition}
-      -   **Lens Type:** ${details.lensType}
-      -   **Film Simulation:** ${details.filmSim}
-      -   **Model's Pose:** ${details.pose}
-      -   **AI Creativity Level (0-10, where 10 is most creative):** ${details.creativityLevel}
+  const productInstruction = "Include the product from the uploaded image.";
 
-      Ensure the final image is photorealistic, engaging, and suitable for social media.
-    `;
+  return `
+Create a high-quality, photorealistic User-Generated Content (UGC) image suitable for TikTok affiliate marketing.
+The image must naturally feature the provided product image.
+
+**Core Instructions:**
+1. The main subject is the model and the product together. Integrate the product naturally.
+2. ${modelInstruction}
+3. The aesthetic must be eye-catching and feel authentic, like real UGC content.
+
+**Creative Direction:**
+- Model's Gender: ${details.gender}
+- Model's Pose: ${details.pose === 'Random' ? 'a natural and relaxed pose, interacting with the product if appropriate' : details.pose}
+- Product: ${productInstruction}
+- Background/Vibe: ${details.vibe}
+- Artistic Style: ${details.style === 'Random' ? 'photorealistic' : details.style}
+- Lighting: ${details.lighting === 'Random' ? 'flattering and natural-looking lighting' : details.lighting}
+- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}
+- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}
+- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}
+- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}
+- AI Creativity Level (0-10): ${details.creativityLevel}
+
+**Final Requirements:**
+- The result must be a high-quality, authentic-looking, and engaging image for affiliate marketing.
+- Output must have a 3:4 aspect ratio.
+- CRITICAL: The image must be purely visual. Do NOT add text, watermarks, or logos.
+`;
 };
 
 // --- Background Remover ---
