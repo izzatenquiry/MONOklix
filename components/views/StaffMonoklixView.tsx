@@ -8,6 +8,8 @@ import {
 } from '../Icons';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getStaffMonoklixPrompt } from '../../services/promptManager';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
 
 interface AiAgent {
   id: string;
@@ -18,18 +20,18 @@ interface AiAgent {
 }
 
 const aiAgents: AiAgent[] = [
-    { id: 'karim', name: 'Karim', description: 'Ideal Customer Persona', icon: UserIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'lina', name: 'Lina', description: 'Fear & Desire', icon: SmileyIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'ali', name: 'Ali', description: 'Marketing Angle', icon: LightbulbIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'aminah', name: 'Aminah', description: 'Copywriter', icon: FileTextIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'hassan', name: 'Hassan', description: 'Variasi Copywriting', icon: ClipboardListIcon, placeholder: 'Masukkan teks jualan asal anda...' },
-    { id: 'siti', name: 'Siti', description: 'Formula Copywriting (AIDA)', icon: TrendingUpIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'alex', name: 'Alex', description: 'Sales Page Creator', icon: StoreIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'alia', name: 'Alia', description: 'Headline Brainstormer', icon: MegaphoneIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'haslam', name: 'Haslam', description: 'Script Writer', icon: FilmIcon, placeholder: 'Nyatakan produk/servis anda...' },
-    { id: 'luqman', name: 'Luqman', description: 'LinkedIn Personal Branding', icon: UsersIcon, placeholder: 'Nyatakan platform dan topik. Cth: LinkedIn, Topik: Pentingnya personal branding' },
-    { id: 'davinci', name: 'Da Vinci', description: 'Image Prompter', icon: ImageIcon, placeholder: 'Cth: Tema: Kucing comel, Gaya: Realistik, Elemen: Kucing sedang tidur atas sofa.' },
-    { id: 'izzad', name: 'Izzad', description: 'Poster Prompter', icon: GalleryIcon, placeholder: 'Cth: Tujuan: Iklan event, Gaya: Moden, Teks: Jualan Hebat, Warna: Merah.' }
+    { id: 'wan', name: 'Wan', description: 'Ideal Customer Persona', icon: UserIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'tina', name: 'Tina', description: 'Fear & Desire', icon: SmileyIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'jamil', name: 'Jamil', description: 'Marketing Angle', icon: LightbulbIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'najwa', name: 'Najwa', description: 'Copywriter', icon: FileTextIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'saifuz', name: 'Saifuz', description: 'Variasi Copywriting', icon: ClipboardListIcon, placeholder: 'Masukkan teks jualan asal anda...' },
+    { id: 'mieya', name: 'Mieya', description: 'Formula Copywriting (AIDA)', icon: TrendingUpIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'afiq', name: 'Afiq', description: 'Sales Page Creator', icon: StoreIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'julia', name: 'Julia', description: 'Headline Brainstormer', icon: MegaphoneIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'mazrul', name: 'Mazrul', description: 'Script Writer', icon: FilmIcon, placeholder: 'Nyatakan produk/servis anda...' },
+    { id: 'musa', name: 'Musa', description: 'LinkedIn Personal Branding', icon: UsersIcon, placeholder: 'Nyatakan platform dan topik. Cth: LinkedIn, Topik: Pentingnya personal branding' },
+    { id: 'joe_davinci', name: 'Joe', description: 'Image Prompter', icon: ImageIcon, placeholder: 'Cth: Tema: Kucing comel, Gaya: Realistik, Elemen: Kucing sedang tidur atas sofa.' },
+    { id: 'zaki', name: 'Zaki', description: 'Poster Prompter', icon: GalleryIcon, placeholder: 'Cth: Tujuan: Iklan event, Gaya: Moden, Teks: Jualan Hebat, Warna: Merah.' }
 ];
 
 const languages = ["English", "Bahasa Malaysia", "Chinese"];
@@ -46,14 +48,21 @@ const downloadText = (text: string, fileName: string) => {
     URL.revokeObjectURL(url);
 };
 
-const StaffMonoklixView: React.FC = () => {
-    const [selectedAgentId, setSelectedAgentId] = useState<string>('karim');
+interface StaffMonoklixViewProps {
+    language: Language;
+}
+
+const StaffMonoklixView: React.FC<StaffMonoklixViewProps> = ({ language }) => {
+    const [selectedAgentId, setSelectedAgentId] = useState<string>('wan');
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedCopy, setGeneratedCopy] = useState<string>('');
     const [copied, setCopied] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState(languages[1]); // Default to Bahasa Malaysia
+    const [selectedLanguage, setSelectedLanguage] = useState(language === 'ms' ? "Bahasa Malaysia" : "English");
+
+    const T = getTranslations(language).staffMonoklixView;
+    const commonT = getTranslations(language);
 
     const selectedAgent = useMemo(() => aiAgents.find(agent => agent.id === selectedAgentId)!, [selectedAgentId]);
 
@@ -99,8 +108,8 @@ const StaffMonoklixView: React.FC = () => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-2xl font-bold sm:text-3xl">Staff MONOklix</h1>
-                <p className="text-neutral-500 dark:text-neutral-400 mt-1">Select an AI Agent to help you with your task.</p>
+                <h1 className="text-2xl font-bold sm:text-3xl">{T.title}</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">{T.subtitle}</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -129,7 +138,7 @@ const StaffMonoklixView: React.FC = () => {
 
             <div>
                 <label htmlFor="agent-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                    Input for {selectedAgent.name}
+                    {T.inputFor} {selectedAgent.name}
                 </label>
                 <textarea
                     id="agent-input"
@@ -143,7 +152,7 @@ const StaffMonoklixView: React.FC = () => {
 
             <div>
                 <label htmlFor="agent-language" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                    Output Language
+                    {T.outputLanguage}
                 </label>
                 <select
                     id="agent-language"
@@ -161,7 +170,7 @@ const StaffMonoklixView: React.FC = () => {
                     disabled={isLoading}
                     className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? <Spinner /> : 'Generate'}
+                    {isLoading ? <Spinner /> : T.generateButton}
                 </button>
                 {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
             </div>
@@ -177,13 +186,13 @@ const StaffMonoklixView: React.FC = () => {
                       className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                     >
                       {copied ? <CheckCircleIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
-                      {copied ? 'Copied!' : 'Copy'}
+                      {copied ? commonT.libraryView.copied : commonT.libraryView.copy}
                     </button>
                     <button
                         onClick={() => downloadText(generatedCopy, `monoklix-staff-${selectedAgent.id}.txt`)}
                         className="flex items-center gap-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                     >
-                        <DownloadIcon className="w-4 h-4" /> Download
+                        <DownloadIcon className="w-4 h-4" /> {T.download}
                     </button>
                 </div>
             )}
@@ -202,7 +211,7 @@ const StaffMonoklixView: React.FC = () => {
                  <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600 p-4">
                     <div>
                         <AIAgentIcon className="w-16 h-16 mx-auto" />
-                        <p>Your AI-generated content will appear here.</p>
+                        <p>{T.outputPlaceholder}</p>
                     </div>
                 </div>
             )}

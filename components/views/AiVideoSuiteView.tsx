@@ -4,15 +4,11 @@ import VideoCombinerView from './VideoCombinerView';
 import VoiceStudioView from './VoiceStudioView';
 import ProductReviewView from './ProductReviewView';
 import Tabs, { type Tab } from '../common/Tabs';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
+
 
 type TabId = 'generation' | 'storyboard' | 'combiner' | 'voice';
-
-const tabs: Tab<TabId>[] = [
-    { id: 'generation', label: 'Video Generation' },
-    { id: 'storyboard', label: 'Video Storyboard' },
-    { id: 'combiner', label: 'Video Combiner' },
-    { id: 'voice', label: 'Voice Studio' }
-];
 
 interface VideoGenPreset {
   prompt: string;
@@ -29,23 +25,35 @@ interface AiVideoSuiteViewProps {
   clearPreset: () => void;
   onReEdit: (preset: ImageEditPreset) => void;
   onCreateVideo: (preset: VideoGenPreset) => void;
+  language: Language;
 }
 
-const AiVideoSuiteView: React.FC<AiVideoSuiteViewProps> = ({ preset, clearPreset, onReEdit, onCreateVideo }) => {
+const AiVideoSuiteView: React.FC<AiVideoSuiteViewProps> = ({ preset, clearPreset, onReEdit, onCreateVideo, language }) => {
     const [activeTab, setActiveTab] = useState<TabId>('generation');
+    const T = getTranslations(language).tabs;
+
+    const tabs: Tab<TabId>[] = [
+        { id: 'generation', label: T.videoGeneration },
+        { id: 'storyboard', label: T.videoStoryboard },
+        { id: 'combiner', label: T.videoCombiner },
+        { id: 'voice', label: T.voiceStudio }
+    ];
 
     const renderActiveTabContent = () => {
+        const commonProps = { language };
         switch (activeTab) {
             case 'generation':
-                return <VideoGenerationView preset={preset} clearPreset={clearPreset} />;
+                return <VideoGenerationView {...commonProps} preset={preset} clearPreset={clearPreset} />;
             case 'storyboard':
-                return <ProductReviewView onReEdit={onReEdit} onCreateVideo={onCreateVideo} />;
+                return <ProductReviewView {...commonProps} onReEdit={onReEdit} onCreateVideo={onCreateVideo} />;
             case 'combiner':
+                // FIX: Removed props from VideoCombinerView as it does not accept any.
                 return <VideoCombinerView />;
             case 'voice':
+                // FIX: Removed props from VoiceStudioView as it does not accept any.
                 return <VoiceStudioView />;
             default:
-                return <VideoGenerationView preset={preset} clearPreset={clearPreset} />;
+                return <VideoGenerationView {...commonProps} preset={preset} clearPreset={clearPreset} />;
         }
     };
 

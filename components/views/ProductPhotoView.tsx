@@ -3,10 +3,12 @@ import ImageUpload from '../common/ImageUpload';
 import { composeImage, type MultimodalContent } from '../../services/geminiService';
 import { addHistoryItem } from '../../services/historyService';
 import Spinner from '../common/Spinner';
-import { CameraIcon, DownloadIcon, SunIcon, SparklesIcon, LeafIcon, WandIcon, VideoIcon } from '../Icons';
-import { type User } from '../../types';
+import { CameraIcon, DownloadIcon, WandIcon, VideoIcon } from '../Icons';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getProductPhotoPrompt } from '../../services/promptManager';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
+
 
 const triggerDownload = (data: string, fileNameBase: string) => {
     const link = document.createElement('a');
@@ -30,6 +32,7 @@ interface ImageEditPreset {
 interface ProductPhotoViewProps {
   onReEdit: (preset: ImageEditPreset) => void;
   onCreateVideo: (preset: VideoGenPreset) => void;
+  language: Language;
 }
 
 const vibeOptions = ["Random", "Studio Backdrop", "Tabletop / Surface", "Premium Texture", "Light & Shadow", "Color & Palette", "Nature & Organic", "Urban & Industrial", "Soft Daylight Studio", "Pastel Clean", "High-Key White", "Low-Key Moody", "Color Block", "Gradient Backdrop", "Paper Curl Backdrop", "Beige Seamless", "Shadow Play / Hard Light", "Marble Tabletop", "Pastel Soft"];
@@ -63,7 +66,7 @@ const SelectControl: React.FC<{
     </select>
 );
 
-const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateVideo }) => {
+const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateVideo, language }) => {
   const [productImage, setProductImage] = useState<MultimodalContent | null>(null);
   const [resultImages, setResultImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,6 +83,8 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
   const [creativityLevel, setCreativityLevel] = useState(5);
   const [customPrompt, setCustomPrompt] = useState('');
   const [numberOfImages, setNumberOfImages] = useState(1);
+  
+  const T = getTranslations(language).productPhotoView;
 
   const handleGenerate = async () => {
     if (!productImage) {
@@ -129,76 +134,46 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
   const leftPanel = (
     <>
       <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">Product Photos</h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Create UGC content for products without models.</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">{T.title}</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 mt-1">{T.subtitle}</p>
       </div>
 
-      <Section title="1. Upload Product">
-        <ImageUpload id="product-photo-upload" onImageUpload={(base64, mimeType) => setProductImage({ base64, mimeType })} title="Click to upload" />
+      <Section title={T.uploadProduct}>
+        <ImageUpload id="product-photo-upload" onImageUpload={(base64, mimeType) => setProductImage({ base64, mimeType })} title={T.uploadTitle} />
       </Section>
 
-      <Section title="2. Custom Prompt (Optional)">
+      <Section title={T.customPrompt}>
         <textarea
           id="custom-prompt"
           value={customPrompt}
           onChange={(e) => setCustomPrompt(e.target.value)}
-          placeholder="Or write your own prompt here..."
+          placeholder={T.customPromptPlaceholder}
           rows={3}
           className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 text-sm text-neutral-800 dark:text-neutral-300 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
         />
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">If filled, this prompt will override the dropdown selections below.</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">{T.customPromptHelp}</p>
       </Section>
       
-      <Section title="3. Creative Direction">
+      <Section title={T.creativeDirection}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Background / Vibe</label>
-            <SelectControl id="vibe-select" value={vibe} onChange={setVibe} options={vibeOptions} />
-          </div>
-          <div>
-            <label htmlFor="style-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Artistic Style</label>
-            <SelectControl id="style-select" value={style} onChange={setStyle} options={styleOptions} />
-          </div>
-           <div>
-            <label htmlFor="lighting-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lighting</label>
-            <SelectControl id="lighting-select" value={lighting} onChange={setLighting} options={lightingOptions} />
-          </div>
-           <div>
-            <label htmlFor="camera-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Camera Shot</label>
-            <SelectControl id="camera-select" value={camera} onChange={setCamera} options={cameraOptions} />
-          </div>
-          <div>
-            <label htmlFor="composition-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Composition</label>
-            <SelectControl id="composition-select" value={composition} onChange={setComposition} options={compositionOptions} />
-          </div>
-           <div>
-            <label htmlFor="lens-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lens Type</label>
-            <SelectControl id="lens-select" value={lensType} onChange={setLensType} options={lensTypeOptions} />
-          </div>
-          <div>
-            <label htmlFor="film-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Film Simulation</label>
-            <SelectControl id="film-select" value={filmSim} onChange={setFilmSim} options={filmSimOptions} />
-          </div>
+          <div><label htmlFor="vibe-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.backgroundVibe}</label><SelectControl id="vibe-select" value={vibe} onChange={setVibe} options={vibeOptions} /></div>
+          <div><label htmlFor="style-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.artisticStyle}</label><SelectControl id="style-select" value={style} onChange={setStyle} options={styleOptions} /></div>
+          <div><label htmlFor="lighting-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.lighting}</label><SelectControl id="lighting-select" value={lighting} onChange={setLighting} options={lightingOptions} /></div>
+          <div><label htmlFor="camera-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.cameraShot}</label><SelectControl id="camera-select" value={camera} onChange={setCamera} options={cameraOptions} /></div>
+          <div><label htmlFor="composition-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.composition}</label><SelectControl id="composition-select" value={composition} onChange={setComposition} options={compositionOptions} /></div>
+          <div><label htmlFor="lens-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.lensType}</label><SelectControl id="lens-select" value={lensType} onChange={setLensType} options={lensTypeOptions} /></div>
+          <div><label htmlFor="film-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.filmSim}</label><SelectControl id="film-select" value={filmSim} onChange={setFilmSim} options={filmSimOptions} /></div>
         </div>
       </Section>
       
-      <Section title="4. AI & Output Settings">
+      <Section title={T.aiSettings}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             <div>
-              <label htmlFor="creativity-slider" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{`AI Creativity Level (${creativityLevel})`}</label>
-              <input
-                id="creativity-slider"
-                type="range"
-                min="0"
-                max="10"
-                step="1"
-                value={creativityLevel}
-                onChange={(e) => setCreativityLevel(Number(e.target.value))}
-                className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
-              />
+              <label htmlFor="creativity-slider" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{`${T.creativityLevel} (${creativityLevel})`}</label>
+              <input id="creativity-slider" type="range" min="0" max="10" step="1" value={creativityLevel} onChange={(e) => setCreativityLevel(Number(e.target.value))} className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary-500" />
             </div>
              <div>
-              <label htmlFor="num-images-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Number of Images</label>
+              <label htmlFor="num-images-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.numberOfImages}</label>
               <SelectControl id="num-images-select" value={String(numberOfImages)} onChange={(val) => setNumberOfImages(Number(val))} options={[1, 2, 3, 4, 5]} />
             </div>
         </div>
@@ -210,7 +185,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
             disabled={isLoading}
             className="w-full mt-2 flex items-center justify-center gap-2 bg-primary-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
-            {isLoading ? <Spinner /> : 'Generate Photo(s)'}
+            {isLoading ? <Spinner /> : T.generateButton}
           </button>
           {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
       </div>
@@ -219,26 +194,15 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
 
   const rightPanel = (
     <>
-        {isLoading && (
-          <div className="text-center">
-            <Spinner />
-            <p className="mt-4 text-neutral-500 dark:text-neutral-400">Generating images... ({resultImages.length}/{numberOfImages})</p>
-          </div>
-        )}
+        {isLoading && (<div className="text-center"><Spinner /><p className="mt-4 text-neutral-500 dark:text-neutral-400">{T.loading} ({resultImages.length}/{numberOfImages})</p></div>)}
         {resultImages.length > 0 && !isLoading && (
            <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-2">
             <div className="flex-1 flex items-center justify-center min-h-0 w-full relative group">
               <img src={`data:image/png;base64,${resultImages[selectedImageIndex]}`} alt={`Generated product ${selectedImageIndex + 1}`} className="rounded-md max-h-full max-w-full object-contain" />
               <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
-                  <WandIcon className="w-4 h-4" />
-                </button>
-                <button onClick={() => onCreateVideo({ prompt: getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
-                  <VideoIcon className="w-4 h-4" />
-                </button>
-                <button onClick={() => triggerDownload(resultImages[selectedImageIndex], 'monoklix-product-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors">
-                  <DownloadIcon className="w-4 h-4" />
-                </button>
+                <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><WandIcon className="w-4 h-4" /></button>
+                <button onClick={() => onCreateVideo({ prompt: getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><VideoIcon className="w-4 h-4" /></button>
+                <button onClick={() => triggerDownload(resultImages[selectedImageIndex], 'monoklix-product-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><DownloadIcon className="w-4 h-4" /></button>
               </div>
             </div>
             {resultImages.length > 1 && (
@@ -256,8 +220,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
         )}
         {resultImages.length === 0 && !isLoading && (
           <div className="text-center text-neutral-500 dark:text-neutral-600">
-            <CameraIcon className="w-16 h-16 mx-auto" />
-            <p>Your content output will appear here.</p>
+            <CameraIcon className="w-16 h-16 mx-auto" /><p>{T.outputPlaceholder}</p>
           </div>
         )}
     </>

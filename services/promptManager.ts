@@ -109,11 +109,9 @@ export const getProductPhotoPrompt = (details: {
       `- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}`,
       `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
       `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
-      `- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}`,
-      `- AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.`,
-      `The result should be a photorealistic, clean, and aesthetic image suitable for social media or an e-commerce listing.`,
-      `- The final output image must have a 3:4 aspect ratio.`,
-      `- CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.`,
+      `- Film Simulation: ${details.filmSim === 'Random' ? 'none' : details.filmSim}`,
+      `- AI Creativity Level (0-10, where 10 is most creative): ${details.creativityLevel}`,
+      `Ensure the final image is high-resolution, clean, and commercially appealing.`
     ];
     
     return promptParts.join('\n');
@@ -121,151 +119,171 @@ export const getProductPhotoPrompt = (details: {
 
 // --- Product Review ---
 export const getProductReviewStoryboardPrompt = (details: {
-    productDesc: string;
-    selectedLanguage: string;
-    selectedVibe: string;
-    selectedBackgroundVibe: string;
-    selectedLighting: string;
-    selectedContentType: string;
-    includeCaptions: string;
-    includeVoiceover: string;
-}): string => {
-    let finalInstructions = 'Combine these elements to create a scene description for each of the 4 scenes, including camera shots.';
-    if (details.includeCaptions === 'Yes') {
-        finalInstructions += ' Include on-screen text/captions.';
-    }
-    if (details.includeVoiceover === 'Yes') {
-        finalInstructions += ' Include a voiceover script where the person (from the face image) is reviewing the product.';
-    }
+  productDesc: string;
+  selectedLanguage: string;
+  selectedVibe: string;
+  selectedBackgroundVibe: string;
+  selectedLighting: string;
+  selectedContentType: string;
+  includeCaptions: 'Yes' | 'No';
+  includeVoiceover: 'Yes' | 'No';
+}): string => `
+    You are an expert storyboard creator for social media product reviews.
+    The final output language for the storyboard must be strictly in ${details.selectedLanguage}.
 
-    return `
-      You are an expert AI assistant specialising in creating storyboards for product review videos for social media.
-      Based on the user's product image, face image, product description, and chosen creative direction, generate a short and engaging 4-scene storyboard for a review video.
-      The output language must be strictly in ${details.selectedLanguage}.
+    Based on the provided product image, face image, and details below, create a 4-scene storyboard for a short-form video (e.g., TikTok, Instagram Reels).
+    For each scene, provide a clear visual description.
+    ${details.includeCaptions === 'Yes' ? "Also, for each scene, provide short, punchy on-screen text/captions." : ""}
+    ${details.includeVoiceover === 'Yes' ? "Also, for each scene, write a voiceover script for the reviewer (based on the provided face)." : ""}
+    The storyboard must follow a logical flow: introduction, demonstration/features, benefits/call-to-action.
 
-      **Product Description:**
-      ${details.productDesc}
+    **Product Description:**
+    ${details.productDesc}
 
-      **Creative Direction:**
-      - Vibe: ${details.selectedVibe}
-      - Background Vibe: ${details.selectedBackgroundVibe}
-      - Lighting: ${details.selectedLighting}
-      - Content Type: ${details.selectedContentType}
-      - On-Screen Text/Captions: ${details.includeCaptions}
-      - Voiceover Script (Reviewer): ${details.includeVoiceover}
+    **Creative Direction:**
+    - Vibe: ${details.selectedVibe}
+    - Background Vibe: ${details.selectedBackgroundVibe}
+    - Lighting: ${details.selectedLighting}
+    - Content Type: ${details.selectedContentType}
 
-      ${finalInstructions}
-      The output must be structured with clear headings for each scene, like "**Scene 1:**", "**Scene 2:**", etc.
-    `;
-};
+    Format the output clearly with "**Scene 1:**", "**Scene 2:**", etc.
+`;
 
 export const getProductReviewImagePrompt = (details: {
-    sceneDescription: string;
-    selectedVibe: string;
-    selectedBackgroundVibe: string;
-    selectedLighting: string;
+  sceneDescription: string;
+  selectedVibe: string;
+  selectedBackgroundVibe: string;
+  selectedLighting: string;
 }): string => `
-    You are an expert image editor. Your task is to create a new, photorealistic image by seamlessly combining two provided images: a product photo (first image) and a face photo (second image), based on a scene description.
+    You are an AI image generator. Your task is to create a single, realistic image based on a scene from a product review video.
+    You will be given two images: [Image 1] is the product, and [Image 2] is the face of the reviewer.
+    Combine these elements into a single, cohesive scene as described.
 
-    **Scene Description:** 
+    **Scene Description:**
     ${details.sceneDescription}
 
-    **CRITICAL Instructions:**
-    1.  **Face Replacement:** The person in the final image MUST have a face that is identical to the face in the second image provided (the face photo). Do not just get inspired by it; replicate it accurately.
-    2.  **Product Integration:** The person must be using or showcasing the product from the first image provided (the product photo). Integrate it naturally into the scene.
-    3.  **Creative Direction:** The overall scene must adhere to this direction: Vibe "${details.selectedVibe}", Background "${details.selectedBackgroundVibe}", Lighting "${details.selectedLighting}".
-    4.  **No Text:** The final image must be purely visual. Do NOT add any text, watermarks, or logos.
+    **Creative Direction:**
+    - Vibe: ${details.selectedVibe}
+    - Background Vibe: ${details.selectedBackgroundVibe}
+    - Lighting: ${details.selectedLighting}
+
+    Generate only the image that matches this description perfectly. Ensure the final image is photorealistic.
 `;
+
 
 // --- TikTok Affiliate ---
 export const getTiktokAffiliatePrompt = (details: {
-    gender: string;
-    modelFace: string;
-    lighting: string;
-    camera: string;
-    pose: string;
-    vibe: string;
-    creativityLevel: number;
-    customPrompt: string;
-    hasFaceImage?: boolean;
-    style: string;
-    composition: string;
-    lensType: string;
-    filmSim: string;
+  gender: string;
+  modelFace: string;
+  lighting: string;
+  camera: string;
+  pose: string;
+  vibe: string;
+  creativityLevel: number;
+  customPrompt: string;
+  hasFaceImage: boolean;
+  style: string;
+  composition: string;
+  lensType: string;
+  filmSim: string;
 }): string => {
     if (details.customPrompt.trim()) {
         return details.customPrompt.trim();
     }
-    
-    const modelInstruction = details.hasFaceImage
-        ? `A ${details.gender} model whose face is inspired by the second image provided (the face photo).`
-        : `A ${details.gender} from ${details.modelFace === 'Random' ? 'Southeast Asia' : details.modelFace}. Ensure the face looks realistic and appealing.`;
-    
-    const productInstruction = details.hasFaceImage
-        ? "Include the product from the first uploaded image."
-        : "Include the product from the uploaded image.";
 
-    const promptParts = [
-       `Create a photorealistic User-Generated Content (UGC) image for a platform like TikTok.`,
-       `The image must naturally feature the uploaded product image.`,
-       `Here are the details for the image:`,
-       `- Model: ${modelInstruction}`,
-       `- Product: ${productInstruction}`,
-       `- Artistic Style: ${details.style === 'Random' ? 'photorealistic' : details.style}`,
-       `- Lighting: ${details.lighting === 'Random' ? 'flattering and natural-looking lighting' : details.lighting}.`,
-       `- Camera Shot: ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}.`,
-       `- Body Movement / Pose: ${details.pose === 'Random' ? 'a natural and relaxed pose' : details.pose}. The model should be interacting with the product if appropriate.`,
-       `- Content Vibe / Background: ${details.vibe}.`,
-       `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
-       `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
-       `- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}`,
-       `- AI Creativity Level: ${details.creativityLevel} out of 10. A level of 0 means being very literal and making minimal changes. A level of 10 means complete creative freedom to reinterpret the scene in an artistic way.`,
-       `The result should be a high-quality, authentic-looking, and engaging image that could be used for affiliate marketing.`,
-       `- The final output image must have a 3:4 aspect ratio.`,
-       `- CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.`,
-    ];
-   
-   return promptParts.join('\n');
+    const faceInstruction = details.hasFaceImage
+        ? "Use the provided face image as a direct reference for the model's face."
+        : `The model should have facial features typical of someone from ${details.modelFace}.`;
+
+    return `
+      Create a high-quality, realistic image suitable for TikTok affiliate marketing.
+      The image should feature a ${details.gender} model interacting with or showcasing the provided product.
+      
+      **Core Instructions:**
+      1.  The main subject is the model and the product together. Integrate the product naturally.
+      2.  ${faceInstruction}
+      3.  The overall aesthetic should be eye-catching and feel like authentic user-generated content (UGC).
+      
+      **Creative Direction:**
+      -   **Model's Gender:** ${details.gender}
+      -   **Background/Vibe:** ${details.vibe}
+      -   **Artistic Style:** ${details.style}
+      -   **Lighting:** ${details.lighting}
+      -   **Camera Shot:** ${details.camera}
+      -   **Composition:** ${details.composition}
+      -   **Lens Type:** ${details.lensType}
+      -   **Film Simulation:** ${details.filmSim}
+      -   **Model's Pose:** ${details.pose}
+      -   **AI Creativity Level (0-10, where 10 is most creative):** ${details.creativityLevel}
+
+      Ensure the final image is photorealistic, engaging, and suitable for social media.
+    `;
 };
 
-// --- Image Tools ---
-export const getBackgroundRemovalPrompt = (): string => 
-    "Remove the background from this image, leaving only the main subject. The background should be transparent.";
+// --- Background Remover ---
+export const getBackgroundRemovalPrompt = (): string => {
+    return "Remove the background from the provided image. The output should be a clean PNG with a transparent background. Isolate the main subject perfectly.";
+};
 
+// --- Image Enhancer ---
 export const getImageEnhancementPrompt = (type: 'upscale' | 'colors'): string => {
     if (type === 'upscale') {
-        return "Upscale this image, making it sharper, clearer, and higher resolution. Preserve all original details.";
+        return "Enhance the quality of the following image. Increase its resolution, sharpen the details, and reduce any noise or artifacts. The final image should look like a high-resolution, professional photograph. Do not change the content.";
     }
-    return "Enhance the colors and lighting of this image to make it more vibrant and visually appealing. Adjust contrast and brightness for a professional look.";
+    // type === 'colors'
+    return "Enhance the colors of the following image. Make them more vibrant, improve the contrast, and adjust the color balance to be more appealing. Do not change the content or resolution, just make the colors pop in a natural way.";
 };
 
-// --- Staff MONOklix ---
-const staffMonoklixTemplates: Record<string, string> = {
-    karim: 'Bertindak sebagai pakar pemasaran. Saya perlukan anda hasilkan profil pelanggan ideal (Ideal Customer Persona) untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nGunakan gaya copywriting yang mudah difahami.\n\nHuraikan secara naratif, bukan sekadar senarai.\n\nPecahkan kepada bahagian berikut:\n\nDemografi (umur, jantina, lokasi, pekerjaan, pendapatan).\n\nPsikografi (gaya hidup, nilai, minat).\n\nMasalah utama (pain points).\n\nMatlamat & aspirasi.\n\nMotivasi membeli.\n\nAkhiri dengan ringkasan “Kenapa mereka sesuai jadi pelanggan utama saya”.',
-    lina: 'Buat analisis penuh tentang ketakutan (Fears) dan keinginan (Desires) pelanggan sasaran untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nTulis dalam bentuk copywriting penuh, bukan jadual.\n\nBahagikan kepada 2 seksyen:\n\nFear Storytelling: Ceritakan apa yang mereka takutkan, risiko yang mereka cuba elak, dan bagaimana hidup mereka jika masalah berterusan.\n\nDesire Storytelling: Gambarkan keinginan mereka, impian, dan keadaan ideal yang mereka mahu capai.\n\nGunakan gaya penulisan emosional, seolah-olah sedang bercakap terus kepada pelanggan.',
-    ali: 'Cadangkan 5 sudut pemasaran (marketing angles) untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nSetiap sudut ditulis dalam bentuk mini-copywriting (3–4 ayat).\n\nGunakan gaya berbeza (emosi, logik, urgency, aspirasi, sosial proof).\n\nSertakan headline + penerangan ringkas.',
-    aminah: 'Tulis copywriting penuh untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nPanjang 200–300 perkataan.\n\nGaya bahasa persuasif, mesra, dan mudah difahami.\n\nSertakan: Hook pembuka, masalah pelanggan, tawaran produk, kelebihan utama, call-to-action.\n\nGunakan nada seolah-olah iklan Facebook/Instagram yang engaging.',
-    hassan: 'Ambil teks jualan berikut: [USER_INPUT].\n\nArahan output:\n\nHasilkan 3 variasi copywriting penuh dengan gaya berbeza:\n\nSantai & Mesra (guna bahasa ringan).\n\nProfesional & Meyakinkan (gaya bisnes).\n\nEmosional & Urgency (tekan pada FOMO).\n\nPanjang setiap variasi 150–200 perkataan.\n\nPastikan mesej utama kekal sama.',
-    siti: 'Tulis copywriting penuh untuk produk/servis saya: [USER_INPUT] menggunakan formula AIDA (Attention, Interest, Desire, Action).\n\nArahan output:\n\nSetiap bahagian ditulis jelas, panjang keseluruhan 250–300 perkataan.\n\nGunakan gaya storytelling dan persuasive.\n\nAkhiri dengan call-to-action kuat.',
-    alex: 'Tulis teks lengkap untuk halaman jualan produk/servis saya: [USER_INPUT]. Gunakan pendekatan ‘100M Offer’ oleh Hormozi.\n\nArahan output:\n\nSertakan bahagian berikut:\n\nTajuk utama & sub-tajuk.\n\nGambaran masalah pelanggan.\n\nPenyelesaian (produk/servis).\n\nSenarai manfaat.\n\nBukti sosial/testimoni (boleh rekaan).\n\nBonus tambahan.\n\nJaminan (money-back guarantee).\n\nCall-to-action.\n\nGaya bahasa direct-response marketing, padat & meyakinkan.\n\nPanjang 500–800 perkataan.',
-    alia: 'Cipta 10 headline penuh untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nSetiap headline maks 10–12 perkataan.\n\nGaya: berani, jelas, dan membuat orang klik.\n\nSertakan variasi (emosional, logik, urgent, aspirasi).',
-    haslam: 'Tulis skrip video promosi berdurasi 30–60 saat untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nGunakan format skrip: [Visual] + [Voiceover].\n\nStruktur: Hook pembuka → Masalah → Penyelesaian → Call-to-action.\n\nGaya storytelling santai, mudah difahami.\n\nPanjang 120–150 perkataan.',
-    luqman: 'Tulis posting personal branding untuk saya di [USER_INPUT].\n\nArahan output:\n\nPanjang 200–300 perkataan.\n\nStruktur: Hook pembuka → Insight / pengajaran → Nilai praktikal → Call-to-action halus.\n\nGaya: storytelling + profesional.',
-    davinci: 'Cipta prompt imej untuk AI image generator.\n\nArahan output:\n\n[USER_INPUT]\n\nFormat hasilkan dalam bentuk 2–3 variasi prompt siap digunakan.',
-    izzad: 'Cipta prompt poster untuk AI design tool (contoh: Ideogram).\n\nArahan output:\n\n[USER_INPUT]\n\nBeri 2–3 variasi prompt siap guna.'
-};
-
+// --- Staff Monoklix ---
 export const getStaffMonoklixPrompt = (details: {
   agentId: string;
   userInput: string;
   language: string;
 }): string => {
-    const template = staffMonoklixTemplates[details.agentId] || '';
-    if (!template) {
-        // Fallback or error handling
-        return `No prompt template found for agent ID: ${details.agentId}. Please create one. User input was: ${details.userInput}`;
+    const baseInstruction = `You are a helpful AI assistant. Your final output language must be strictly in ${details.language}.`;
+    let agentSpecificInstruction = '';
+
+    switch (details.agentId) {
+        case 'wan':
+            agentSpecificInstruction = `You are Wan, an expert in market research. Based on the product/service "${details.userInput}", create a detailed "Ideal Customer Persona". Include demographics, interests, pain points, and motivations.`;
+            break;
+        case 'tina':
+            agentSpecificInstruction = `You are Tina, a behavioral psychology expert. For the product/service "${details.userInput}", identify the key "Fears" (what the customer wants to avoid) and "Desires" (what the customer wants to achieve).`;
+            break;
+        case 'jamil':
+            agentSpecificInstruction = `You are Jamil, a marketing strategist. For the product/service "${details.userInput}", brainstorm 3 distinct "Marketing Angles". Each angle should present a unique way to appeal to potential customers.`;
+            break;
+        case 'najwa':
+            agentSpecificInstruction = `You are Najwa, a professional copywriter. Write a short, persuasive marketing copy for the product/service "${details.userInput}". Focus on benefits over features.`;
+            break;
+        case 'saifuz':
+            agentSpecificInstruction = `You are Saifuz, an A/B testing specialist. Take the following sales copy and create 3 different variations of it. Each variation should try a different hook or call-to-action. Original copy: "${details.userInput}"`;
+            break;
+        case 'mieya':
+            agentSpecificInstruction = `You are Mieya, an expert in classic marketing formulas. Write a marketing copy for the product/service "${details.userInput}" using the AIDA (Attention, Interest, Desire, Action) formula.`;
+            break;
+        case 'afiq':
+            agentSpecificInstruction = `You are Afiq, a web content strategist. Outline the key sections for a high-converting sales page for the product/service "${details.userInput}". Include sections like Headline, Problem, Solution, Testimonials, Offer, and Call to Action.`;
+            break;
+        case 'julia':
+            agentSpecificInstruction = `You are Julia, a headline specialist. Brainstorm 10 catchy and click-worthy headlines for an advertisement about "${details.userInput}".`;
+            break;
+        case 'mazrul':
+            agentSpecificInstruction = `You are Mazrul, a video scriptwriter. Write a short (30-60 seconds) video script for a social media ad about "${details.userInput}". Include visual cues and voiceover text.`;
+            break;
+        case 'musa':
+            agentSpecificInstruction = `You are Musa, a personal branding coach. Based on the input "${details.userInput}", write a compelling personal branding post suitable for the specified platform. Focus on storytelling and providing value.`;
+            break;
+        case 'joe_davinci':
+            agentSpecificInstruction = `You are Joe, an AI art prompt engineer. Based on the input "${details.userInput}", create a detailed and effective prompt for an AI image generator to create a stunning visual. Include details about style, lighting, composition, and subject.`;
+            break;
+        case 'zaki':
+            agentSpecificInstruction = `You are Zaki, a graphic design prompter. Based on the input "${details.userInput}", create a detailed prompt for an AI to generate a promotional poster. Include instructions on text, layout, color scheme, and overall mood.`;
+            break;
+        default:
+            agentSpecificInstruction = `Analyze the following user input and provide a helpful response: "${details.userInput}"`;
+            break;
     }
 
-    const promptWithInput = template.replace('[USER_INPUT]', details.userInput);
-    return `${promptWithInput}\n\nThe final output language must be strictly in ${details.language}.`;
+    return `${baseInstruction}\n\n${agentSpecificInstruction}`;
 };

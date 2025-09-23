@@ -1,10 +1,23 @@
 import React from 'react';
-import { type View, type NavItem, type User } from '../types';
+import { type View, type NavItem, type User, type Language } from '../types';
 import {
-  ImageIcon, VideoIcon, StoreIcon, StarIcon,
-  TikTokIcon, CameraIcon, SettingsIcon, BookOpenIcon, LogoutIcon, GalleryIcon, LogoIcon, XIcon, FilmIcon, MicIcon, MegaphoneIcon,
-  ScissorsIcon, WandIcon, TrendingUpIcon, UserIcon, UsersIcon, WebhookIcon, LibraryIcon, ClipboardListIcon, FileTextIcon
+  ImageIcon, VideoIcon, SettingsIcon, BookOpenIcon, LogoutIcon, GalleryIcon, LogoIcon, XIcon, LibraryIcon, FileTextIcon, GraduationCapIcon
 } from './Icons';
+import { getTranslations } from '../services/translations';
+
+
+const getNavItems = (T: ReturnType<typeof getTranslations>['sidebar']): NavItem[] => [
+  { id: 'get-started', label: T.getStarted, section: 'main', icon: GraduationCapIcon },
+  { id: 'e-course', label: T.eTutorial, description: T.eTutorialDesc, section: 'main', icon: BookOpenIcon, isSpecial: true },
+  { id: 'ai-text-suite', label: T.aiContentIdea, section: 'free', icon: FileTextIcon },
+  { id: 'ai-image-suite', label: T.aiImage, section: 'free', icon: ImageIcon },
+  { id: 'ai-video-suite', label: T.aiVideo, section: 'free', icon: VideoIcon },
+  { id: 'library', label: T.promptLibrary, section: 'free', icon: LibraryIcon },
+  { id: 'gallery', label: T.imageGallery, section: 'free', icon: GalleryIcon },
+  { id: 'settings', label: T.settings, section: 'bottom', icon: SettingsIcon, roles: ['admin', 'user'] },
+  { id: 'logout', label: T.logout, section: 'bottom', icon: LogoutIcon, roles: ['admin', 'user'] }
+];
+
 
 interface SidebarProps {
   activeView: View;
@@ -13,23 +26,13 @@ interface SidebarProps {
   currentUser: User;
   isOpen: boolean;
   onClose: () => void;
+  language: Language;
 }
 
-const navItems: NavItem[] = [
-  { id: 'e-course', label: 'e-Tutorial', section: 'main', icon: BookOpenIcon, isSpecial: true },
-  { id: 'ai-text-suite', label: 'AI Content Idea', section: 'free', icon: FileTextIcon },
-  { id: 'ai-image-suite', label: 'AI Image', section: 'free', icon: ImageIcon },
-  { id: 'ai-video-suite', label: 'AI Video & Voice', section: 'free', icon: VideoIcon },
-  { id: 'library', label: 'Prompt Library', section: 'free', icon: LibraryIcon },
-  { id: 'gallery', label: 'Image Gallery', section: 'free', icon: GalleryIcon },
 
-  // Bottom Section
-  
-  { id: 'settings', label: 'Settings', section: 'bottom', icon: SettingsIcon, roles: ['admin', 'user'] },
-  { id: 'logout', label: 'Log Out', section: 'bottom', icon: LogoutIcon, roles: ['admin', 'user'] }
-];
-
-const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, currentUser, isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, currentUser, isOpen, onClose, language }) => {
+  const T = getTranslations(language);
+  const navItems = getNavItems(T.sidebar);
 
   const handleItemClick = async (viewId: View | 'logout') => {
     if (viewId === 'logout') {
@@ -37,7 +40,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
     } else {
       setActiveView(viewId as View);
     }
-    // Close sidebar on item click for mobile experience
     if (isOpen) {
       onClose();
     }
@@ -59,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
                 <item.icon className="w-5 h-5 mr-3" />
                 <div>
                     <p className="font-bold">{item.label}</p>
-                    <p className={`text-xs ${activeView === 'e-course' ? 'text-white/80' : 'text-primary-600 dark:text-primary-400'}`}>How to use MONOklix.com</p>
+                    <p className={`text-xs ${activeView === 'e-course' ? 'text-white/80' : 'text-primary-600 dark:text-primary-400'}`}>{item.description}</p>
                 </div>
                 </div>
             </button>
@@ -125,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, onLogout, 
 
         <div className="flex-1 overflow-y-auto pr-2">
           {renderSection('main')}
-          {renderSection('free', 'AI Agent')}
+          {renderSection('free', T.sidebar.aiAgent)}
           {renderSection('ugc', 'UGC Content')}
           {renderSection('admin', 'Admin')}
         </div>

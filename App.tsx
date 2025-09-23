@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { type View, type User } from './types';
+import { type View, type User, type Language } from './types';
 import Sidebar from './components/Sidebar';
 import AiTextSuiteView from './components/views/AiTextSuiteView';
 import AiImageSuiteView from './components/views/AiImageSuiteView';
@@ -10,7 +10,7 @@ import LoginPage from './LoginPage';
 import GalleryView from './components/views/GalleryView';
 import WelcomeAnimation from './components/WelcomeAnimation';
 import LibraryView from './components/views/LibraryView';
-import { MenuIcon, LogoIcon, XIcon, CreditCardIcon } from './components/Icons';
+import { MenuIcon, LogoIcon, XIcon } from './components/Icons';
 import { signOutUser } from './services/userService';
 import { setActiveApiKey, createChatSession, streamChatResponse } from './services/geminiService';
 import Spinner from './components/common/Spinner';
@@ -18,7 +18,8 @@ import { loadData, saveData } from './services/indexedDBService';
 import { type Chat } from '@google/genai';
 import { getSupportPrompt } from './services/promptManager';
 import { triggerUserWebhook } from './services/webhookService';
-
+import GetStartedView from './components/views/GetStartedView';
+import { getTranslations } from './services/translations';
 
 interface VideoGenPreset {
   prompt: string;
@@ -35,11 +36,30 @@ interface Message {
   text: string;
 }
 
+const LanguageSwitcher: React.FC<{ language: Language; setLanguage: (lang: Language) => void }> = ({ language, setLanguage }) => (
+    <div className="flex items-center bg-neutral-200 dark:bg-neutral-800 p-1 rounded-full">
+        <button
+            onClick={() => setLanguage('en')}
+            className={`px-3 py-1 text-sm font-semibold rounded-full transition-colors ${language === 'en' ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400' : 'text-neutral-600 dark:text-neutral-300'}`}
+        >
+            EN
+        </button>
+        <button
+            onClick={() => setLanguage('ms')}
+            className={`px-3 py-1 text-sm font-semibold rounded-full transition-colors ${language === 'ms' ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400' : 'text-neutral-600 dark:text-neutral-300'}`}
+        >
+            MS
+        </button>
+    </div>
+);
+
+
 const App: React.FC = () => {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeView, setActiveView] = useState<View>('e-course');
   const [theme, setTheme] = useState('light'); // Default to light, load async
+  const [language, setLanguage] = useState<Language>('en');
   const [videoGenPreset, setVideoGenPreset] = useState<VideoGenPreset | null>(null);
   const [imageToReEdit, setImageToReEdit] = useState<ImageEditPreset | null>(null);
   const [imageGenPresetPrompt, setImageGenPresetPrompt] = useState<string | null>(null);
@@ -47,19 +67,22 @@ const App: React.FC = () => {
   const [isShowingWelcome, setIsShowingWelcome] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
 
+  const T = getTranslations(language);
+
   // --- AI Support Chat State ---
   const [aiSupportMessages, setAiSupportMessages] = useState<Message[]>([]);
   const [aiSupportChat, setAiSupportChat] = useState<Chat | null>(null);
   const [isAiSupportLoading, setIsAiSupportLoading] = useState(false);
 
   useEffect(() => {
-    const loadTheme = async () => {
+    const loadSettings = async () => {
         const savedTheme = await loadData<string>('theme');
-        if (savedTheme) {
-            setTheme(savedTheme);
-        }
+        if (savedTheme) setTheme(savedTheme);
+
+        const savedLang = localStorage.getItem('language') as Language;
+        if (savedLang) setLanguage(savedLang);
     };
-    loadTheme();
+    loadSettings();
   }, []);
 
   useEffect(() => {
@@ -71,6 +94,11 @@ const App: React.FC = () => {
     }
     saveData('theme', theme);
   }, [theme]);
+  
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
+
 
   // Effect to manage the active API key and initialize dependent services like AI chat.
   // This consolidation prevents a race condition where the chat might initialize before the key is set.
@@ -79,18 +107,15 @@ const App: React.FC = () => {
         const userApiKey = currentUser.apiKey || null;
         setActiveApiKey(userApiKey);
         
-        // Only initialize the chat session if a key is present.
         if (userApiKey) {
             const systemInstruction = getSupportPrompt();
             const session = createChatSession(systemInstruction);
             setAiSupportChat(session);
         } else {
-            // If the user has no API key (or logs out), clear the chat session.
             setAiSupportChat(null);
             setAiSupportMessages([]);
         }
     } else {
-        // No user logged in, clear everything.
         setActiveApiKey(null);
         setAiSupportChat(null);
         setAiSupportMessages([]);
@@ -147,7 +172,6 @@ const App: React.FC = () => {
     try {
         const stream = await streamChatResponse(aiSupportChat, prompt);
         let modelResponse = '';
-        // Add placeholder for streaming response
         setAiSupportMessages((prev) => [...prev, { role: 'model', text: '...' }]);
         
         for await (const chunk of stream) {
@@ -195,13 +219,17 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
+    const commonProps = { language };
     switch (activeView) {
       case 'e-course':
-        return <ECourseView />;
+        return <ECourseView {...commonProps} />;
+      case 'get-started':
+        return <GetStartedView {...commonProps} />;
       case 'ai-text-suite':
-        return <AiTextSuiteView />;
+        return <AiTextSuiteView {...commonProps} />;
       case 'ai-image-suite':
         return <AiImageSuiteView 
+                  {...commonProps}
                   onCreateVideo={handleCreateVideoFromImage} 
                   onReEdit={handleReEditImage}
                   imageToReEdit={imageToReEdit}
@@ -211,17 +239,19 @@ const App: React.FC = () => {
                 />;
       case 'ai-video-suite':
         return <AiVideoSuiteView 
+                  {...commonProps}
                   preset={videoGenPreset} 
                   clearPreset={() => setVideoGenPreset(null)}
                   onCreateVideo={handleCreateVideoFromImage}
                   onReEdit={handleReEditImage}
                 />;
       case 'gallery':
-        return <GalleryView onCreateVideo={handleCreateVideoFromImage} onReEdit={handleReEditImage} />;
+        return <GalleryView {...commonProps} onCreateVideo={handleCreateVideoFromImage} onReEdit={handleReEditImage} />;
       case 'library':
-        return <LibraryView onUsePrompt={handleUsePromptInGenerator} />;
+        return <LibraryView {...commonProps} onUsePrompt={handleUsePromptInGenerator} />;
       case 'settings':
           return <SettingsView 
+                    {...commonProps}
                     theme={theme} 
                     setTheme={setTheme} 
                     currentUser={currentUser!} 
@@ -231,7 +261,7 @@ const App: React.FC = () => {
                     onAiSupportSend={handleAiSupportSend}
                  />;
       default:
-        return <ECourseView />;
+        return <ECourseView {...commonProps}/>;
     }
   };
   
@@ -243,37 +273,27 @@ const App: React.FC = () => {
       );
   }
 
-  // Show welcome animation first if triggered
   if (isShowingWelcome) {
     return <WelcomeAnimation onAnimationEnd={() => {
         setIsShowingWelcome(false);
-        setActiveView('e-course'); // Go to default page
-    }} />;
+        setActiveView('e-course');
+    }} language={language} />;
   }
   
   if (!currentUser) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    return <LoginPage onLoginSuccess={handleLoginSuccess} language={language} />;
   }
 
   // --- Access Control Logic ---
   let isBlocked = false;
-  let blockMessage = { title: '', body: '' };
-
-  // Define which views are considered AI-powered and require an API key
+  let blockMessage = { title: T.apiKeyRequiredTitle, body: T.apiKeyRequiredBody };
   const aiPoweredViews: View[] = ['ai-text-suite', 'ai-image-suite', 'ai-video-suite'];
 
   if (aiPoweredViews.includes(activeView)) {
-      const hasPersonalKey = !!currentUser.apiKey;
-
-      if (!hasPersonalKey) {
+      if (!currentUser.apiKey) {
           isBlocked = true;
-          blockMessage = {
-              title: 'API Key Required',
-              body: 'To use AI features, please provide your own Gemini API Key on the Settings page.',
-          };
       }
   }
-
 
   const PageContent = isBlocked ? (
     <div className="flex items-center justify-center h-full p-4">
@@ -296,22 +316,22 @@ const App: React.FC = () => {
         currentUser={currentUser}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        language={language}
       />
       <main className="flex-1 flex flex-col overflow-y-auto">
-        {/* Mobile Header */}
-        <header className="lg:hidden grid grid-cols-3 items-center p-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 sticky top-0 z-10">
-          {/* Left Column */}
+        {/* Header */}
+        <header className="grid grid-cols-3 items-center p-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 sticky top-0 z-10">
           <div className="flex justify-start">
-            <button onClick={() => setIsSidebarOpen(true)} className="p-2" aria-label="Open menu">
+            <button onClick={() => setIsSidebarOpen(true)} className="p-2 lg:hidden" aria-label="Open menu">
               <MenuIcon className="w-6 h-6" />
             </button>
           </div>
-          {/* Center Column */}
           <div className="flex justify-center items-center">
             <LogoIcon className="w-28 text-neutral-800 dark:text-neutral-200" />
           </div>
-          {/* Right Column (empty for balance) */}
-          <div />
+          <div className="flex justify-end pr-2">
+              <LanguageSwitcher language={language} setLanguage={setLanguage} />
+          </div>
         </header>
         <div className="flex-1 p-4 md:p-8">
           {PageContent}

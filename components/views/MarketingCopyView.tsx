@@ -5,6 +5,9 @@ import Spinner from '../common/Spinner';
 import { MegaphoneIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getMarketingCopyPrompt } from '../../services/promptManager';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
+
 
 const tones = ["Professional", "Casual", "Witty", "Persuasive", "Empathetic", "Bold"];
 const languages = ["English", "Bahasa Malaysia", "Chinese"];
@@ -21,16 +24,23 @@ const downloadText = (text: string, fileName: string) => {
     URL.revokeObjectURL(url);
 };
 
-const MarketingCopyView: React.FC = () => {
+interface MarketingCopyViewProps {
+    language: Language;
+}
+
+const MarketingCopyView: React.FC<MarketingCopyViewProps> = ({ language }) => {
     const [productDetails, setProductDetails] = useState('');
     const [targetAudience, setTargetAudience] = useState('');
     const [keywords, setKeywords] = useState('');
     const [selectedTone, setSelectedTone] = useState(tones[0]);
-    const [selectedLanguage, setSelectedLanguage] = useState(languages[1]);
+    const [selectedLanguage, setSelectedLanguage] = useState(language === 'ms' ? "Bahasa Malaysia" : "English");
     const [generatedCopy, setGeneratedCopy] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+
+    const T = getTranslations(language).marketingCopyView;
+    const commonT = getTranslations(language);
 
     const handleGenerate = useCallback(async () => {
         if (!productDetails.trim()) {
@@ -53,7 +63,6 @@ const MarketingCopyView: React.FC = () => {
         try {
             const result = await generateText(prompt);
             setGeneratedCopy(result);
-            // Automatically save to history
             await addHistoryItem({
                 type: 'Copy',
                 prompt: `Marketing Copy for: ${productDetails.substring(0, 50)}... (Lang: ${selectedLanguage})`,
@@ -78,48 +87,48 @@ const MarketingCopyView: React.FC = () => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-2xl font-bold sm:text-3xl">Generate Marketing Copy</h1>
-                <p className="text-neutral-500 dark:text-neutral-400 mt-1">Create powerful marketing text with just a few inputs.</p>
+                <h1 className="text-2xl font-bold sm:text-3xl">{T.title}</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">{T.subtitle}</p>
             </div>
 
             <div>
-                <label htmlFor="product-details" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Product/Service Details</label>
+                <label htmlFor="product-details" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.productDetailsLabel}</label>
                 <textarea
                     id="product-details"
                     value={productDetails}
                     onChange={(e) => setProductDetails(e.target.value)}
-                    placeholder="e.g., A high-performance electric scooter with a 50-mile range and a sleek, foldable design."
+                    placeholder={T.productDetailsPlaceholder}
                     rows={5}
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                 />
             </div>
 
             <div>
-                <label htmlFor="target-audience" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Target Audience</label>
+                <label htmlFor="target-audience" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.targetAudienceLabel}</label>
                 <input
                     id="target-audience"
                     type="text"
                     value={targetAudience}
                     onChange={(e) => setTargetAudience(e.target.value)}
-                    placeholder="e.g., Urban commuters, tech enthusiasts, students"
+                    placeholder={T.targetAudiencePlaceholder}
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                 />
             </div>
 
             <div>
-                <label htmlFor="keywords" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Keywords (comma-separated)</label>
+                <label htmlFor="keywords" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.keywordsLabel}</label>
                 <input
                     id="keywords"
                     type="text"
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
-                    placeholder="e.g., eco-friendly, fast, portable"
+                    placeholder={T.keywordsPlaceholder}
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                 />
             </div>
 
             <div>
-                <label htmlFor="tone" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Tone of Voice</label>
+                <label htmlFor="tone" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.toneLabel}</label>
                 <select
                     id="tone"
                     value={selectedTone}
@@ -131,7 +140,7 @@ const MarketingCopyView: React.FC = () => {
             </div>
             
             <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Output Language</label>
+                <label htmlFor="language" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.outputLanguage}</label>
                 <select
                     id="language"
                     value={selectedLanguage}
@@ -148,7 +157,7 @@ const MarketingCopyView: React.FC = () => {
                     disabled={isLoading}
                     className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? <Spinner /> : 'Generate Copy'}
+                    {isLoading ? <Spinner /> : T.generateButton}
                 </button>
                 {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
             </div>
@@ -164,7 +173,7 @@ const MarketingCopyView: React.FC = () => {
                       className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                     >
                       {copied ? <CheckCircleIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
-                      {copied ? 'Copied!' : 'Copy'}
+                      {copied ? commonT.libraryView.copied : commonT.libraryView.copy}
                     </button>
                     <button
                         onClick={() => downloadText(generatedCopy, `1za7-marketing-copy-${Date.now()}.txt`)}
@@ -178,7 +187,7 @@ const MarketingCopyView: React.FC = () => {
                 <div className="flex items-center justify-center h-full text-center">
                     <div>
                         <Spinner />
-                        <p className="mt-4 text-neutral-500 dark:text-neutral-400">Crafting your copy...</p>
+                        <p className="mt-4 text-neutral-500 dark:text-neutral-400">{T.loading}</p>
                     </div>
                 </div>
             ) : generatedCopy ? (
@@ -189,7 +198,7 @@ const MarketingCopyView: React.FC = () => {
                  <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600 p-4">
                     <div>
                         <MegaphoneIcon className="w-16 h-16 mx-auto" />
-                        <p>Your output will appear here.</p>
+                        <p>{T.outputPlaceholder}</p>
                     </div>
                 </div>
             )}

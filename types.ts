@@ -1,7 +1,10 @@
 import type { ComponentType } from 'react';
 
+export type Language = 'en' | 'ms';
+
 export type View =
   | 'e-course'
+  | 'get-started'
   // Text suite already exists and handles its own internal views
   | 'ai-text-suite'
   // The new suites for image and video
@@ -23,6 +26,7 @@ export interface NavItem {
   isExternal?: boolean;
   roles?: ('admin' | 'user')[];
   isSpecial?: boolean; // Added for unique styling like the e-course button
+  description?: string;
 }
 
 // FIX: Added 'Audio' to the HistoryItemType to support it as a valid type for history items.

@@ -7,6 +7,9 @@ import { type GenerateContentResponse } from '@google/genai';
 import { TrendingUpIcon, DownloadIcon, ClipboardIcon, CheckCircleIcon } from '../Icons';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { getContentIdeasPrompt } from '../../services/promptManager';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
+
 
 const downloadText = (text: string, fileName: string) => {
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -22,14 +25,20 @@ const downloadText = (text: string, fileName: string) => {
 
 const languages = ["English", "Bahasa Malaysia", "Chinese"];
 
+interface ContentIdeasViewProps {
+    language: Language;
+}
 
-const ContentIdeasView: React.FC = () => {
+const ContentIdeasView: React.FC<ContentIdeasViewProps> = ({ language }) => {
     const [topic, setTopic] = useState('');
     const [response, setResponse] = useState<GenerateContentResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState(languages[1]);
+    const [selectedLanguage, setSelectedLanguage] = useState(language === 'ms' ? "Bahasa Malaysia" : "English");
+    
+    const T = getTranslations(language).contentIdeasView;
+    const commonT = getTranslations(language);
 
     const handleGenerate = useCallback(async () => {
         if (!topic.trim()) {
@@ -70,24 +79,24 @@ const ContentIdeasView: React.FC = () => {
     const leftPanel = (
         <>
             <div>
-                <h1 className="text-2xl font-bold sm:text-3xl">Generate Content Ideas</h1>
-                <p className="text-neutral-500 dark:text-neutral-400 mt-1">Discover trending content ideas for any topic or niche.</p>
+                <h1 className="text-2xl font-bold sm:text-3xl">{T.title}</h1>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1">{T.subtitle}</p>
             </div>
             
             <div className="flex-1 flex flex-col justify-center gap-4">
                 <div>
-                    <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Topic or Niche</label>
+                    <label htmlFor="topic-input" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.topicLabel}</label>
                     <textarea
                         id="topic-input"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
-                        placeholder="e.g., sustainable fashion, home gardening for beginners, AI in marketing"
+                        placeholder={T.topicPlaceholder}
                         rows={4}
                         className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition"
                     />
                 </div>
                 <div>
-                    <label htmlFor="language-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Output Language</label>
+                    <label htmlFor="language-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{T.outputLanguage}</label>
                     <select
                         id="language-select"
                         value={selectedLanguage}
@@ -105,7 +114,7 @@ const ContentIdeasView: React.FC = () => {
                     disabled={isLoading}
                     className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? <Spinner /> : 'Generate Ideas'}
+                    {isLoading ? <Spinner /> : T.generateButton}
                 </button>
                 {error && <p className="text-red-500 dark:text-red-400 mt-2 text-center">{error}</p>}
             </div>
@@ -121,7 +130,7 @@ const ContentIdeasView: React.FC = () => {
                       className="flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                     >
                       {copied ? <CheckCircleIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
-                      {copied ? 'Copied!' : 'Copy'}
+                      {copied ? commonT.libraryView.copied : commonT.libraryView.copy}
                     </button>
                     <button
                         onClick={() => downloadText(response.text, `1za7-content-ideas-${Date.now()}.txt`)}
@@ -135,7 +144,7 @@ const ContentIdeasView: React.FC = () => {
                 <div className="flex items-center justify-center h-full text-center">
                     <div>
                         <Spinner />
-                        <p className="mt-4 text-neutral-500 dark:text-neutral-400">Searching for trending ideas...</p>
+                        <p className="mt-4 text-neutral-500 dark:text-neutral-400">{T.loading}</p>
                     </div>
                 </div>
             ) : response ? (
@@ -146,7 +155,7 @@ const ContentIdeasView: React.FC = () => {
                  <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600 p-4">
                     <div>
                         <TrendingUpIcon className="w-16 h-16 mx-auto" />
-                        <p>Your output will appear here.</p>
+                        <p>{T.outputPlaceholder}</p>
                     </div>
                 </div>
             )}

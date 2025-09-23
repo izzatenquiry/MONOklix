@@ -4,31 +4,39 @@ import MarketingCopyView from './MarketingCopyView';
 import ProductAdView from './ProductAdView';
 import StaffMonoklixView from './StaffMonoklixView';
 import Tabs, { type Tab } from '../common/Tabs';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
 
 type TabId = 'staff-monoklix' | 'content-ideas' | 'marketing-copy' | 'storyline';
 
-const tabs: Tab<TabId>[] = [
-    { id: 'staff-monoklix', label: 'Staff MONOklix' },
-    { id: 'content-ideas', label: 'Content Ideas' },
-    { id: 'marketing-copy', label: 'Marketing Copy' },
-    { id: 'storyline', label: 'Storyline' },
-];
+interface AiTextSuiteViewProps {
+    language: Language;
+}
 
-const AiTextSuiteView: React.FC = () => {
+const AiTextSuiteView: React.FC<AiTextSuiteViewProps> = ({ language }) => {
     const [activeTab, setActiveTab] = useState<TabId>('staff-monoklix');
+    const T = getTranslations(language).tabs;
+
+    const tabs: Tab<TabId>[] = [
+        { id: 'staff-monoklix', label: T.staffMonoklix },
+        { id: 'content-ideas', label: T.contentIdeas },
+        { id: 'marketing-copy', label: T.marketingCopy },
+        { id: 'storyline', label: T.storyline },
+    ];
 
     const renderActiveTabContent = () => {
+        const commonProps = { language };
         switch (activeTab) {
             case 'staff-monoklix':
-                return <StaffMonoklixView />;
+                return <StaffMonoklixView {...commonProps} />;
             case 'content-ideas':
-                return <ContentIdeasView />;
+                return <ContentIdeasView {...commonProps} />;
             case 'marketing-copy':
-                return <MarketingCopyView />;
+                return <MarketingCopyView {...commonProps} />;
             case 'storyline':
-                return <ProductAdView />;
+                return <ProductAdView {...commonProps} />;
             default:
-                return <StaffMonoklixView />;
+                return <StaffMonoklixView {...commonProps} />;
         }
     };
 

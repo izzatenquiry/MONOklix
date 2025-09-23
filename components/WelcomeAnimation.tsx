@@ -1,11 +1,16 @@
 import React, { useEffect } from 'react';
 import { LogoIcon } from './Icons';
+import { Language } from '../types';
+import { getTranslations } from '../services/translations';
 
 interface WelcomeAnimationProps {
   onAnimationEnd: () => void;
+  language: Language;
 }
 
-const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onAnimationEnd }) => {
+const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onAnimationEnd, language }) => {
+  const T = getTranslations(language);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onAnimationEnd();
@@ -17,7 +22,7 @@ const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onAnimationEnd }) =
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-100 dark:bg-neutral-900">
       <div className="text-center animate-zoomIn">
-        <h1 className="text-3xl font-bold text-neutral-800 dark:text-neutral-200 mb-4 sm:text-4xl">Welcome Back!</h1>
+        <h1 className="text-3xl font-bold text-neutral-800 dark:text-neutral-200 mb-4 sm:text-4xl">{T.welcome}</h1>
         <LogoIcon className="w-64 mx-auto text-neutral-800 dark:text-neutral-200" />
       </div>
     </div>

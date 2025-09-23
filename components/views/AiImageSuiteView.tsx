@@ -5,16 +5,10 @@ import BackgroundRemoverView from './BackgroundRemoverView';
 import ProductPhotoView from './ProductPhotoView';
 import TiktokAffiliateView from './TiktokAffiliateView';
 import Tabs, { type Tab } from '../common/Tabs';
+import { type Language } from '../../types';
+import { getTranslations } from '../../services/translations';
 
 type TabId = 'generation' | 'enhancer' | 'remover' | 'product' | 'model';
-
-const tabs: Tab<TabId>[] = [
-    { id: 'generation', label: 'Image Generation' },
-    { id: 'product', label: 'Product Photos' },
-    { id: 'model', label: 'Model Photos' },
-    { id: 'enhancer', label: 'Enhancer' },
-    { id: 'remover', label: 'BG Remover' },
-];
 
 interface VideoGenPreset {
   prompt: string;
@@ -33,11 +27,20 @@ interface AiImageSuiteViewProps {
   clearReEdit: () => void;
   presetPrompt: string | null;
   clearPresetPrompt: () => void;
+  language: Language;
 }
 
-
-const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit, presetPrompt, clearPresetPrompt }) => {
+const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onReEdit, imageToReEdit, clearReEdit, presetPrompt, clearPresetPrompt, language }) => {
     const [activeTab, setActiveTab] = useState<TabId>('generation');
+    const T = getTranslations(language).tabs;
+
+    const tabs: Tab<TabId>[] = [
+        { id: 'generation', label: T.imageGeneration },
+        { id: 'product', label: T.productPhotos },
+        { id: 'model', label: T.modelPhotos },
+        { id: 'enhancer', label: T.enhancer },
+        { id: 'remover', label: T.bgRemover },
+    ];
 
     useEffect(() => {
         if (imageToReEdit) {
@@ -52,7 +55,7 @@ const AiImageSuiteView: React.FC<AiImageSuiteViewProps> = ({ onCreateVideo, onRe
     }, [presetPrompt]);
 
     const renderActiveTabContent = () => {
-        const commonProps = { onReEdit, onCreateVideo };
+        const commonProps = { onReEdit, onCreateVideo, language };
         switch (activeTab) {
             case 'generation':
                 return <ImageGenerationView 

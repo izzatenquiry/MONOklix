@@ -1,7 +1,24 @@
-
 # MONOklix.com - All-in-One AI Platform
 
-MONOklix.com is a comprehensive, web-based AI toolkit designed to streamline content creation for marketers, creators, and businesses. Powered by Google's advanced Gemini API, this platform provides a unified suite of tools for generating and editing text, images, videos, and audio content.
+MONOklix.com adalah sebuah platform AI serba lengkap berasaskan web yang direka untuk memudahkan penciptaan kandungan bagi pemasar, pencipta konten, dan usahawan. Dikuasakan oleh API Gemini dari Google, platform ini menyediakan set alatan bersepadu untuk menjana dan menyunting teks, imej, video, serta kandungan audio.
+
+---
+
+## 📖 **Panduan Pengguna**
+
+Untuk panduan lengkap langkah demi langkah bagi setiap ciri dalam Bahasa Melayu, sila rujuk dokumen di bawah:
+
+➡️ **[Buka Panduan Penggunaan Penuh MONOklix.com](./PANDUAN_PENGGUNAAN.md)** ⬅️
+
+### **Ringkasan Ciri-Ciri Utama:**
+
+*   **📝 AI Content Idea:** Dapatkan idea kandungan sohor kini, tulis teks pemasaran (copywriting), dan jana skrip iklan video secara automatik.
+*   **🖼️ AI Image Suite:** Cipta imej asli dari teks, hasilkan gambar produk profesional, jana gambar model UGC (User-Generated Content), tingkatkan kualiti imej, dan buang latar belakang dengan satu klik.
+*   **📹 AI Video & Voice Suite:** Hasilkan video dinamik dari teks, rancang papan cerita (storyboard) video ulasan produk, gabungkan klip video, dan tukar teks kepada suara (voice-over) berkualiti tinggi.
+*   ** gallery & Perpustakaan:** Semua hasil kerja anda disimpan di dalam galeri peribadi. Dapatkan inspirasi dari koleksi prompt yang telah terbukti berkesan.
+*   **⚙️ Tetapan & Automasi:** Urus profil anda, kunci API, dan hantar hasil kerja anda secara automatik ke aplikasi lain menggunakan Webhook peribadi.
+
+---
 
 ## 🚀 User Flow
 
