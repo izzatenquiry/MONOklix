@@ -30,4 +30,4 @@ COPY --from=build /app/dist ./dist
 EXPOSE 8080
 
 # Start command
-CMD ["serve", "-s", "dist", "-l", "0.0.0.0:8080"]
+CMD ["serve", "-s", "dist", "-l", "8080"]
