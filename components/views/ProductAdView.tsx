@@ -51,7 +51,7 @@ const ProductAdView: React.FC = () => {
     vibe: vibeOptions[0],
     lighting: lightingOptions[0],
     contentType: contentTypeOptions[0],
-    language: languages[0],
+    language: languages[1],
   });
   const [storyboard, setStoryboard] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);

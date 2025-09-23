@@ -29,7 +29,7 @@ const ContentIdeasView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+    const [selectedLanguage, setSelectedLanguage] = useState(languages[1]);
 
     const handleGenerate = useCallback(async () => {
         if (!topic.trim()) {

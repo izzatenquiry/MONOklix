@@ -165,16 +165,16 @@ export const getProductReviewImagePrompt = (details: {
     selectedBackgroundVibe: string;
     selectedLighting: string;
 }): string => `
-    This is an image editing task. Your goal is to create a new, photorealistic image by combining the provided product photo and face photo according to the scene description.
+    You are an expert image editor. Your task is to create a new, photorealistic image by seamlessly combining two provided images: a product photo (first image) and a face photo (second image), based on a scene description.
 
     **Scene Description:** 
     ${details.sceneDescription}
 
-    **Instructions:**
-    - The image must feature a person whose appearance is inspired by the provided face image.
-    - The person must be using or showcasing the product from the provided product image.
-    - The overall creative direction is: Vibe "${details.selectedVibe}", Background "${details.selectedBackgroundVibe}", Lighting "${details.selectedLighting}".
-    - CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos to the image.
+    **CRITICAL Instructions:**
+    1.  **Face Replacement:** The person in the final image MUST have a face that is identical to the face in the second image provided (the face photo). Do not just get inspired by it; replicate it accurately.
+    2.  **Product Integration:** The person must be using or showcasing the product from the first image provided (the product photo). Integrate it naturally into the scene.
+    3.  **Creative Direction:** The overall scene must adhere to this direction: Vibe "${details.selectedVibe}", Background "${details.selectedBackgroundVibe}", Lighting "${details.selectedLighting}".
+    4.  **No Text:** The final image must be purely visual. Do NOT add any text, watermarks, or logos.
 `;
 
 // --- TikTok Affiliate ---
@@ -237,4 +237,35 @@ export const getImageEnhancementPrompt = (type: 'upscale' | 'colors'): string =>
         return "Upscale this image, making it sharper, clearer, and higher resolution. Preserve all original details.";
     }
     return "Enhance the colors and lighting of this image to make it more vibrant and visually appealing. Adjust contrast and brightness for a professional look.";
+};
+
+// --- Staff MONOklix ---
+const staffMonoklixTemplates: Record<string, string> = {
+    karim: 'Bertindak sebagai pakar pemasaran. Saya perlukan anda hasilkan profil pelanggan ideal (Ideal Customer Persona) untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nGunakan gaya copywriting yang mudah difahami.\n\nHuraikan secara naratif, bukan sekadar senarai.\n\nPecahkan kepada bahagian berikut:\n\nDemografi (umur, jantina, lokasi, pekerjaan, pendapatan).\n\nPsikografi (gaya hidup, nilai, minat).\n\nMasalah utama (pain points).\n\nMatlamat & aspirasi.\n\nMotivasi membeli.\n\nAkhiri dengan ringkasan “Kenapa mereka sesuai jadi pelanggan utama saya”.',
+    lina: 'Buat analisis penuh tentang ketakutan (Fears) dan keinginan (Desires) pelanggan sasaran untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nTulis dalam bentuk copywriting penuh, bukan jadual.\n\nBahagikan kepada 2 seksyen:\n\nFear Storytelling: Ceritakan apa yang mereka takutkan, risiko yang mereka cuba elak, dan bagaimana hidup mereka jika masalah berterusan.\n\nDesire Storytelling: Gambarkan keinginan mereka, impian, dan keadaan ideal yang mereka mahu capai.\n\nGunakan gaya penulisan emosional, seolah-olah sedang bercakap terus kepada pelanggan.',
+    ali: 'Cadangkan 5 sudut pemasaran (marketing angles) untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nSetiap sudut ditulis dalam bentuk mini-copywriting (3–4 ayat).\n\nGunakan gaya berbeza (emosi, logik, urgency, aspirasi, sosial proof).\n\nSertakan headline + penerangan ringkas.',
+    aminah: 'Tulis copywriting penuh untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nPanjang 200–300 perkataan.\n\nGaya bahasa persuasif, mesra, dan mudah difahami.\n\nSertakan: Hook pembuka, masalah pelanggan, tawaran produk, kelebihan utama, call-to-action.\n\nGunakan nada seolah-olah iklan Facebook/Instagram yang engaging.',
+    hassan: 'Ambil teks jualan berikut: [USER_INPUT].\n\nArahan output:\n\nHasilkan 3 variasi copywriting penuh dengan gaya berbeza:\n\nSantai & Mesra (guna bahasa ringan).\n\nProfesional & Meyakinkan (gaya bisnes).\n\nEmosional & Urgency (tekan pada FOMO).\n\nPanjang setiap variasi 150–200 perkataan.\n\nPastikan mesej utama kekal sama.',
+    siti: 'Tulis copywriting penuh untuk produk/servis saya: [USER_INPUT] menggunakan formula AIDA (Attention, Interest, Desire, Action).\n\nArahan output:\n\nSetiap bahagian ditulis jelas, panjang keseluruhan 250–300 perkataan.\n\nGunakan gaya storytelling dan persuasive.\n\nAkhiri dengan call-to-action kuat.',
+    alex: 'Tulis teks lengkap untuk halaman jualan produk/servis saya: [USER_INPUT]. Gunakan pendekatan ‘100M Offer’ oleh Hormozi.\n\nArahan output:\n\nSertakan bahagian berikut:\n\nTajuk utama & sub-tajuk.\n\nGambaran masalah pelanggan.\n\nPenyelesaian (produk/servis).\n\nSenarai manfaat.\n\nBukti sosial/testimoni (boleh rekaan).\n\nBonus tambahan.\n\nJaminan (money-back guarantee).\n\nCall-to-action.\n\nGaya bahasa direct-response marketing, padat & meyakinkan.\n\nPanjang 500–800 perkataan.',
+    alia: 'Cipta 10 headline penuh untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nSetiap headline maks 10–12 perkataan.\n\nGaya: berani, jelas, dan membuat orang klik.\n\nSertakan variasi (emosional, logik, urgent, aspirasi).',
+    haslam: 'Tulis skrip video promosi berdurasi 30–60 saat untuk produk/servis saya: [USER_INPUT].\n\nArahan output:\n\nGunakan format skrip: [Visual] + [Voiceover].\n\nStruktur: Hook pembuka → Masalah → Penyelesaian → Call-to-action.\n\nGaya storytelling santai, mudah difahami.\n\nPanjang 120–150 perkataan.',
+    luqman: 'Tulis posting personal branding untuk saya di [USER_INPUT].\n\nArahan output:\n\nPanjang 200–300 perkataan.\n\nStruktur: Hook pembuka → Insight / pengajaran → Nilai praktikal → Call-to-action halus.\n\nGaya: storytelling + profesional.',
+    davinci: 'Cipta prompt imej untuk AI image generator.\n\nArahan output:\n\n[USER_INPUT]\n\nFormat hasilkan dalam bentuk 2–3 variasi prompt siap digunakan.',
+    izzad: 'Cipta prompt poster untuk AI design tool (contoh: Ideogram).\n\nArahan output:\n\n[USER_INPUT]\n\nBeri 2–3 variasi prompt siap guna.'
+};
+
+export const getStaffMonoklixPrompt = (details: {
+  agentId: string;
+  userInput: string;
+  language: string;
+}): string => {
+    const template = staffMonoklixTemplates[details.agentId] || '';
+    if (!template) {
+        // Fallback or error handling
+        return `No prompt template found for agent ID: ${details.agentId}. Please create one. User input was: ${details.userInput}`;
+    }
+
+    const promptWithInput = template.replace('[USER_INPUT]', details.userInput);
+    return `${promptWithInput}\n\nThe final output language must be strictly in ${details.language}.`;
 };

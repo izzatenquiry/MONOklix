@@ -26,7 +26,7 @@ const MarketingCopyView: React.FC = () => {
     const [targetAudience, setTargetAudience] = useState('');
     const [keywords, setKeywords] = useState('');
     const [selectedTone, setSelectedTone] = useState(tones[0]);
-    const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+    const [selectedLanguage, setSelectedLanguage] = useState(languages[1]);
     const [generatedCopy, setGeneratedCopy] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
