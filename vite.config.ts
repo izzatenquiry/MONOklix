@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   // Load .env variables
-  const env = loadEnv(mode, '.', '');
+  const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [react()],
@@ -14,19 +14,18 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // FIX: Using `path.resolve('.')` is equivalent to `process.cwd()` but avoids TypeScript type errors.
-        '@': path.resolve('.'),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     server: {
-      host: '0.0.0.0',       // supaya boleh diakses dari luar
-      port: 5259,            // port baru
-      strictPort: true,      // kalau port taken, error terus
+      host: '0.0.0.0',   // supaya boleh diakses dari luar container
+      port: Number(process.env.PORT) || 8080,
+      strictPort: true,
     },
     preview: {
       host: '0.0.0.0',
-      port: 5259,
-      allowedHosts: ['app.monoklix.com'], // domain yang dibenarkan
+      port: Number(process.env.PORT) || 8080,
+      allowedHosts: ['app.monoklix.com'], // whitelist domain
     },
   };
 });
