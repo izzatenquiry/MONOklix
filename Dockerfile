@@ -16,4 +16,4 @@ RUN npm install -g vite
 
 EXPOSE 8080
 
-CMD ["vite", "preview", "--port", "8080", "--strictPort"]
+CMD ["vite", "preview", "--port", "8080", "--host", "0.0.0.0", "--strictPort"]
