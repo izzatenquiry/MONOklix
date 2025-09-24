@@ -122,7 +122,7 @@ const AdminDashboardView: React.FC = () => {
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             const timestamp = new Date().toISOString().split('T')[0];
-            link.download = `1za7_users_backup_${timestamp}.json`;
+            link.download = `monoklix_users_backup_${timestamp}.json`;
             link.href = url;
             document.body.appendChild(link);
             link.click();

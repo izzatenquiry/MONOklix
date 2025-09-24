@@ -133,7 +133,7 @@ const ContentIdeasView: React.FC<ContentIdeasViewProps> = ({ language }) => {
                       {copied ? commonT.libraryView.copied : commonT.libraryView.copy}
                     </button>
                     <button
-                        onClick={() => downloadText(response.text, `1za7-content-ideas-${Date.now()}.txt`)}
+                        onClick={() => downloadText(response.text, `monoklix-content-ideas-${Date.now()}.txt`)}
                         className="flex items-center gap-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                     >
                         <DownloadIcon className="w-4 h-4" /> Download

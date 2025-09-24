@@ -176,7 +176,7 @@ const MarketingCopyView: React.FC<MarketingCopyViewProps> = ({ language }) => {
                       {copied ? commonT.libraryView.copied : commonT.libraryView.copy}
                     </button>
                     <button
-                        onClick={() => downloadText(generatedCopy, `1za7-marketing-copy-${Date.now()}.txt`)}
+                        onClick={() => downloadText(generatedCopy, `monoklix-marketing-copy-${Date.now()}.txt`)}
                         className="flex items-center gap-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold py-1.5 px-3 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                     >
                         <DownloadIcon className="w-4 h-4" /> Download

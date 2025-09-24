@@ -1,9 +1,9 @@
 import { type TutorialContent, type PlatformStatus, type Announcement } from '../types';
 import { saveData, loadData } from './indexedDBService';
 
-const TUTORIAL_CONTENT_KEY = '1za7-ai-tutorial-content';
-const PLATFORM_STATUS_KEY = '1za7-ai-platform-status';
-const ANNOUNCEMENTS_KEY = '1za7-ai-announcements';
+const TUTORIAL_CONTENT_KEY = 'monoklix-ai-tutorial-content';
+const PLATFORM_STATUS_KEY = 'monoklix-ai-platform-status';
+const ANNOUNCEMENTS_KEY = 'monoklix-ai-announcements';
 
 const defaultTutorialContent: TutorialContent = {
   mainVideoUrl: 'https://www.youtube.com/embed/ankY0Lg8kwQ',

@@ -141,7 +141,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                 }
                  // Asynchronously download all images with a delay
                 for (let i = 0; i < generatedImages.length; i++) {
-                    triggerDownload(generatedImages[i], `1za7-ai-model-photo-${i + 1}`);
+                    triggerDownload(generatedImages[i], `monoklix-ai-model-photo-${i + 1}`);
                     if (i < generatedImages.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 300));
                     }
@@ -221,7 +221,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                   <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><WandIcon className="w-4 h-4" /></button>
                       <button onClick={() => onCreateVideo({ prompt: getTiktokAffiliatePrompt({ gender, modelFace, lighting, camera, pose, vibe, creativityLevel, customPrompt, style, composition, lensType, filmSim, hasFaceImage: !!faceImage }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><VideoIcon className="w-4 h-4" /></button>
-                      <button onClick={() => triggerDownload(resultImages[selectedImageIndex], '1za7-model-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><DownloadIcon className="w-4 h-4" /></button>
+                      <button onClick={() => triggerDownload(resultImages[selectedImageIndex], 'monoklix-model-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><DownloadIcon className="w-4 h-4" /></button>
                   </div>
                 </div>
                 {resultImages.length > 1 && (

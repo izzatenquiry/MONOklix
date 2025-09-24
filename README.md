@@ -8,7 +8,7 @@ MONOklix.com adalah sebuah platform AI serba lengkap berasaskan web yang direka 
 
 Untuk panduan lengkap langkah demi langkah bagi setiap ciri dalam Bahasa Melayu, sila rujuk dokumen di bawah:
 
-➡️ **[Buka Panduan Penggunaan Penuh MONOklix.com](./PANDUAN_PENGGUNAAN.md)** ⬅️
+➡️ **[Buka Panduan Penggunaan Penuh MONOklix.com](./USER_GUIDE.md)** ⬅️
 
 ### **Ringkasan Ciri-Ciri Utama:**
 
