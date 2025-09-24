@@ -6,7 +6,7 @@ const PLATFORM_STATUS_KEY = '1za7-ai-platform-status';
 const ANNOUNCEMENTS_KEY = '1za7-ai-announcements';
 
 const defaultTutorialContent: TutorialContent = {
-  mainVideoUrl: 'https://www.youtube.com/embed/EbXYHeQWaG0',
+  mainVideoUrl: 'https://www.youtube.com/embed/ankY0Lg8kwQ',
   mainTitle: 'Welcome to the MONOKlix.com Tutorial',
   mainDescription: 'Welcome! This video is your introduction to the MONOKlix.com platform. Understand the overview, powerful features, and how to get started on your creative projects with the help of AI.',
   tutorials: [
