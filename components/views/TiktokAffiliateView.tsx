@@ -15,14 +15,16 @@ const CreativeButton: React.FC<{
   isSelected: boolean;
   onClick: () => void;
   icon?: React.ComponentType<{ className?: string }>;
-}> = ({ label, isSelected, onClick, icon: Icon }) => (
+  disabled?: boolean;
+}> = ({ label, isSelected, onClick, icon: Icon, disabled }) => (
   <button
     onClick={onClick}
+    disabled={disabled}
     className={`flex items-center justify-center gap-3 p-3 rounded-lg border text-left transition-all duration-200 w-full
-      ${isSelected
+      ${isSelected && !disabled
         ? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400'
         : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100/50 dark:hover:bg-neutral-700/50 hover:border-neutral-400 dark:hover:border-neutral-500'
-      }`}
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
   >
     {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
     <span className="font-semibold text-sm flex-1 text-center">{label}</span>
@@ -70,8 +72,15 @@ const SelectControl: React.FC<{
   value: string;
   onChange: (value: string) => void;
   options: (string|number)[];
-}> = ({ id, value, onChange, options }) => (
-    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 text-neutral-800 dark:text-neutral-300 focus:ring-2 focus:ring-primary-500 focus:outline-none transition">
+  disabled?: boolean;
+}> = ({ id, value, onChange, options, disabled }) => (
+    <select 
+        id={id} 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 text-neutral-800 dark:text-neutral-300 focus:ring-2 focus:ring-primary-500 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+    >
       {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
     </select>
 );
@@ -167,10 +176,6 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                   <ImageUpload id="tiktok-product-upload" onImageUpload={(base64, mimeType) => setProductImage({base64, mimeType})} title={T.productPhoto} description={T.productPhotoDesc}/>
                   <ImageUpload id="tiktok-face-upload" onImageUpload={(base64, mimeType) => setFaceImage({base64, mimeType})} title={T.facePhoto} description={T.facePhotoDesc}/>
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                  <CreativeButton label={T.female} isSelected={gender === 'Female'} onClick={() => setGender('Female')} icon={UserIcon}/>
-                  <CreativeButton label={T.male} isSelected={gender === 'Male'} onClick={() => setGender('Male')} icon={UserIcon}/>
-              </div>
           </Section>
 
           <Section title={T.customPrompt}>
@@ -180,7 +185,17 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
           
           <Section title={T.creativeDirection}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label htmlFor="model-face-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.modelFace}</label><SelectControl id="model-face-select" value={modelFace} onChange={setModelFace} options={modelFaceOptions} /></div>
+                <div className="md:col-span-2">
+                    <label className={`block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 transition-colors ${!!faceImage ? 'text-gray-400 dark:text-gray-500' : ''}`}>{T.gender}</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <CreativeButton label={T.female} isSelected={gender === 'Female'} onClick={() => setGender('Female')} icon={UserIcon} disabled={!!faceImage} />
+                        <CreativeButton label={T.male} isSelected={gender === 'Male'} onClick={() => setGender('Male')} icon={UserIcon} disabled={!!faceImage} />
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="model-face-select" className={`block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 transition-colors ${!!faceImage ? 'text-gray-400 dark:text-gray-500' : ''}`}>{T.modelFace}</label>
+                    <SelectControl id="model-face-select" value={modelFace} onChange={setModelFace} options={modelFaceOptions} disabled={!!faceImage} />
+                </div>
                 <div><label htmlFor="style-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.artisticStyle}</label><SelectControl id="style-select" value={style} onChange={setStyle} options={styleOptions} /></div>
                 <div><label htmlFor="lighting-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.lighting}</label><SelectControl id="lighting-select" value={lighting} onChange={setLighting} options={lightingOptions} /></div>
                 <div><label htmlFor="camera-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.cameraShot}</label><SelectControl id="camera-select" value={camera} onChange={setCamera} options={cameraOptions} /></div>

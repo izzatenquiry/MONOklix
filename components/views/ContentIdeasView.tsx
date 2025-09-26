@@ -121,6 +121,8 @@ const ContentIdeasView: React.FC<ContentIdeasViewProps> = ({ language }) => {
         </>
     );
 
+    const groundingMetadata = response?.candidates?.[0]?.groundingMetadata?.groundingChunks;
+
     const rightPanel = (
         <>
              {response && !isLoading && (
@@ -150,6 +152,20 @@ const ContentIdeasView: React.FC<ContentIdeasViewProps> = ({ language }) => {
             ) : response ? (
                 <div className="w-full h-full overflow-y-auto pr-2 custom-scrollbar">
                     <MarkdownRenderer content={response.text} />
+                     {groundingMetadata && groundingMetadata.length > 0 && (
+                        <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                            <h3 className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-2">Sources:</h3>
+                            <ul className="space-y-2">
+                                {(groundingMetadata as any[]).map((chunk, index) => (
+                                    <li key={index} className="text-xs">
+                                        <a href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="text-primary-600 dark:text-primary-400 hover:underline truncate block">
+                                            {chunk.web.title || chunk.web.uri}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             ) : (
                  <div className="flex items-center justify-center h-full text-center text-neutral-500 dark:text-neutral-600 p-4">

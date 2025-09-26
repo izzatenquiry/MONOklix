@@ -164,17 +164,16 @@ export const generateVideo = async (
         const videoConfig: {
             numberOfVideos: number;
             aspectRatio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9";
-            resolution?: "720p" | "1080p";
             negativePrompt?: string;
+            resolution?: "720p" | "1080p";
         } = {
             numberOfVideos: 1,
             aspectRatio: aspectRatio as "1:1" | "3:4" | "4:3" | "9:16" | "16:9",
             ...(negativePrompt && { negativePrompt }),
         };
 
-        // Conditionally add resolution for Veo 3 models, as Veo 2 does not support this parameter.
-        if (model.startsWith('veo-3.0')) {
-            videoConfig.resolution = resolution as "720p" | "1080p";
+        if (model.includes('veo-3.0')) {
+            videoConfig.resolution = resolution as '720p' | '1080p';
         }
 
         let operation = await ai.models.generateVideos({

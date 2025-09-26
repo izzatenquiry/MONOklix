@@ -189,7 +189,7 @@ ${details.sceneDescription}
 - Lighting: ${details.selectedLighting}
 
 **Instructions:**
-- The image must feature a person whose appearance is inspired by the provided face image.
+- The image must feature a person. CRITICAL: This person's face MUST be the EXACT same face from the provided face reference image. Do not alter their facial features, structure, or identity.
 - The person must be using or showcasing the product from the provided product image.
 - The final result must look like a real frame from a short-form video.
 - CRITICAL: The final image must be purely visual. Do NOT add any text, watermarks, or logos.
@@ -218,13 +218,40 @@ export const getTiktokAffiliatePrompt = (details: {
     return details.customPrompt.trim();
   }
 
-  const modelInstruction = details.hasFaceImage
-    ? `A ${details.gender} model whose face is inspired by the provided face image.`
-    : `A ${details.gender} model with facial features typical of ${details.modelFace === 'Random' ? 'Southeast Asia' : details.modelFace}. Ensure the face looks realistic and appealing.`;
+  if (details.hasFaceImage) {
+    // Use a much stricter prompt when a face is provided to ensure it's preserved.
+    return `
+You are an AI image generation expert. Your task is to create a single, photorealistic UGC-style image by compositing a person and a product into a new scene.
 
-  const productInstruction = "Include the product from the uploaded image.";
+**Provided Assets:**
+1.  **Person's Face:** A reference image of the person to be featured.
+2.  **Product:** A reference image of the product.
 
-  return `
+**Creative Direction for the New Scene:**
+-   **Background/Vibe:** ${details.vibe}
+-   **Model's Pose:** ${details.pose === 'Random' ? 'a natural and relaxed pose, interacting with the product if appropriate' : details.pose}
+-   **Artistic Style:** ${details.style === 'Random' ? 'photorealistic' : details.style}
+-   **Lighting:** ${details.lighting === 'Random' ? 'flattering and natural-looking lighting' : details.lighting}
+-   **Camera Shot:** ${details.camera === 'Random' ? 'a dynamic angle' : details.camera}
+-   **Composition:** ${details.composition === 'Random' ? 'well-composed' : details.composition}
+-   **Lens Type:** ${details.lensType === 'Random' ? 'standard lens' : details.lensType}
+-   **Film Simulation:** ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}
+-   **AI Creativity Level (0-10):** ${details.creativityLevel}
+
+**CRITICAL INSTRUCTIONS:**
+1.  **Face Integrity:** The person's face in the final image **MUST be the EXACT same face** from the provided face reference image. **Do not alter** their facial features, structure, or identity. The gender is determined by the face image.
+2.  **Product Integration:** Seamlessly and naturally integrate the product into the scene with the person.
+3.  **Final Image Quality:** The result must be a high-quality, authentic-looking UGC image suitable for TikTok.
+4.  **No Text:** The output image must be purely visual. Do NOT add text, watermarks, or logos.
+
+Generate only the image that perfectly matches this description.
+`;
+  } else {
+    // The original prompt for when no face is provided (generates a new face).
+    const modelInstruction = `A ${details.gender} model with facial features typical of ${details.modelFace === 'Random' ? 'Southeast Asia' : details.modelFace}. Ensure the face looks realistic and appealing.`;
+    const productInstruction = "Include the product from the uploaded image.";
+
+    return `
 Create a high-quality, photorealistic User-Generated Content (UGC) image suitable for TikTok affiliate marketing.
 The image must naturally feature the provided product image.
 
@@ -251,6 +278,7 @@ The image must naturally feature the provided product image.
 - Output must have a 3:4 aspect ratio.
 - CRITICAL: The image must be purely visual. Do NOT add text, watermarks, or logos.
 `;
+  }
 };
 
 // --- Background Remover ---
@@ -266,6 +294,22 @@ export const getImageEnhancementPrompt = (type: 'upscale' | 'colors'): string =>
     // type === 'colors'
     return "Enhance the colors of the following image. Make them more vibrant, improve the contrast, and adjust the color balance to be more appealing. Do not change the content or resolution, just make the colors pop in a natural way.";
 };
+
+// --- Image Generation (Editing Mode) ---
+export const getImageEditingPrompt = (userPrompt: string): string => `
+You are an expert AI image editor. Your task is to modify the provided reference image(s) based on the user's request.
+
+**User's Request:**
+"${userPrompt}"
+
+**CRITICAL GUIDELINES:**
+1.  **Face Preservation:** If any of the reference images contain a person's face, you **MUST preserve the EXACT same face**. Do not alter their facial features, bone structure, or identity unless explicitly instructed to make minor changes (e.g., "make them smile"). The identity must remain the same.
+2.  **Apply Edits:** Creatively apply the user's request to the image.
+3.  **High Quality:** The final result must be a high-quality, realistic image.
+4.  **No Text/Logos:** The final image must be purely visual. Do NOT add any text, watermarks, or logos.
+
+Generate only the edited image based on these instructions.
+`;
 
 // --- Staff Monoklix ---
 export const getStaffMonoklixPrompt = (details: {

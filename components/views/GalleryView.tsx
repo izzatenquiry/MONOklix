@@ -3,6 +3,7 @@ import { getHistory, deleteHistoryItem, clearHistory } from '../../services/hist
 import { type HistoryItem } from '../../types';
 import { ImageIcon, VideoIcon, DownloadIcon, TrashIcon, PlayIcon, FileTextIcon, AudioIcon, WandIcon } from '../Icons';
 import Tabs, { type Tab } from '../common/Tabs';
+import PreviewModal from '../common/PreviewModal'; // Import the new component
 
 interface VideoGenPreset {
   prompt: string;
@@ -25,6 +26,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
     const [allItems, setAllItems] = useState<HistoryItem[]>([]);
     const [activeTab, setActiveTab] = useState<GalleryTabId>('images');
     const [blobUrls, setBlobUrls] = useState<Map<string, string>>(new Map());
+    const [previewItem, setPreviewItem] = useState<HistoryItem | null>(null); // State for the modal
 
     const refreshHistory = useCallback(async () => {
         const history = await getHistory();
@@ -109,6 +111,10 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
         }
     };
 
+    const handleActionClick = (e: React.MouseEvent, action: () => void) => {
+        e.stopPropagation();
+        action();
+    };
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Are you sure you want to delete this item from your history?")) {
@@ -158,12 +164,16 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
         const displayUrl = getDisplayUrl(item);
 
         return (
-            <div key={item.id} className="group relative aspect-square bg-neutral-200 dark:bg-neutral-800 rounded-lg overflow-hidden shadow-md">
+            <div 
+                key={item.id} 
+                className="group relative aspect-square bg-neutral-200 dark:bg-neutral-800 rounded-lg overflow-hidden shadow-md cursor-pointer"
+                onClick={() => setPreviewItem(item)}
+            >
                 {isImage && <img src={displayUrl} alt={item.prompt} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />}
                 {isVideo && displayUrl && (
                     <div className="w-full h-full flex items-center justify-center">
                         <video src={displayUrl} className="w-full h-full object-cover" loop muted playsInline title={item.prompt}/>
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity">
                             <PlayIcon className="w-12 h-12 text-white/80" />
                         </div>
                     </div>
@@ -175,14 +185,14 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
                         {isImage && (
                           <>
                             <button
-                                onClick={() => onReEdit({ base64: item.result as string, mimeType: 'image/png' })}
+                                onClick={(e) => handleActionClick(e, () => onReEdit({ base64: item.result as string, mimeType: 'image/png' }))}
                                 className="p-2 bg-purple-600/80 text-white rounded-full hover:bg-purple-600 transition-colors transform hover:scale-110"
                                 title="Re-edit Image"
                             >
                                 <WandIcon className="w-4 h-4" />
                             </button>
                             <button
-                                onClick={() => onCreateVideo({ prompt: item.prompt, image: { base64: item.result as string, mimeType: 'image/png' } })}
+                                onClick={(e) => handleActionClick(e, () => onCreateVideo({ prompt: item.prompt, image: { base64: item.result as string, mimeType: 'image/png' } }))}
                                 className="p-2 bg-primary-600/80 text-white rounded-full hover:bg-primary-600 transition-colors transform hover:scale-110"
                                 title="Create Video"
                             >
@@ -191,14 +201,14 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
                           </>
                         )}
                         <button
-                            onClick={() => downloadAsset(item)}
+                            onClick={(e) => handleActionClick(e, () => downloadAsset(item))}
                             className="p-2 bg-white/80 text-black rounded-full hover:bg-white transition-colors transform hover:scale-110"
                             title="Download"
                         >
                             <DownloadIcon className="w-4 h-4" />
                         </button>
                          <button
-                            onClick={() => handleDelete(item.id)}
+                            onClick={(e) => handleActionClick(e, () => handleDelete(item.id))}
                             className="p-2 bg-red-500/80 text-white rounded-full hover:bg-red-500 transition-colors transform hover:scale-110"
                             title="Delete"
                         >
@@ -308,6 +318,14 @@ const GalleryView: React.FC<GalleryViewProps> = ({ onCreateVideo, onReEdit }) =>
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
                 {renderContent()}
             </div>
+            
+            {previewItem && (
+                <PreviewModal
+                    item={previewItem}
+                    onClose={() => setPreviewItem(null)}
+                    getDisplayUrl={getDisplayUrl}
+                />
+            )}
         </div>
     );
 };

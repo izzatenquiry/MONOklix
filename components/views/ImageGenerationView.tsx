@@ -7,6 +7,7 @@ import { type MultimodalContent } from '../../services/geminiService';
 import TwoColumnLayout from '../common/TwoColumnLayout';
 import { type Language } from '../../types';
 import { getTranslations } from '../../services/translations';
+import { getImageEditingPrompt } from '../../services/promptManager';
 
 interface ImageData extends MultimodalContent {
   id: string;
@@ -156,7 +157,8 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
 
     try {
       if (referenceImages.length > 0) {
-        const result = await composeImage(prompt, referenceImages);
+        const editingPrompt = getImageEditingPrompt(prompt);
+        const result = await composeImage(editingPrompt, referenceImages);
         setEditedResult(result);
         if (result.imageBase64) {
           await addHistoryItem({ type: 'Image', prompt: `Image Edit: ${prompt}`, result: result.imageBase64 });

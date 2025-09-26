@@ -30,6 +30,7 @@ const aspectRatios = ["9:16", "1:1", "16:9", "4:3", "3:4"];
 const cameraMotions = ["Random", "Pan", "Zoom In", "Zoom Out", "Tilt", "Crane", "Dolly", "Aerial"];
 const styles = ["Random", "Photorealistic", "Cinematic", "Anime", "Vintage", "Claymation", "Watercolor", "3D Animation", "Soft Daylight Studio", "Pastel Clean", "High-Key White", "Low-Key Moody", "Color Block", "Gradient Backdrop", "Paper Curl Backdrop", "Beige Seamless", "Shadow Play / Hard Light", "Marble Tabletop", "Pastel Soft"];
 const backgroundVibes = [ "Random", "Coffee Shop Aesthetic", "Urban Night", "Tropical Beach", "Luxury Apartment", "Flower Garden", "Old Building", "Classic Library", "Minimalist Studio", "Rooftop Bar", "Autumn Garden", "Tokyo Street", "Scandinavian Interior", "Magical Forest", "Cyberpunk City", "Bohemian Desert", "Modern Art Gallery", "Sunset Rooftop", "Snowy Mountain Cabin", "Industrial Loft", "Futuristic Lab", "Pastel Dream Sky", "Palace Interior", "Country Kitchen", "Coral Reef", "Paris Street", "Asian Night Market", "Cruise Deck", "Vintage Train Station", "Outdoor Basketball Court", "Professional Kitchen", "Luxury Hotel Lobby", "Rock Concert Stage", "Zen Garden", "Mediterranean Villa Terrace", "Space / Sci-Fi Setting", "Modern Workspace", "Hot Spring Bath", "Fantasy Throne Room", "Skyscraper Peak", "Sports Car Garage", "Botanical Greenhouse", "Ice Rink", "Classic Dance Studio", "Beach Party Night", "Ancient Library", "Mountain Observation Deck", "Modern Dance Studio", "Speakeasy Bar", "Rainforest Trail", "Rice Terrace Field" ];
+const resolutions = ["720p", "1080p"];
 
 const Section: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
     <div><h2 className="text-lg font-semibold mb-2">{title}</h2>{children}</div>
@@ -63,12 +64,13 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [referenceImage, setReferenceImage] = useState<ImageData | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [model, setModel] = useState(MODELS.videoGenerationOptions[0].id);
-  const [aspectRatio, setAspectRatio] = useState("9:16");
+  const [model, setModel] = useState(MODELS.videoGenerationDefault);
   const [resolution, setResolution] = useState("720p");
+  const [aspectRatio, setAspectRatio] = useState("9:16");
   const [imageUploadKey, setImageUploadKey] = useState(Date.now());
 
   const T = getTranslations(language).videoGenerationView;
+  const showResolution = model.includes('veo-3.0');
 
   const loadingMessages = [
     "Warming up the AI director...",
@@ -164,26 +166,27 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
         </div>
 
         <Section title={T.modelFormat}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-1">
+            <div className={`grid grid-cols-1 ${showResolution ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
+                <div className={showResolution ? 'sm:col-span-1' : 'sm:col-span-1'}>
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.aiModel}</label>
                     <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition">
                         {MODELS.videoGenerationOptions.map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                     </select>
                 </div>
-                <div className="sm:col-span-1">
+                <div className={showResolution ? 'sm:col-span-1' : 'sm:col-span-1'}>
                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.aspectRatio}</label>
                      <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition">
                         {aspectRatios.map(ar => <option key={ar} value={ar}>{ar}</option>)}
                     </select>
                 </div>
-                <div className="sm:col-span-1">
-                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.resolution}</label>
-                     <select value={resolution} onChange={(e) => setResolution(e.target.value)} disabled={!model.startsWith('veo-3.0')} className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed">
-                        <option value="720p">720p</option>
-                        <option value="1080p">1080p</option>
-                    </select>
-                </div>
+                {showResolution && (
+                    <div className="sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.resolution}</label>
+                        <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition">
+                            {resolutions.map(res => <option key={res} value={res}>{res}</option>)}
+                        </select>
+                    </div>
+                )}
             </div>
         </Section>
         
