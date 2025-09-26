@@ -1,10 +1,6 @@
-
+import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-// FIX: Explicitly import 'process' to ensure Node.js types are available and resolve the 'cwd' error on line 6.
-import { process } from 'node:process';
-// FIX: Import 'fileURLToPath' and 'URL' to correctly resolve paths in an ES module environment, replacing the need for 'path' and '__dirname'.
-import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -17,8 +13,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // FIX: Replaced the CommonJS '__dirname' with the modern ES module equivalent 'import.meta.url' to fix the error on line 16.
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     server: {
