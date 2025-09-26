@@ -36,17 +36,6 @@ const Section: React.FC<{ title: string, children: React.ReactNode }> = ({ title
     <div><h2 className="text-lg font-semibold mb-2">{title}</h2>{children}</div>
 );
 
-const triggerDownload = (data: Blob, fileNameBase: string) => {
-    const url = URL.createObjectURL(data);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileNameBase}-${Date.now()}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-};
-
 // FIX: Replaced incomplete component with full implementation, adding a JSX return and a default export to fix compilation errors.
 const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clearPreset, language }) => {
   const [subjectContext, setSubjectContext] = useState('');
@@ -138,7 +127,14 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
           const result = await generateVideo(fullPrompt, model, aspectRatio, resolution, negativePrompt, image, dialogue);
           const url = URL.createObjectURL(result);
           setVideoUrl(url);
-          triggerDownload(result, 'monoklix-video');
+
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `monoklix-video-${Date.now()}.mp4`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
           await addHistoryItem({
               type: 'Video',
               prompt: `Video: ${fullPrompt}`,

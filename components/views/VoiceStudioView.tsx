@@ -50,18 +50,6 @@ const SliderControl: React.FC<{
   </div>
 );
 
-const triggerDownload = (data: Blob, fileNameBase: string) => {
-    const url = URL.createObjectURL(data);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileNameBase}-${Date.now()}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url); // Clean up immediately
-};
-
-
 const VoiceStudioView: React.FC = () => {
     const [script, setScript] = useState('');
     const [selectedActor, setSelectedActor] = useState(voiceActors[0].id);
@@ -98,10 +86,16 @@ const VoiceStudioView: React.FC = () => {
 
         try {
             const resultBlob = await generateVoiceOver(script, selectedActor, speed, pitch, volume);
-            triggerDownload(resultBlob, `monoklix-voiceover-${selectedActor}`);
             
             const resultUrl = URL.createObjectURL(resultBlob);
             setAudioUrl(resultUrl);
+
+            const link = document.createElement('a');
+            link.href = resultUrl;
+            link.download = `monoklix-audio-${Date.now()}.mp3`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             
             await addHistoryItem({
                 type: 'Audio',

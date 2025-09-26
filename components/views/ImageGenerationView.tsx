@@ -23,15 +23,6 @@ const lensTypeOptions = ["Select Lens...", "Wide Angle Lens", "Telephoto Lens", 
 const filmSimOptions = ["Select Film...", "Fujifilm Velvia", "Kodak Portra 400", "Cinematic Kodachrome", "Vintage Polaroid", "Ilford HP5 (B&W)"];
 
 
-const triggerDownload = (data: string, fileNameBase: string) => {
-    const link = document.createElement('a');
-    link.href = `data:image/png;base64,${data}`;
-    link.download = `${fileNameBase}-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
 const downloadImage = (base64Image: string, fileName: string) => {
   const link = document.createElement('a');
   link.href = `data:image/png;base64,${base64Image}`;
@@ -162,7 +153,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         setEditedResult(result);
         if (result.imageBase64) {
           await addHistoryItem({ type: 'Image', prompt: `Image Edit: ${prompt}`, result: result.imageBase64 });
-          triggerDownload(result.imageBase64, 'monoklix-edited-image');
+          downloadImage(result.imageBase64, `monoklix-edited-image-${Date.now()}.png`);
         }
       } else {
         const seedValue = seed === '' ? undefined : Number(seed);
@@ -173,13 +164,9 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           for (const imgBase64 of result) {
             await addHistoryItem({ type: 'Image', prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`, result: imgBase64 });
           }
-          // Asynchronously download all images with a delay to prevent browser blocking
-          for (let i = 0; i < result.length; i++) {
-            triggerDownload(result[i], `monoklix-generated-image-${i+1}`);
-            if (i < result.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
-          }
+          result.forEach((img, index) => {
+            downloadImage(img, `monoklix-generated-image-${index + 1}-${Date.now()}.png`);
+          });
         }
       }
     } catch (e) {

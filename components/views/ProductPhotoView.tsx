@@ -106,6 +106,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
             generatedImages.push(result.imageBase64);
             setResultImages([...generatedImages]);
             setSelectedImageIndex(i);
+            triggerDownload(result.imageBase64, `monoklix-product-photo-${i + 1}`);
           } else {
             throw new Error(`The AI did not return an image for this attempt.`);
           }
@@ -123,13 +124,6 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
             prompt: `Product Photo: ${prompt.substring(0, 50)}...`,
             result: imgBase64,
           });
-        }
-        // Asynchronously download all images with a delay
-        for (let i = 0; i < generatedImages.length; i++) {
-            triggerDownload(generatedImages[i], `monoklix-product-photo-${i + 1}`);
-            if (i < generatedImages.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
         }
       }
     } catch (e) {

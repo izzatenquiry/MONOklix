@@ -31,15 +31,6 @@ const CreativeButton: React.FC<{
   </button>
 );
 
-const triggerDownload = (data: string, fileNameBase: string) => {
-    const link = document.createElement('a');
-    link.href = `data:image/png;base64,${data}`;
-    link.download = `${fileNameBase}-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
 interface VideoGenPreset {
   prompt: string;
   image: { base64: string; mimeType: string; };
@@ -84,6 +75,16 @@ const SelectControl: React.FC<{
       {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
     </select>
 );
+
+// FIX: Added missing triggerDownload function definition.
+const triggerDownload = (data: string, fileNameBase: string) => {
+    const link = document.createElement('a');
+    link.href = `data:image/png;base64,${data}`;
+    link.download = `${fileNameBase}-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
 const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onCreateVideo, language }) => {
     const [productImage, setProductImage] = useState<MultimodalContent | null>(null);
@@ -134,6 +135,7 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                         generatedImages.push(result.imageBase64);
                         setResultImages([...generatedImages]);
                         setSelectedImageIndex(i);
+                        triggerDownload(result.imageBase64, `monoklix-model-photo-${i + 1}`);
                     } else {
                         throw new Error(`The AI did not return an image for this attempt.`);
                     }
@@ -147,13 +149,6 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
             if (generatedImages.length > 0) {
                 for (const imgBase64 of generatedImages) {
                     await addHistoryItem({ type: 'Image', prompt: `TikTok Affiliate: Vibe - ${vibe}, Model - ${gender}`, result: imgBase64 });
-                }
-                 // Asynchronously download all images with a delay
-                for (let i = 0; i < generatedImages.length; i++) {
-                    triggerDownload(generatedImages[i], `monoklix-ai-model-photo-${i + 1}`);
-                    if (i < generatedImages.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                    }
                 }
             }
         } catch (e) {
