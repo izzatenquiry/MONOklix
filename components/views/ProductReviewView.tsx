@@ -164,19 +164,22 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
             );
 
             if (result.imageBase64) {
+                const newImageBase64 = result.imageBase64;
                 setGeneratedImages(prev => {
                     const newImages = [...prev];
-                    newImages[i] = result.imageBase64;
+                    newImages[i] = newImageBase64;
                     return newImages;
                 });
                 
                 await addHistoryItem({
                     type: 'Image',
                     prompt: `Product Review Scene Image ${i + 1}: ${parsedScenes[i].substring(0, 50)}...`,
-                    result: result.imageBase64
+                    result: newImageBase64
                 });
-
-                triggerImageDownload(result.imageBase64, `monoklix-review-scene-${i + 1}`);
+                
+                setTimeout(() => {
+                  triggerImageDownload(newImageBase64, `monoklix-review-scene-${i + 1}`);
+                }, 3500);
             } else {
                  throw new Error("The AI did not return an image for this scene. Try rephrasing your inputs.");
             }

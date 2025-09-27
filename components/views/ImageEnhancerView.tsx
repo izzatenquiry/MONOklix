@@ -80,7 +80,9 @@ const ImageEnhancerView: React.FC<ImageEnhancerViewProps> = ({ onReEdit, onCreat
             prompt: historyPrompt,
             result: result.imageBase64,
         });
-        triggerDownload(result.imageBase64, 'monoklix-enhanced');
+        setTimeout(() => {
+          triggerDownload(result.imageBase64!, 'monoklix-enhanced');
+        }, 3500);
       } else {
         setError("The AI could not enhance the image. Please try a different image.");
       }

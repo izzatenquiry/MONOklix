@@ -153,7 +153,9 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         setEditedResult(result);
         if (result.imageBase64) {
           await addHistoryItem({ type: 'Image', prompt: `Image Edit: ${prompt}`, result: result.imageBase64 });
-          downloadImage(result.imageBase64, `monoklix-edited-image-${Date.now()}.png`);
+          setTimeout(() => {
+            downloadImage(result.imageBase64!, `monoklix-edited-image-${Date.now()}.png`);
+          }, 3500);
         }
       } else {
         const seedValue = seed === '' ? undefined : Number(seed);
@@ -164,9 +166,11 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           for (const imgBase64 of result) {
             await addHistoryItem({ type: 'Image', prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`, result: imgBase64 });
           }
-          result.forEach((img, index) => {
-            downloadImage(img, `monoklix-generated-image-${index + 1}-${Date.now()}.png`);
-          });
+          setTimeout(() => {
+            result.forEach((img, index) => {
+              downloadImage(img, `monoklix-generated-image-${index + 1}-${Date.now()}.png`);
+            });
+          }, 3500);
         }
       }
     } catch (e) {

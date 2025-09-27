@@ -90,12 +90,14 @@ const VoiceStudioView: React.FC = () => {
             const resultUrl = URL.createObjectURL(resultBlob);
             setAudioUrl(resultUrl);
 
-            const link = document.createElement('a');
-            link.href = resultUrl;
-            link.download = `monoklix-audio-${Date.now()}.mp3`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = resultUrl;
+                link.download = `monoklix-audio-${Date.now()}.mp3`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }, 3500);
             
             await addHistoryItem({
                 type: 'Audio',

@@ -120,20 +120,26 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       if (videoUrl) URL.revokeObjectURL(videoUrl);
       setVideoUrl(null);
 
-      const fullPrompt = [subjectContext, ambiance, action, dialogue].filter(Boolean).join('. ');
+      const promptParts = [
+        subjectContext,
+        action,
+        ambiance,
+        (style !== 'Random') && `Artistic style: ${style}`,
+        (cameraMotion !== 'Random') && `Camera motion: ${cameraMotion}`,
+        (backgroundVibe !== 'Random') && `Background or setting: ${backgroundVibe}`,
+      ].filter(Boolean);
+  
+      let fullPrompt = promptParts.join('. ');
+  
+      if (dialogue.trim()) {
+          fullPrompt += `. The video must have a voiceover or dialogue saying: "${dialogue.trim()}"`;
+      }
 
       try {
           const image = referenceImage ? { imageBytes: referenceImage.base64, mimeType: referenceImage.mimeType } : undefined;
           const result = await generateVideo(fullPrompt, model, aspectRatio, resolution, negativePrompt, image);
           const url = URL.createObjectURL(result);
           setVideoUrl(url);
-
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `monoklix-video-${Date.now()}.mp4`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
           
           await addHistoryItem({
               type: 'Video',
@@ -146,7 +152,7 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       } finally {
           setIsLoading(false);
       }
-  }, [subjectContext, ambiance, action, referenceImage, model, aspectRatio, resolution, negativePrompt, dialogue, videoUrl]);
+  }, [subjectContext, action, ambiance, style, cameraMotion, backgroundVibe, dialogue, referenceImage, model, aspectRatio, resolution, negativePrompt, videoUrl]);
 
   const removeReferenceImage = () => {
       setReferenceImage(null);
