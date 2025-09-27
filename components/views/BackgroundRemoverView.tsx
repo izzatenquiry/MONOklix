@@ -75,9 +75,6 @@ const BackgroundRemoverView: React.FC<BackgroundRemoverViewProps> = ({ onReEdit,
             prompt: 'Background Removed',
             result: result.imageBase64,
         });
-        setTimeout(() => {
-          triggerDownload(result.imageBase64!, 'monoklix-bg-removed');
-        }, 3500);
       } else {
         setError("The AI could not remove the background. Please try a different image.");
       }

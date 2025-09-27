@@ -14,6 +14,8 @@ interface ImageData extends MultimodalContent {
   previewUrl: string;
 }
 
+type PersonGenerationOption = "DONT_GENERATE" | "GENERATE_DEFAULT" | "GENERATE_PHOTOREALISTIC_FACES";
+
 const aspectRatios = ["9:16", "1:1", "16:9", "4:3", "3:4"];
 const styleOptions = ["Select Style...", "Realism", "Photorealistic", "Cinematic", "Anime", "Vintage", "3D Animation", "Watercolor", "Claymation"];
 const lightingOptions = ["Select Lighting...", "Golden Hour", "Studio Lighting", "Natural Light", "Dramatic Lighting", "Backlight", "Rim Lighting", "Neon Glow"];
@@ -67,7 +69,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
   const [negativePrompt, setNegativePrompt] = useState('');
   const [seed, setSeed] = useState<number | ''>('');
   const [highDynamicRange, setHighDynamicRange] = useState(false);
-  const [personGeneration, setPersonGeneration] = useState('GENERATE_PHOTOREALISTIC_FACES');
+  const [personGeneration, setPersonGeneration] = useState<PersonGenerationOption>('GENERATE_PHOTOREALISTIC_FACES');
 
   const T = getTranslations(language).imageGenerationView;
   const isEditing = referenceImages.length > 0;
@@ -153,24 +155,16 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
         setEditedResult(result);
         if (result.imageBase64) {
           await addHistoryItem({ type: 'Image', prompt: `Image Edit: ${prompt}`, result: result.imageBase64 });
-          setTimeout(() => {
-            downloadImage(result.imageBase64!, `monoklix-edited-image-${Date.now()}.png`);
-          }, 3500);
         }
       } else {
         const seedValue = seed === '' ? undefined : Number(seed);
-        const result = await generateImages( prompt, aspectRatio, numberOfImages, negativePrompt, seedValue, highDynamicRange, personGeneration as any );
+        const result = await generateImages( prompt, aspectRatio, numberOfImages, negativePrompt, seedValue, highDynamicRange, personGeneration );
         setImages(result);
         setSelectedImageIndex(0);
         if (result.length > 0) {
           for (const imgBase64 of result) {
             await addHistoryItem({ type: 'Image', prompt: `Generate Image: ${prompt} (Ratio: ${aspectRatio})`, result: imgBase64 });
           }
-          setTimeout(() => {
-            result.forEach((img, index) => {
-              downloadImage(img, `monoklix-generated-image-${index + 1}-${Date.now()}.png`);
-            });
-          }, 3500);
         }
       }
     } catch (e) {
@@ -280,7 +274,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
               </div>
                <div>
                 <label htmlFor="person-generation" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>{T.personGeneration}</label>
-                <select id="person-generation" value={personGeneration} onChange={(e) => setPersonGeneration(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" disabled={isEditing}>
+                <select id="person-generation" value={personGeneration} onChange={(e) => setPersonGeneration(e.target.value as PersonGenerationOption)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" disabled={isEditing}>
                   <option value="GENERATE_PHOTOREALISTIC_FACES">Photorealistic Faces</option><option value="GENERATE_DEFAULT">Default</option><option value="DONT_GENERATE">Don't Generate</option>
                 </select>
               </div>

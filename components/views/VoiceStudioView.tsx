@@ -90,15 +90,6 @@ const VoiceStudioView: React.FC = () => {
             const resultUrl = URL.createObjectURL(resultBlob);
             setAudioUrl(resultUrl);
 
-            setTimeout(() => {
-                const link = document.createElement('a');
-                link.href = resultUrl;
-                link.download = `monoklix-audio-${Date.now()}.mp3`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }, 3500);
-            
             await addHistoryItem({
                 type: 'Audio',
                 prompt: `Voice Studio (${selectedActor}): ${script.substring(0, 50)}...`,

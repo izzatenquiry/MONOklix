@@ -7,7 +7,7 @@ export const MODELS = {
   text: 'gemini-2.5-flash',
   imageGeneration: 'imagen-4.0-generate-001',
   imageEdit: 'gemini-2.5-flash-image-preview',
-  videoGenerationDefault: 'veo-3.0-generate-001',
+  videoGenerationDefault: 'veo-2.0-generate-001',
   videoGenerationOptions: [
     { id: 'veo-3.0-generate-001', label: 'Veo 3 (Highest Quality)' },
     { id: 'veo-3.0-fast-generate-001', label: 'Veo 3 (Fast)' },

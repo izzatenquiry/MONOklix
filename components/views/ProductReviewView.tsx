@@ -176,10 +176,6 @@ const ProductReviewView: React.FC<ProductReviewViewProps> = ({ onReEdit, onCreat
                     prompt: `Product Review Scene Image ${i + 1}: ${parsedScenes[i].substring(0, 50)}...`,
                     result: newImageBase64
                 });
-                
-                setTimeout(() => {
-                  triggerImageDownload(newImageBase64, `monoklix-review-scene-${i + 1}`);
-                }, 3500);
             } else {
                  throw new Error("The AI did not return an image for this scene. Try rephrasing your inputs.");
             }

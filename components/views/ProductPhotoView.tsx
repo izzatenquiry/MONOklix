@@ -107,9 +107,6 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
             generatedImages.push(newImageBase64);
             setResultImages([...generatedImages]);
             setSelectedImageIndex(i);
-            setTimeout(() => {
-              triggerDownload(newImageBase64, `monoklix-product-photo-${i + 1}`);
-            }, 3500);
           } else {
             throw new Error(`The AI did not return an image for this attempt.`);
           }

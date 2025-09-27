@@ -136,9 +136,6 @@ const TiktokAffiliateView: React.FC<TiktokAffiliateViewProps> = ({ onReEdit, onC
                         generatedImages.push(newImageBase64);
                         setResultImages([...generatedImages]);
                         setSelectedImageIndex(i);
-                        setTimeout(() => {
-                            triggerDownload(newImageBase64, `monoklix-model-photo-${i + 1}`);
-                        }, 3500);
                     } else {
                         throw new Error(`The AI did not return an image for this attempt.`);
                     }

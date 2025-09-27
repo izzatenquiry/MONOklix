@@ -34,6 +34,9 @@ export const handleApiError = (error: unknown): void => {
             userFriendlyMessage = error.message;
         }
         // Server-side errors
+        else if (message.includes('503') || message.includes('unavailable')) {
+            userFriendlyMessage = "The AI service is temporarily unavailable. This is usually a temporary issue. Please wait a moment and try again.";
+        }
         else if (message.includes('500') || message.includes('internal')) {
             userFriendlyMessage = "An internal error occurred on the server. Please wait a few moments and try again.";
         }
