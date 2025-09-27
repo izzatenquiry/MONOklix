@@ -42,6 +42,8 @@ const cameraOptions = ["Random", "Detail / Macro", "Close-Up", "Medium Close-Up"
 const compositionOptions = ["Random", "Rule of Thirds", "Leading Lines", "Symmetry", "Golden Ratio", "Centered", "Asymmetrical"];
 const lensTypeOptions = ["Random", "Wide Angle Lens", "Telephoto Lens", "Fisheye Lens", "Macro Lens", "50mm lens", "85mm lens"];
 const filmSimOptions = ["Random", "Fujifilm Velvia", "Kodak Portra 400", "Cinematic Kodachrome", "Vintage Polaroid", "Ilford HP5 (B&W)"];
+const effectOptions = ["None", "Random", "Water Splash", "Smoke", "Fire", "Floating in Water", "Rain Drops", "Light Streaks", "Confetti", "Glitter", "Powder Explosion"];
+
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
     <div>
@@ -80,6 +82,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
   const [composition, setComposition] = useState('Random');
   const [lensType, setLensType] = useState('Random');
   const [filmSim, setFilmSim] = useState('Random');
+  const [effect, setEffect] = useState('None');
   const [creativityLevel, setCreativityLevel] = useState(5);
   const [customPrompt, setCustomPrompt] = useState('');
   const [numberOfImages, setNumberOfImages] = useState(1);
@@ -95,7 +98,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
     setError(null);
     setResultImages([]);
 
-    const prompt = getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim });
+    const prompt = getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim, effect });
 
     try {
       const generatedImages: string[] = [];
@@ -133,7 +136,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
     } finally {
       setIsLoading(false);
     }
-  }, [productImage, vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim, numberOfImages]);
+  }, [productImage, vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim, effect, numberOfImages]);
 
   const leftPanel = (
     <>
@@ -167,6 +170,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
           <div><label htmlFor="composition-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.composition}</label><SelectControl id="composition-select" value={composition} onChange={setComposition} options={compositionOptions} /></div>
           <div><label htmlFor="lens-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.lensType}</label><SelectControl id="lens-select" value={lensType} onChange={setLensType} options={lensTypeOptions} /></div>
           <div><label htmlFor="film-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.filmSim}</label><SelectControl id="film-select" value={filmSim} onChange={setFilmSim} options={filmSimOptions} /></div>
+          <div><label htmlFor="effect-select" className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{T.visualEffect}</label><SelectControl id="effect-select" value={effect} onChange={setEffect} options={effectOptions} /></div>
         </div>
       </Section>
       
@@ -205,7 +209,7 @@ const ProductPhotoView: React.FC<ProductPhotoViewProps> = ({ onReEdit, onCreateV
               <img src={`data:image/png;base64,${resultImages[selectedImageIndex]}`} alt={`Generated product ${selectedImageIndex + 1}`} className="rounded-md max-h-full max-w-full object-contain" />
               <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <button onClick={() => onReEdit({ base64: resultImages[selectedImageIndex], mimeType: 'image/png' })} title="Re-edit this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><WandIcon className="w-4 h-4" /></button>
-                <button onClick={() => onCreateVideo({ prompt: getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><VideoIcon className="w-4 h-4" /></button>
+                <button onClick={() => onCreateVideo({ prompt: getProductPhotoPrompt({ vibe, lighting, camera, creativityLevel, customPrompt, style, composition, lensType, filmSim, effect }), image: { base64: resultImages[selectedImageIndex], mimeType: 'image/png' } })} title="Create Video from this image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><VideoIcon className="w-4 h-4" /></button>
                 <button onClick={() => triggerDownload(resultImages[selectedImageIndex], 'monoklix-product-photo')} title="Download Image" className="flex items-center justify-center w-8 h-8 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors"><DownloadIcon className="w-4 h-4" /></button>
               </div>
             </div>

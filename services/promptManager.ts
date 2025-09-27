@@ -95,6 +95,7 @@ export const getProductPhotoPrompt = (details: {
   composition: string;
   lensType: string;
   filmSim: string;
+  effect: string;
 }): string => {
   if (details.customPrompt.trim()) {
     return details.customPrompt.trim();
@@ -112,6 +113,7 @@ export const getProductPhotoPrompt = (details: {
     `- Composition: ${details.composition === 'Random' ? 'well-composed' : details.composition}`,
     `- Lens Type: ${details.lensType === 'Random' ? 'standard lens' : details.lensType}`,
     `- Film Simulation: ${details.filmSim === 'Random' ? 'modern digital look' : details.filmSim}`,
+    `- Visual Effect: ${details.effect === 'Random' || details.effect === 'None' ? 'none' : details.effect}`,
     `- AI Creativity Level: ${details.creativityLevel} out of 10 (0 = literal, 10 = full artistic freedom)`,
     
     `**Final Requirements:**`,
