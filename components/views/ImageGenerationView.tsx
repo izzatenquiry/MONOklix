@@ -14,8 +14,6 @@ interface ImageData extends MultimodalContent {
   previewUrl: string;
 }
 
-type PersonGenerationOption = "DONT_GENERATE" | "GENERATE_DEFAULT" | "GENERATE_PHOTOREALISTIC_FACES";
-
 const aspectRatios = ["9:16", "1:1", "16:9", "4:3", "3:4"];
 const styleOptions = ["Select Style...", "Realism", "Photorealistic", "Cinematic", "Anime", "Vintage", "3D Animation", "Watercolor", "Claymation"];
 const lightingOptions = ["Select Lighting...", "Golden Hour", "Studio Lighting", "Natural Light", "Dramatic Lighting", "Backlight", "Rim Lighting", "Neon Glow"];
@@ -67,9 +65,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [negativePrompt, setNegativePrompt] = useState('');
-  const [seed, setSeed] = useState<number | ''>('');
   const [highDynamicRange, setHighDynamicRange] = useState(false);
-  const [personGeneration, setPersonGeneration] = useState<PersonGenerationOption>('GENERATE_PHOTOREALISTIC_FACES');
 
   const T = getTranslations(language).imageGenerationView;
   const isEditing = referenceImages.length > 0;
@@ -157,8 +153,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           await addHistoryItem({ type: 'Image', prompt: `Image Edit: ${prompt}`, result: result.imageBase64 });
         }
       } else {
-        const seedValue = seed === '' ? undefined : Number(seed);
-        const result = await generateImages( prompt, aspectRatio, numberOfImages, negativePrompt, seedValue, highDynamicRange, personGeneration );
+        const result = await generateImages( prompt, aspectRatio, numberOfImages, negativePrompt, highDynamicRange );
         setImages(result);
         setSelectedImageIndex(0);
         if (result.length > 0) {
@@ -173,7 +168,7 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, aspectRatio, referenceImages, numberOfImages, negativePrompt, seed, highDynamicRange, personGeneration]);
+  }, [prompt, aspectRatio, referenceImages, numberOfImages, negativePrompt, highDynamicRange]);
 
   const handleLocalReEdit = (base64: string, mimeType: string) => {
       const newImage: ImageData = { id: `re-edit-${Date.now()}`, previewUrl: `data:${mimeType};base64,${base64}`, base64, mimeType };
@@ -266,18 +261,6 @@ const ImageGenerationView: React.FC<ImageGenerationViewProps> = ({ onCreateVideo
           <div>
             <label htmlFor="negative-prompt" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>{T.negativePrompt}</label>
             <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder={T.negativePromptPlaceholder} rows={2} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed" disabled={isEditing} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="seed" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>{T.seed}</label>
-                <input id="seed" type="number" value={seed} onChange={(e) => setSeed(e.target.value === '' ? '' : parseInt(e.target.value, 10))} placeholder={T.seedPlaceholder} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" disabled={isEditing} />
-              </div>
-               <div>
-                <label htmlFor="person-generation" className={`block text-sm font-medium mb-2 transition-colors ${isEditing ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>{T.personGeneration}</label>
-                <select id="person-generation" value={personGeneration} onChange={(e) => setPersonGeneration(e.target.value as PersonGenerationOption)} className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" disabled={isEditing}>
-                  <option value="GENERATE_PHOTOREALISTIC_FACES">Photorealistic Faces</option><option value="GENERATE_DEFAULT">Default</option><option value="DONT_GENERATE">Don't Generate</option>
-                </select>
-              </div>
           </div>
           <div>
               <div className={`flex items-center justify-between ${isEditing ? 'cursor-not-allowed' : ''}`}>

@@ -84,9 +84,7 @@ export const streamChatResponse = async (chat: Chat, prompt: string) => {
  * @param {string} aspectRatio - The desired aspect ratio.
  * @param {number} numberOfImages - The number of images to generate.
  * @param {string} [negativePrompt] - A prompt of what not to include.
- * @param {number} [seed] - A seed for deterministic generation.
  * @param {boolean} [highDynamicRange] - Whether to generate in HDR.
- * @param {string} [personGeneration] - How to handle generating people.
  * @returns {Promise<string[]>} An array of base64 encoded image strings.
  */
 export const generateImages = async (
@@ -94,9 +92,7 @@ export const generateImages = async (
     aspectRatio: string, 
     numberOfImages: number,
     negativePrompt?: string,
-    seed?: number,
-    highDynamicRange?: boolean,
-    personGeneration?: "DONT_GENERATE" | "GENERATE_DEFAULT" | "GENERATE_PHOTOREALISTIC_FACES"
+    highDynamicRange?: boolean
 ): Promise<string[]> => {
     const model = MODELS.imageGeneration;
     try {
@@ -109,10 +105,7 @@ export const generateImages = async (
             aspectRatio: aspectRatio as "1:1" | "3:4" | "4:3" | "9:16" | "16:9",
             outputMimeType: 'image/png',
             ...(negativePrompt && { negativePrompt }),
-            ...(seed !== undefined && { seed }),
             ...(highDynamicRange !== undefined && { highDynamicRange }),
-            // FIX: Cast the personGeneration string to the PersonGeneration enum type expected by the SDK.
-            ...(personGeneration && { personGeneration: personGeneration as PersonGeneration }),
             },
         });
         addLogEntry({
