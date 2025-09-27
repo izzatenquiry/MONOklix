@@ -1,7 +1,7 @@
 import React from 'react';
 import { type View, type NavItem, type User, type Language } from '../types';
 import {
-  ImageIcon, VideoIcon, SettingsIcon, BookOpenIcon, LogoutIcon, GalleryIcon, LogoIcon, XIcon, LibraryIcon, FileTextIcon, GraduationCapIcon
+  ImageIcon, VideoIcon, SettingsIcon, BookOpenIcon, LogoutIcon, GalleryIcon, LogoIcon, XIcon, LibraryIcon, FileTextIcon, GraduationCapIcon, TrendingUpIcon
 } from './Icons';
 import { getTranslations } from '../services/translations';
 
@@ -13,6 +13,7 @@ const getNavItems = (T: ReturnType<typeof getTranslations>['sidebar']): NavItem[
   { id: 'ai-image-suite', label: T.aiImage, section: 'free', icon: ImageIcon },
   { id: 'ai-video-suite', label: T.aiVideo, section: 'free', icon: VideoIcon },
   { id: 'library', label: T.promptLibrary, section: 'free', icon: LibraryIcon },
+  { id: 'prompt-viral-my', label: T.promptViralMy, section: 'free', icon: TrendingUpIcon, isNew: true },
   { id: 'gallery', label: T.imageGallery, section: 'free', icon: GalleryIcon },
   { id: 'settings', label: T.settings, section: 'bottom', icon: SettingsIcon, roles: ['admin', 'user'] },
   { id: 'logout', label: T.logout, section: 'bottom', icon: LogoutIcon, roles: ['admin', 'user'] }

@@ -48,6 +48,16 @@ const GetStartedView: React.FC<GetStartedViewProps> = ({ language }) => {
                          <ol className="list-decimal pl-5 space-y-1">
                             {T.chapter1.sub1_2_ol.map((item, i) => <li key={i} dangerouslySetInnerHTML={{ __html: item.replace(/Google AI Studio/g, '<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:underline">Google AI Studio</a>') }} />)}
                         </ol>
+                        <div className="aspect-video mt-4 bg-neutral-200 dark:bg-neutral-800 rounded-lg overflow-hidden">
+                            <iframe
+                                className="w-full h-full"
+                                src="https://www.youtube.com/embed/IS3zZfoaCrY"
+                                title="Cara Setup API Key MONOklix.com"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen>
+                            </iframe>
+                        </div>
                         <p>{T.chapter1.sub1_2_p2}</p>
                     </SubSection>
                 </Section>

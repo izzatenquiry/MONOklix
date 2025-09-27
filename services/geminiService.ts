@@ -146,7 +146,6 @@ export const generateImages = async (
  * @param {string} resolution - The desired resolution for the video.
  * @param {string} negativePrompt - A prompt of what not to include.
  * @param {{ imageBytes: string; mimeType: string }} [image] - Optional image data.
- * @param {any} [_dialogue] - Unused parameter to satisfy call signature from UI.
  * @returns {Promise<Blob>} The blob of the generated video.
  */
 export const generateVideo = async (
@@ -155,8 +154,7 @@ export const generateVideo = async (
     aspectRatio: string,
     resolution: string,
     negativePrompt: string,
-    image?: { imageBytes: string, mimeType: string },
-    _dialogue?: any
+    image?: { imageBytes: string, mimeType: string }
 ): Promise<Blob> => {
     try {
         const ai = getAiInstance();

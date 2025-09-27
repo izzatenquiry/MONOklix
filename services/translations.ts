@@ -28,6 +28,7 @@ export const translations = {
       aiImage: 'AI Image',
       aiVideo: 'AI Video & Voice',
       promptLibrary: 'Prompt Library',
+      promptViralMy: 'Prompt Viral MY',
       imageGallery: 'Image Gallery',
       settings: 'Settings',
       logout: 'Log Out',
@@ -535,6 +536,12 @@ export const translations = {
         copied: 'Copied!',
         usePrompt: 'Use this Prompt',
     },
+    promptViralMyView: {
+        title: 'Prompt Viral MY',
+        subtitle: 'A collection of the latest viral prompts specially for the Malaysian market.',
+        comingSoon: 'Coming Soon!',
+        description: 'We are currently curating the best viral prompts for you. Check back soon!',
+    },
     settingsView: {
         title: 'Settings',
         // Profile Panel
@@ -612,6 +619,7 @@ export const translations = {
       aiImage: 'Imej AI',
       aiVideo: 'Video & Suara AI',
       promptLibrary: 'Perpustakaan Prompt',
+      promptViralMy: 'Prompt Viral MY',
       imageGallery: 'Galeri Imej',
       settings: 'Tetapan',
       logout: 'Log Keluar',
@@ -1110,6 +1118,12 @@ export const translations = {
         copy: 'Salin',
         copied: 'Disalin!',
         usePrompt: 'Guna Prompt Ini',
+    },
+    promptViralMyView: {
+        title: 'Prompt Viral MY',
+        subtitle: 'Koleksi prompt-prompt viral terkini khas untuk pasaran Malaysia.',
+        comingSoon: 'Akan Datang!',
+        description: 'Kami sedang menyusun prompt-prompt viral terbaik untuk anda. Sila kembali lagi nanti!',
     },
     settingsView: {
         title: 'Tetapan',

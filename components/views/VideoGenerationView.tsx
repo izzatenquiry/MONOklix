@@ -120,11 +120,11 @@ const VideoGenerationView: React.FC<VideoGenerationViewProps> = ({ preset, clear
       if (videoUrl) URL.revokeObjectURL(videoUrl);
       setVideoUrl(null);
 
-      const fullPrompt = [subjectContext, ambiance, action].filter(Boolean).join(', ');
+      const fullPrompt = [subjectContext, ambiance, action, dialogue].filter(Boolean).join('. ');
 
       try {
           const image = referenceImage ? { imageBytes: referenceImage.base64, mimeType: referenceImage.mimeType } : undefined;
-          const result = await generateVideo(fullPrompt, model, aspectRatio, resolution, negativePrompt, image, dialogue);
+          const result = await generateVideo(fullPrompt, model, aspectRatio, resolution, negativePrompt, image);
           const url = URL.createObjectURL(result);
           setVideoUrl(url);
 

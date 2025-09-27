@@ -20,6 +20,7 @@ import { getSupportPrompt } from './services/promptManager';
 import { triggerUserWebhook } from './services/webhookService';
 import GetStartedView from './components/views/GetStartedView';
 import { getTranslations } from './services/translations';
+import PromptViralMyView from './components/views/PromptViralMyView';
 
 interface VideoGenPreset {
   prompt: string;
@@ -249,6 +250,8 @@ const App: React.FC = () => {
         return <GalleryView {...commonProps} onCreateVideo={handleCreateVideoFromImage} onReEdit={handleReEditImage} />;
       case 'library':
         return <LibraryView {...commonProps} onUsePrompt={handleUsePromptInGenerator} />;
+      case 'prompt-viral-my':
+        return <PromptViralMyView {...commonProps} />;
       case 'settings':
           return <SettingsView 
                     {...commonProps}

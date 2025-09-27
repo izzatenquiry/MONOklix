@@ -13,6 +13,7 @@ export type View =
   // Standalone tools/pages
   | 'gallery'
   | 'library'
+  | 'prompt-viral-my'
   // Settings & Admin
   | 'settings';
 

@@ -21,6 +21,12 @@ Selepas log masuk buat kali pertama, anda **WAJIB** menetapkan API Key Google Ge
 4.  Salin (copy) API Key tersebut dan tampal (paste) ke dalam ruangan "Google Gemini API Key".
 5.  Klik butang **Save**.
 
+<br>
+
+<div align="center">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/IS3zZfoaCrY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
+
 Selepas API Key disimpan, barulah anda boleh mula menggunakan semua alatan AI.
 
 ---
