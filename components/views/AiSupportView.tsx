@@ -25,13 +25,13 @@ const AiSupportView: React.FC = () => {
           <ChatIcon className="w-8 h-8 text-primary-500"/>
           AI Support
         </h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Ada soalan atau perlukan bantuan? Tanya di sini. / Have a question or need help? Ask here.</p>
+        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Have a question or need help? Ask here.</p>
       </div>
        {/* This wrapper ensures the ChatInterface correctly fills the remaining vertical space */}
       <div className="flex-1 flex flex-col min-h-0">
         <ChatInterface
           systemInstruction={systemInstruction}
-          placeholder="Ada apa-apa yang boleh saya bantu? / How can I help you today?"
+          placeholder="How can I help you today?"
           messages={messages}
           isLoading={isLoading}
           onSendMessage={onSendMessage}

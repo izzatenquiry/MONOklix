@@ -285,12 +285,12 @@ const AiSupportPanel: React.FC<{
       <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-sm">
           <h2 className="text-xl font-semibold mb-2 flex items-center gap-2"><ChatIcon className="w-6 h-6"/>AI Support</h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
-              Ada soalan atau perlukan bantuan? Tanya di sini. / Have a question or need help? Ask here.
+              Have a question or need help? Ask here.
           </p>
           <div className="h-[60vh] flex flex-col">
               <ChatInterface
                   systemInstruction={systemInstruction}
-                  placeholder="Ada apa-apa yang boleh saya bantu? / How can I help you today?"
+                  placeholder="How can I help you today?"
                   messages={messages}
                   isLoading={isLoading}
                   onSendMessage={onSendMessage}
